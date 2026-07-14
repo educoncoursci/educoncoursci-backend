@@ -1,0 +1,50 @@
+{
+  "name": "educoncoursci-backend",
+  "version": "1.0.0",
+  "description": "Backend API EduConcoursCI — Plateforme de préparation aux concours CI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node scripts/seed.js",
+    "jwt:secret": "node scripts/generer-jwt-secret.js",
+    "check": "node scripts/deploy-check.js",
+    "admin:init": "node scripts/init-admin.js",
+    "db:reset": "node scripts/reset-db.js --confirmer",
+    "test": "bash scripts/test-local.sh"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.14.0",
+    "nodemailer": "^6.9.7",
+    "node-fetch": "^2.7.0",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "côte d'ivoire",
+    "concours",
+    "préparation",
+    "éducation",
+    "node.js",
+    "express",
+    "postgresql",
+    "railway"
+  ],
+  "author": "EduConcoursCI — Abidjan, Côte d'Ivoire",
+  "license": "ISC"
+}

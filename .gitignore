@@ -1,0 +1,100 @@
+# ── Variables secrètes ───────────────────────────────────────
+.env
+.env.local
+.env.production
+
+# ── Dépendances Node.js ──────────────────────────────────────
+node_modules/
+
+# ── Fichiers uploadés par les utilisateurs ───────────────────
+uploads/
+storage/generated/
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+logs/
+
+# ── Système ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ── Build ────────────────────────────────────────────────────
+dist/
+build/
+# EduConcoursCI Frontend — .gitignore
+
+# Fichiers système macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Fichiers Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Fichiers éditeur
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dossiers node (si jamais)
+node_modules/
+
+# Fichiers de build Netlify
+.netlify/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+# EduConcoursCI Backend — .gitignore
+
+# Variables d'environnement (NE JAMAIS ENVOYER SUR GITHUB)
+.env
+.env.local
+.env.production
+
+# Dépendances Node.js
+node_modules/
+
+# Fichiers uploadés par les utilisateurs
+uploads/
+storage/generated/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+.AppleDouble
+
+# Fichiers éditeur
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Fichiers de build
+dist/
+build/
+
+# Coverage tests
+coverage/
+
+# Fichiers temporaires
+*.tmp
+*.temp
