@@ -4,16 +4,16 @@
 //         activation Premium, historique, résiliation
 // ============================================================
 
-const Transaction = require(”../models/Transaction”);
-const User        = require(”../models/User”);
-const Wave        = require(”../services/wave”);
-const Orange      = require(”../services/orange”);
+const Transaction = require("../models/Transaction");
+const User        = require("../models/User");
+const Wave        = require("../services/wave");
+const Orange      = require("../services/orange");
 
 // Plans disponibles
 const PLANS = {
-“1 Mois”:  { montant: 2000,  dureeJours: 30  },
-“3 Mois”:  { montant: 5000,  dureeJours: 90  },
-“12 Mois”: { montant: 15000, dureeJours: 365 },
+"1 Mois":  { montant: 2000,  dureeJours: 30  },
+"3 Mois":  { montant: 5000,  dureeJours: 90  },
+"12 Mois": { montant: 15000, dureeJours: 365 },
 };
 
 // ════════════════════════════════════════════════════════════
@@ -23,7 +23,6 @@ exports.getPlans = async (req, res) => {
 try {
 const { plan } = req.query;
 
-```
 const plans = Object.entries(PLANS).map(([label, data]) => ({
   label,
   montant:     data.montant,
@@ -41,22 +40,20 @@ if (plan && PLANS[plan]) {
 }
 
 res.json({ plans, instructions });
-```
 
 } catch (err) {
-console.error(“Erreur getPlans :”, err.message);
-res.status(500).json({ error: “Erreur serveur.” });
+console.error("Erreur getPlans :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };
 
 // ════════════════════════════════════════════════════════════
-//  POST /api/payment/verify — Vérifier l’ID + activer Premium
+//  POST /api/payment/verify — Vérifier l'ID + activer Premium
 // ════════════════════════════════════════════════════════════
 exports.verify = async (req, res) => {
 try {
 const { txId, moyen, plan } = req.body;
 
-```
 // ── Validations de base ───────────────────────────────────
 if (!txId || !moyen || !plan) {
   return res.status(400).json({
@@ -139,11 +136,10 @@ res.json({
     date:   new Date().toLocaleDateString("fr-FR"),
   },
 });
-```
 
 } catch (err) {
-console.error(“Erreur vérification paiement :”, err.message);
-res.status(500).json({ error: “Erreur lors de la vérification du paiement.” });
+console.error("Erreur vérification paiement :", err.message);
+res.status(500).json({ error: "Erreur lors de la vérification du paiement." });
 }
 };
 
@@ -156,8 +152,8 @@ const transactions = await Transaction.findByUser(req.user.id);
 res.json({ transactions });
 
 } catch (err) {
-console.error(“Erreur historique paiements :”, err.message);
-res.status(500).json({ error: “Erreur lors de la récupération de l’historique.” });
+console.error("Erreur historique paiements :", err.message);
+res.status(500).json({ error: "Erreur lors de la récupération de l'historique." });
 }
 };
 
@@ -173,7 +169,6 @@ limit:  parseInt(limit)  || 100,
 offset: parseInt(offset) || 0,
 });
 
-```
 const revenus      = await Transaction.totalRevenus();
 const revenusQMois = await Transaction.revenusduMois();
 
@@ -183,11 +178,10 @@ res.json({
   revenus_mois:  revenusQMois,
   transactions,
 });
-```
 
 } catch (err) {
-console.error(“Erreur all transactions :”, err.message);
-res.status(500).json({ error: “Erreur serveur.” });
+console.error("Erreur all transactions :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };
 
@@ -198,10 +192,9 @@ exports.resilier = async (req, res) => {
 try {
 const { userId } = req.body;
 if (!userId) {
-return res.status(400).json({ error: “userId requis.” });
+return res.status(400).json({ error: "userId requis." });
 }
 
-```
 const user = await User.findById(userId);
 if (!user) {
   return res.status(404).json({ error: "Utilisateur introuvable." });
@@ -216,10 +209,9 @@ await User.setPremium(userId, {
 res.json({
   message: `Abonnement de ${user.nom} (${user.email}) résilié avec succès.`
 });
-```
 
 } catch (err) {
-console.error(“Erreur résiliation :”, err.message);
-res.status(500).json({ error: “Erreur lors de la résiliation.” });
+console.error("Erreur résiliation :", err.message);
+res.status(500).json({ error: "Erreur lors de la résiliation." });
 }
 };

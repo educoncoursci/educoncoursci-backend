@@ -3,14 +3,14 @@
 //  Tableau de bord admin : stats globales, gestion utilisateurs
 // ============================================================
 
-const User        = require(”../models/User”);
-const Concours    = require(”../models/Concours”);
-const PDF         = require(”../models/PDF”);
-const Video       = require(”../models/Video”);
-const QCM         = require(”../models/QCM”);
-const Score       = require(”../models/Score”);
-const Transaction = require(”../models/Transaction”);
-const { query }   = require(”../config/database”);
+const User        = require("../models/User");
+const Concours    = require("../models/Concours");
+const PDF         = require("../models/PDF");
+const Video       = require("../models/Video");
+const QCM         = require("../models/QCM");
+const Score       = require("../models/Score");
+const Transaction = require("../models/Transaction");
+const { query }   = require("../config/database");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/admin/stats — Statistiques globales du tableau de bord
@@ -46,7 +46,6 @@ Transaction.findAll({ limit: 5 }),
 User.findAll({ limit: 5 }),
 ]);
 
-```
 // Revenus des 6 derniers mois pour le graphique
 const graphiqueResult = await query(`
   SELECT
@@ -105,11 +104,10 @@ res.json({
   derniers_inscrits:   derniersInscrits,
   dernieres_transactions: dernieresTransactions,
 });
-```
 
 } catch (err) {
-console.error(“Erreur stats admin :”, err.message);
-res.status(500).json({ error: “Erreur lors de la récupération des statistiques.” });
+console.error("Erreur stats admin :", err.message);
+res.status(500).json({ error: "Erreur lors de la récupération des statistiques." });
 }
 };
 
@@ -121,7 +119,6 @@ try {
 const { limit, offset, recherche } = req.query;
 let utilisateurs;
 
-```
 if (recherche) {
   const result = await query(
     `SELECT id, nom, email, role, premium, premium_plan,
@@ -144,11 +141,10 @@ res.json({
   total:        utilisateurs.length,
   utilisateurs,
 });
-```
 
 } catch (err) {
-console.error(“Erreur getUsers admin :”, err.message);
-res.status(500).json({ error: “Erreur serveur.” });
+console.error("Erreur getUsers admin :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };
 
@@ -160,17 +156,15 @@ try {
 const abonnes = await User.findPremium();
 const revenus = await Transaction.totalRevenus();
 
-```
 res.json({
   total:   abonnes.length,
   revenus: `${revenus.toLocaleString("fr-CI")} FCFA`,
   abonnes,
 });
-```
 
 } catch (err) {
-console.error(“Erreur getAbonnes :”, err.message);
-res.status(500).json({ error: “Erreur serveur.” });
+console.error("Erreur getAbonnes :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };
 
@@ -182,7 +176,6 @@ try {
 const { id }   = req.params;
 const { role, premium, premium_plan, premium_expire } = req.body;
 
-```
 const user = await User.findById(id);
 if (!user) {
   return res.status(404).json({ error: "Utilisateur introuvable." });
@@ -212,11 +205,10 @@ res.json({
   message: "Utilisateur mis à jour avec succès.",
   user:    userMisAJour,
 });
-```
 
 } catch (err) {
-console.error(“Erreur updateUser admin :”, err.message);
-res.status(500).json({ error: “Erreur lors de la mise à jour.” });
+console.error("Erreur updateUser admin :", err.message);
+res.status(500).json({ error: "Erreur lors de la mise à jour." });
 }
 };
 
@@ -227,7 +219,6 @@ exports.deleteUser = async (req, res) => {
 try {
 const { id } = req.params;
 
-```
 // Empêche de se supprimer soi-même
 if (parseInt(id) === req.user.id) {
   return res.status(403).json({
@@ -244,11 +235,10 @@ await User.delete(id);
 res.json({
   message: `Utilisateur ${user.nom} (${user.email}) supprimé avec succès.`
 });
-```
 
 } catch (err) {
-console.error(“Erreur deleteUser admin :”, err.message);
-res.status(500).json({ error: “Erreur lors de la suppression.” });
+console.error("Erreur deleteUser admin :", err.message);
+res.status(500).json({ error: "Erreur lors de la suppression." });
 }
 };
 
@@ -259,16 +249,14 @@ exports.getScores = async (req, res) => {
 try {
 const result = await query(`SELECT s.id, s.score, s.total, s.pourcentage, s.qcm_titre, s.date, u.nom AS user_nom, u.email AS user_email FROM scores s JOIN users u ON s.user_id = u.id ORDER BY s.pourcentage DESC, s.date DESC LIMIT $1`, [parseInt(req.query.limit) || 100]);
 
-```
 res.json({
   total:  result.rows.length,
   scores: result.rows,
 });
-```
 
 } catch (err) {
-console.error(“Erreur getScores admin :”, err.message);
-res.status(500).json({ error: “Erreur serveur.” });
+console.error("Erreur getScores admin :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };
 
@@ -279,7 +267,6 @@ exports.exportUsers = async (req, res) => {
 try {
 const utilisateurs = await User.findAll({ limit: 10000 });
 
-```
 // Génère le CSV
 const entetes  = ["ID", "Nom", "Email", "Role", "Premium", "Plan", "Expiration", "Inscription"];
 const lignes   = utilisateurs.map(u => [
@@ -296,10 +283,9 @@ res.setHeader("Content-Type", "text/csv; charset=utf-8");
 res.setHeader("Content-Disposition",
   `attachment; filename="utilisateurs_${Date.now()}.csv"`);
 res.send("\uFEFF" + csv); // BOM pour Excel
-```
 
 } catch (err) {
-console.error(“Erreur export CSV :”, err.message);
-res.status(500).json({ error: “Erreur lors de l’export.” });
+console.error("Erreur export CSV :", err.message);
+res.status(500).json({ error: "Erreur lors de l'export." });
 }
 };

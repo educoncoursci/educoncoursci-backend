@@ -3,9 +3,9 @@
 //  Gère : liste, téléchargement, upload, CRUD PDFs
 // ============================================================
 
-const path = require(“path”);
-const fs   = require(“fs”);
-const PDF  = require(”../models/PDF”);
+const path = require("path");
+const fs   = require("fs");
+const PDF  = require("../models/PDF");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/pdfs — Liste avec filtres
@@ -14,7 +14,6 @@ exports.liste = async (req, res) => {
 try {
 const { categorie, premium, recherche, limit, offset } = req.query;
 
-```
 let filtrerPremium;
 if (premium !== undefined) filtrerPremium = premium === "true";
 
@@ -39,23 +38,21 @@ res.json({
   total: pdfsFiltres.length,
   pdfs:  pdfsFiltres,
 });
-```
 
 } catch (err) {
-console.error(“Erreur liste PDFs :”, err.message);
-res.status(500).json({ error: “Erreur lors de la récupération des PDFs.” });
+console.error("Erreur liste PDFs :", err.message);
+res.status(500).json({ error: "Erreur lors de la récupération des PDFs." });
 }
 };
 
 // ════════════════════════════════════════════════════════════
-//  GET /api/pdfs/:id — Détail d’un PDF
+//  GET /api/pdfs/:id — Détail d'un PDF
 // ════════════════════════════════════════════════════════════
 exports.detail = async (req, res) => {
 try {
 const pdf = await PDF.findById(req.params.id);
-if (!pdf) return res.status(404).json({ error: “PDF introuvable.” });
+if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
-```
 if (pdf.premium && (!req.user || !req.user.premium)) {
   return res.status(403).json({
     error:   "Contenu réservé aux abonnés Premium.",
@@ -64,11 +61,10 @@ if (pdf.premium && (!req.user || !req.user.premium)) {
 }
 
 res.json({ pdf });
-```
 
 } catch (err) {
-console.error(“Erreur détail PDF :”, err.message);
-res.status(500).json({ error: “Erreur serveur.” });
+console.error("Erreur détail PDF :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };
 
@@ -78,9 +74,8 @@ res.status(500).json({ error: “Erreur serveur.” });
 exports.telecharger = async (req, res) => {
 try {
 const pdf = await PDF.findById(req.params.id);
-if (!pdf) return res.status(404).json({ error: “PDF introuvable.” });
+if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
-```
 // Vérifie les droits Premium
 if (pdf.premium && (!req.user || !req.user.premium)) {
   return res.status(403).json({
@@ -104,11 +99,10 @@ if (!fs.existsSync(filePath)) {
 }
 
 res.download(filePath, `${pdf.titre}.pdf`);
-```
 
 } catch (err) {
-console.error(“Erreur téléchargement PDF :”, err.message);
-res.status(500).json({ error: “Erreur lors du téléchargement.” });
+console.error("Erreur téléchargement PDF :", err.message);
+res.status(500).json({ error: "Erreur lors du téléchargement." });
 }
 };
 
@@ -117,9 +111,8 @@ res.status(500).json({ error: “Erreur lors du téléchargement.” });
 // ════════════════════════════════════════════════════════════
 exports.creer = async (req, res) => {
 try {
-const data = { …req.body };
+const data = { ...req.body };
 
-```
 // Si un fichier est uploadé via Multer
 if (req.file) {
   data.url    = `/uploads/pdf/${req.file.filename}`;
@@ -142,11 +135,10 @@ res.status(201).json({
   message: "PDF ajouté avec succès.",
   pdf,
 });
-```
 
 } catch (err) {
-console.error(“Erreur créer PDF :”, err.message);
-res.status(500).json({ error: “Erreur lors de l’ajout du PDF.” });
+console.error("Erreur créer PDF :", err.message);
+res.status(500).json({ error: "Erreur lors de l'ajout du PDF." });
 }
 };
 
@@ -156,16 +148,14 @@ res.status(500).json({ error: “Erreur lors de l’ajout du PDF.” });
 exports.modifier = async (req, res) => {
 try {
 const pdf = await PDF.findById(req.params.id);
-if (!pdf) return res.status(404).json({ error: “PDF introuvable.” });
+if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
-```
 const modifie = await PDF.update(req.params.id, req.body);
 res.json({ message: "PDF modifié avec succès.", pdf: modifie });
-```
 
 } catch (err) {
-console.error(“Erreur modifier PDF :”, err.message);
-res.status(500).json({ error: “Erreur lors de la modification.” });
+console.error("Erreur modifier PDF :", err.message);
+res.status(500).json({ error: "Erreur lors de la modification." });
 }
 };
 
@@ -175,9 +165,8 @@ res.status(500).json({ error: “Erreur lors de la modification.” });
 exports.supprimer = async (req, res) => {
 try {
 const pdf = await PDF.findById(req.params.id);
-if (!pdf) return res.status(404).json({ error: “PDF introuvable.” });
+if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
-```
 // Supprimer le fichier local si c'est un upload
 if (pdf.url && pdf.url.startsWith("/uploads/")) {
   const filePath = path.join(__dirname, "..", pdf.url);
@@ -186,10 +175,9 @@ if (pdf.url && pdf.url.startsWith("/uploads/")) {
 
 await PDF.delete(req.params.id);
 res.json({ message: "PDF supprimé avec succès." });
-```
 
 } catch (err) {
-console.error(“Erreur supprimer PDF :”, err.message);
-res.status(500).json({ error: “Erreur lors de la suppression.” });
+console.error("Erreur supprimer PDF :", err.message);
+res.status(500).json({ error: "Erreur lors de la suppression." });
 }
 };

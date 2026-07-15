@@ -4,15 +4,15 @@
 //  Usage : node scripts/generer-jwt-secret.js
 // ============================================================
 
-const crypto = require(“crypto”);
+const crypto = require("crypto");
 
-const secret = crypto.randomBytes(64).toString(“hex”);
+const secret = crypto.randomBytes(64).toString("hex");
 
-console.log(””);
-console.log(“🔑 JWT_SECRET généré (128 caractères hexadécimaux) :”);
-console.log(””);
+console.log("");
+console.log("🔑 JWT_SECRET généré (128 caractères hexadécimaux) :");
+console.log("");
 console.log(secret);
-console.log(””);
-console.log(“📋 Copie cette ligne dans ton .env Railway :”);
+console.log("");
+console.log("📋 Copie cette ligne dans ton .env Railway :");
 console.log(`JWT_SECRET=${secret}`);
-console.log(””);
+console.log("");

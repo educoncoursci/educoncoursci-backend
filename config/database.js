@@ -4,13 +4,13 @@
 //  au premier démarrage du serveur.
 // ============================================================
 
-const { Pool } = require(“pg”);
+const { Pool } = require("pg");
 
 // Pool de connexions PostgreSQL
 // En production (Railway), DATABASE_URL est fournie automatiquement
 const pool = new Pool({
 connectionString: process.env.DATABASE_URL,
-ssl: process.env.NODE_ENV === “production”
+ssl: process.env.NODE_ENV === "production"
 ? { rejectUnauthorized: false }
 : false,
 });
@@ -18,20 +18,19 @@ ssl: process.env.NODE_ENV === “production”
 // ── Teste la connexion ────────────────────────────────────────
 pool.connect((err, client, release) => {
 if (err) {
-console.error(“❌ Erreur de connexion PostgreSQL :”, err.message);
+console.error("❌ Erreur de connexion PostgreSQL :", err.message);
 return;
 }
 release();
-console.log(“✅ Connexion PostgreSQL établie”);
+console.log("✅ Connexion PostgreSQL établie");
 });
 
-// ── Crée toutes les tables si elles n’existent pas ────────────
+// ── Crée toutes les tables si elles n'existent pas ────────────
 async function initDatabase() {
 const client = await pool.connect();
 try {
-await client.query(“BEGIN”);
+await client.query("BEGIN");
 
-```
 // Table : utilisateurs
 await client.query(`
   CREATE TABLE IF NOT EXISTS users (
@@ -194,35 +193,34 @@ console.log("✅ Tables PostgreSQL initialisées");
 
 // Crée le compte admin par défaut s'il n'existe pas
 await createDefaultAdmin();
-```
 
 } catch (err) {
-await client.query(“ROLLBACK”);
-console.error(“❌ Erreur initialisation base de données :”, err.message);
+await client.query("ROLLBACK");
+console.error("❌ Erreur initialisation base de données :", err.message);
 throw err;
 } finally {
 client.release();
 }
 }
 
-// ── Crée l’admin par défaut au premier lancement ──────────────
+// ── Crée l'admin par défaut au premier lancement ──────────────
 async function createDefaultAdmin() {
 if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) return;
 
 const existant = await pool.query(
-“SELECT id FROM users WHERE email = $1”,
+"SELECT id FROM users WHERE email = $1",
 [process.env.ADMIN_EMAIL]
 );
 if (existant.rows.length > 0) return;
 
-const bcrypt = require(“bcryptjs”);
+const bcrypt = require("bcryptjs");
 const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
 
 await pool.query(
 `INSERT INTO users (nom, email, password_hash, role, premium) VALUES ($1, $2, $3, 'admin', TRUE)`,
-[“Administrateur”, process.env.ADMIN_EMAIL, hash]
+["Administrateur", process.env.ADMIN_EMAIL, hash]
 );
-console.log(“✅ Compte admin créé :”, process.env.ADMIN_EMAIL);
+console.log("✅ Compte admin créé :", process.env.ADMIN_EMAIL);
 }
 
 // ── Helper : exécuter une requête ─────────────────────────────

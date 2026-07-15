@@ -3,8 +3,8 @@
 //  Gère : génération CV, génération LM, export PDF
 // ============================================================
 
-const { genererCV, genererLM, genererConseilRevision } = require(”../services/claude”);
-const { genererPDFTexte, genererCVStructure, supprimerFichier } = require(”../services/pdf”);
+const { genererCV, genererLM, genererConseilRevision } = require("../services/claude");
+const { genererPDFTexte, genererCVStructure, supprimerFichier } = require("../services/pdf");
 
 // ════════════════════════════════════════════════════════════
 //  POST /api/cv/generate — Générer un CV via Claude IA
@@ -18,7 +18,6 @@ experiences, formations,
 competences, langues, loisirs,
 } = req.body;
 
-```
 // Validations minimales
 if (!nom || !poste) {
   return res.status(400).json({
@@ -50,12 +49,10 @@ res.json({
   cv:      contenuCV,
   type:    "cv",
 });
-```
 
 } catch (err) {
-console.error(“Erreur génération CV :”, err.message);
+console.error("Erreur génération CV :", err.message);
 
-```
 // Message spécifique si la clé API est manquante
 if (err.message.includes("API")) {
   return res.status(503).json({
@@ -64,7 +61,6 @@ if (err.message.includes("API")) {
 }
 
 res.status(500).json({ error: "Erreur lors de la génération du CV." });
-```
 
 }
 };
@@ -80,7 +76,6 @@ destinataire, type,
 motivation, experience,
 } = req.body;
 
-```
 if (!nom || !poste || !organisation) {
   return res.status(400).json({
     error: "Le nom, le poste visé et l'organisation sont requis."
@@ -105,16 +100,15 @@ res.json({
   lm:      contenuLM,
   type:    "lm",
 });
-```
 
 } catch (err) {
-console.error(“Erreur génération LM :”, err.message);
-if (err.message.includes(“API”)) {
+console.error("Erreur génération LM :", err.message);
+if (err.message.includes("API")) {
 return res.status(503).json({
-error: “Service IA temporairement indisponible.”
+error: "Service IA temporairement indisponible."
 });
 }
-res.status(500).json({ error: “Erreur lors de la génération de la lettre.” });
+res.status(500).json({ error: "Erreur lors de la génération de la lettre." });
 }
 };
 
@@ -125,10 +119,9 @@ exports.exportPDF = async (req, res) => {
 let filePath = null;
 try {
 const { contenu, type, data, style } = req.body;
-// type  : “cv” | “lm”
-// style : “simple” | “structure” (CV avec mise en page colonnes)
+// type  : "cv" | "lm"
+// style : "simple" | "structure" (CV avec mise en page colonnes)
 
-```
 if (!contenu) {
   return res.status(400).json({ error: "Le contenu est requis pour générer le PDF." });
 }
@@ -158,12 +151,11 @@ res.download(filePath, labelFichier, (err) => {
     res.status(500).json({ error: "Erreur lors du téléchargement du PDF." });
   }
 });
-```
 
 } catch (err) {
-console.error(“Erreur export PDF :”, err.message);
+console.error("Erreur export PDF :", err.message);
 if (filePath) supprimerFichier(filePath);
-res.status(500).json({ error: “Erreur lors de la génération du PDF.” });
+res.status(500).json({ error: "Erreur lors de la génération du PDF." });
 }
 };
 
@@ -174,7 +166,6 @@ exports.conseilRevision = async (req, res) => {
 try {
 const { matiere, score, total } = req.body;
 
-```
 if (!matiere || score === undefined || !total) {
   return res.status(400).json({
     error: "Matière, score et total sont requis."
@@ -187,10 +178,9 @@ res.json({
   message: "Conseil généré avec succès.",
   conseil,
 });
-```
 
 } catch (err) {
-console.error(“Erreur conseil révision :”, err.message);
-res.status(500).json({ error: “Erreur lors de la génération du conseil.” });
+console.error("Erreur conseil révision :", err.message);
+res.status(500).json({ error: "Erreur lors de la génération du conseil." });
 }
 };

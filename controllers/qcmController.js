@@ -3,8 +3,8 @@
 //  Gère : liste, détail, soumission score, CRUD QCM
 // ============================================================
 
-const QCM   = require(”../models/QCM”);
-const Score = require(”../models/Score”);
+const QCM   = require("../models/QCM");
+const Score = require("../models/Score");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/qcm — Liste des QCM disponibles
@@ -13,7 +13,6 @@ exports.liste = async (req, res) => {
 try {
 const { matiere, difficulte, premium, limit, offset } = req.query;
 
-```
 let filtrerPremium;
 if (premium !== undefined) filtrerPremium = premium === "true";
 
@@ -32,11 +31,10 @@ const liste = qcmListe.map(q => ({
 }));
 
 res.json({ total: liste.length, qcm: liste });
-```
 
 } catch (err) {
-console.error(“Erreur liste QCM :”, err.message);
-res.status(500).json({ error: “Erreur lors de la récupération des QCM.” });
+console.error("Erreur liste QCM :", err.message);
+res.status(500).json({ error: "Erreur lors de la récupération des QCM." });
 }
 };
 
@@ -47,10 +45,9 @@ exports.detail = async (req, res) => {
 try {
 const qcm = await QCM.findById(req.params.id);
 if (!qcm) {
-return res.status(404).json({ error: “QCM introuvable.” });
+return res.status(404).json({ error: "QCM introuvable." });
 }
 
-```
 // Vérifie les droits Premium
 if (qcm.premium && (!req.user || !req.user.premium)) {
   return res.status(403).json({
@@ -75,11 +72,10 @@ res.json({
     questions_json:  undefined,
   },
 });
-```
 
 } catch (err) {
-console.error(“Erreur détail QCM :”, err.message);
-res.status(500).json({ error: “Erreur serveur.” });
+console.error("Erreur détail QCM :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };
 
@@ -89,9 +85,8 @@ res.status(500).json({ error: “Erreur serveur.” });
 exports.soumettre = async (req, res) => {
 try {
 const { reponses } = req.body;
-// reponses = { “0”: 2, “1”: 0, “2”: 3, … } (index question: index réponse choisie)
+// reponses = { "0": 2, "1": 0, "2": 3, … } (index question: index réponse choisie)
 
-```
 if (!reponses || typeof reponses !== "object") {
   return res.status(400).json({ error: "Réponses manquantes ou format invalide." });
 }
@@ -142,21 +137,20 @@ res.json({
   corrections,
   score_id:    scoreEnregistre?.id || null,
 });
-```
 
 } catch (err) {
-console.error(“Erreur soumission QCM :”, err.message);
-res.status(500).json({ error: “Erreur lors de la correction.” });
+console.error("Erreur soumission QCM :", err.message);
+res.status(500).json({ error: "Erreur lors de la correction." });
 }
 };
 
 // Retourne la mention selon le pourcentage
 function getMention(pourcentage) {
-if (pourcentage >= 90) return “Excellent 🏆”;
-if (pourcentage >= 75) return “Très bien 🥇”;
-if (pourcentage >= 60) return “Bien 👍”;
-if (pourcentage >= 50) return “Passable ✅”;
-return “À revoir 📚”;
+if (pourcentage >= 90) return "Excellent 🏆";
+if (pourcentage >= 75) return "Très bien 🥇";
+if (pourcentage >= 60) return "Bien 👍";
+if (pourcentage >= 50) return "Passable ✅";
+return "À revoir 📚";
 }
 
 // ════════════════════════════════════════════════════════════
@@ -166,7 +160,6 @@ exports.creer = async (req, res) => {
 try {
 const { titre, matiere, difficulte, statut, questions, premium } = req.body;
 
-```
 if (!titre || !matiere) {
   return res.status(400).json({ error: "Titre et matière sont requis." });
 }
@@ -194,11 +187,10 @@ const qcm = await QCM.create({
 });
 
 res.status(201).json({ message: "QCM créé avec succès.", qcm });
-```
 
 } catch (err) {
-console.error(“Erreur créer QCM :”, err.message);
-res.status(500).json({ error: “Erreur lors de la création du QCM.” });
+console.error("Erreur créer QCM :", err.message);
+res.status(500).json({ error: "Erreur lors de la création du QCM." });
 }
 };
 
@@ -208,16 +200,14 @@ res.status(500).json({ error: “Erreur lors de la création du QCM.” });
 exports.modifier = async (req, res) => {
 try {
 const qcm = await QCM.findById(req.params.id);
-if (!qcm) return res.status(404).json({ error: “QCM introuvable.” });
+if (!qcm) return res.status(404).json({ error: "QCM introuvable." });
 
-```
 const modifie = await QCM.update(req.params.id, req.body);
 res.json({ message: "QCM modifié avec succès.", qcm: modifie });
-```
 
 } catch (err) {
-console.error(“Erreur modifier QCM :”, err.message);
-res.status(500).json({ error: “Erreur lors de la modification.” });
+console.error("Erreur modifier QCM :", err.message);
+res.status(500).json({ error: "Erreur lors de la modification." });
 }
 };
 
@@ -227,15 +217,13 @@ res.status(500).json({ error: “Erreur lors de la modification.” });
 exports.supprimer = async (req, res) => {
 try {
 const qcm = await QCM.findById(req.params.id);
-if (!qcm) return res.status(404).json({ error: “QCM introuvable.” });
+if (!qcm) return res.status(404).json({ error: "QCM introuvable." });
 
-```
 await QCM.delete(req.params.id);
 res.json({ message: "QCM supprimé avec succès." });
-```
 
 } catch (err) {
-console.error(“Erreur supprimer QCM :”, err.message);
-res.status(500).json({ error: “Erreur lors de la suppression.” });
+console.error("Erreur supprimer QCM :", err.message);
+res.status(500).json({ error: "Erreur lors de la suppression." });
 }
 };

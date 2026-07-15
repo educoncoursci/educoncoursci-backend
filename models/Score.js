@@ -3,7 +3,7 @@
 //  Requêtes SQL pour la table scores.
 // ============================================================
 
-const { query } = require(”../config/database”);
+const { query } = require("../config/database");
 
 const Score = {
 
@@ -17,7 +17,7 @@ const result = await query(
 return result.rows[0];
 },
 
-// ── Historique d’un utilisateur ─────────────────────────────
+// ── Historique d'un utilisateur ─────────────────────────────
 async findByUser(userId, { limit = 20, offset = 0 } = {}) {
 const result = await query(
 `SELECT s.*, q.titre as qcm_titre_actuel FROM scores s LEFT JOIN qcm q ON s.qcm_id = q.id WHERE s.user_id = $1 ORDER BY s.date DESC LIMIT $2 OFFSET $3`,
@@ -26,7 +26,7 @@ const result = await query(
 return result.rows;
 },
 
-// ── Meilleur score d’un utilisateur sur un QCM ───────────────
+// ── Meilleur score d'un utilisateur sur un QCM ───────────────
 async meilleurScore(userId, qcmId) {
 const result = await query(
 `SELECT MAX(pourcentage) as meilleur FROM scores WHERE user_id = $1 AND qcm_id = $2`,
@@ -35,7 +35,7 @@ const result = await query(
 return result.rows[0]?.meilleur || 0;
 },
 
-// ── Statistiques globales d’un utilisateur ───────────────────
+// ── Statistiques globales d'un utilisateur ───────────────────
 async statsUtilisateur(userId) {
 const result = await query(
 `SELECT COUNT(*) as total_tentatives, ROUND(AVG(pourcentage), 0) as moyenne, MAX(pourcentage) as meilleur, COUNT(DISTINCT qcm_id) as qcm_distincts FROM scores WHERE user_id = $1`,
@@ -46,7 +46,7 @@ return result.rows[0];
 
 // ── Total des tentatives (stats admin) ───────────────────────
 async count() {
-const result = await query(“SELECT COUNT(*) FROM scores”);
+const result = await query("SELECT COUNT(*) FROM scores");
 return parseInt(result.rows[0].count, 10);
 },
 };

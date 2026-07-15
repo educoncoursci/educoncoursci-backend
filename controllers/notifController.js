@@ -3,14 +3,14 @@
 //  Gère : envoi de notifications e-mail, historique
 // ============================================================
 
-const { query }                    = require(”../config/database”);
-const User                         = require(”../models/User”);
-const Concours                     = require(”../models/Concours”);
+const { query }                    = require("../config/database");
+const User                         = require("../models/User");
+const Concours                     = require("../models/Concours");
 const {
 envoyerNotificationAdmin,
 envoyerAlerteConcours,
 envoyerRappelCloture,
-} = require(”../services/email”);
+} = require("../services/email");
 
 // ════════════════════════════════════════════════════════════
 //  POST /api/notifs/send — Envoyer une notification (admin)
@@ -19,7 +19,6 @@ exports.envoyer = async (req, res) => {
 try {
 const { titre, message, cible, urgent } = req.body;
 
-```
 if (!titre || !message) {
   return res.status(400).json({
     error: "Titre et message sont requis."
@@ -65,11 +64,10 @@ res.json({
   total:         resultat.total,
   destinataires: destinataires.length,
 });
-```
 
 } catch (err) {
-console.error(“Erreur envoi notification :”, err.message);
-res.status(500).json({ error: “Erreur lors de l’envoi de la notification.” });
+console.error("Erreur envoi notification :", err.message);
+res.status(500).json({ error: "Erreur lors de l'envoi de la notification." });
 }
 };
 
@@ -80,7 +78,6 @@ exports.alerteConcours = async (req, res) => {
 try {
 const { concoursId, cible } = req.body;
 
-```
 if (!concoursId) {
   return res.status(400).json({ error: "concoursId est requis." });
 }
@@ -126,11 +123,10 @@ res.json({
   echecs,
   concours: concours.titre,
 });
-```
 
 } catch (err) {
-console.error(“Erreur alerte concours :”, err.message);
-res.status(500).json({ error: “Erreur lors de l’envoi de l’alerte.” });
+console.error("Erreur alerte concours :", err.message);
+res.status(500).json({ error: "Erreur lors de l'envoi de l'alerte." });
 }
 };
 
@@ -142,7 +138,6 @@ try {
 // Trouve les concours qui ferment dans 7 jours
 const result = await query(`SELECT * FROM concours WHERE statut = 'ouvert' AND cloture IS NOT NULL AND cloture != ''`);
 
-```
 const concoursAlertes = [];
 const utilisateurs    = await User.findAll({ limit: 1000 });
 
@@ -183,11 +178,10 @@ res.json({
   message: `${concoursAlertes.length} rappel(s) envoyé(s).`,
   rappels: concoursAlertes,
 });
-```
 
 } catch (err) {
-console.error(“Erreur rappels clôture :”, err.message);
-res.status(500).json({ error: “Erreur lors de l’envoi des rappels.” });
+console.error("Erreur rappels clôture :", err.message);
+res.status(500).json({ error: "Erreur lors de l'envoi des rappels." });
 }
 };
 
@@ -202,15 +196,13 @@ const result = await query(
 [parseInt(limit) || 50, parseInt(offset) || 0]
 );
 
-```
 res.json({
   total:         result.rows.length,
   notifications: result.rows,
 });
-```
 
 } catch (err) {
-console.error(“Erreur historique notifications :”, err.message);
-res.status(500).json({ error: “Erreur serveur.” });
+console.error("Erreur historique notifications :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };

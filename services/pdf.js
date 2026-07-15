@@ -1,42 +1,41 @@
 // ============================================================
 //  services/pdf.js
 //  Génère des fichiers PDF téléchargeables avec PDFKit.
-//  Utilisé pour les CV et Lettres de Motivation générés par l’IA.
+//  Utilisé pour les CV et Lettres de Motivation générés par l'IA.
 // ============================================================
 
-const PDFDocument = require(“pdfkit”);
-const path        = require(“path”);
-const fs          = require(“fs”);
+const PDFDocument = require("pdfkit");
+const path        = require("path");
+const fs          = require("fs");
 
 // Crée le dossier de stockage si nécessaire
-const storageDir = path.join(__dirname, “../storage/generated”);
+const storageDir = path.join(__dirname, "../storage/generated");
 if (!fs.existsSync(storageDir)) {
 fs.mkdirSync(storageDir, { recursive: true });
 }
 
 // ── Couleurs & styles EduConcoursCI ──────────────────────────
 const COULEURS = {
-primaire:    “#1A6B3C”,
-secondaire:  “#0A6EBD”,
-accent:      “#F5820D”,
-texte:       “#1A1A2E”,
-gris:        “#666666”,
-grisClair:   “#F4F6F9”,
-blanc:       “#FFFFFF”,
+primaire:    "#1A6B3C",
+secondaire:  "#0A6EBD",
+accent:      "#F5820D",
+texte:       "#1A1A2E",
+gris:        "#666666",
+grisClair:   "#F4F6F9",
+blanc:       "#FFFFFF",
 };
 
 // ════════════════════════════════════════════════════════════
-//  Génère un PDF à partir d’un texte brut (CV ou LM)
+//  Génère un PDF à partir d'un texte brut (CV ou LM)
 // ════════════════════════════════════════════════════════════
-async function genererPDFTexte(contenu, nomFichier, type = “cv”) {
+async function genererPDFTexte(contenu, nomFichier, type = "cv") {
 return new Promise((resolve, reject) => {
 const filePath = path.join(storageDir, `${nomFichier}.pdf`);
 const doc      = new PDFDocument({
-size:    “A4”,
+size:    "A4",
 margins: { top: 50, bottom: 50, left: 60, right: 60 },
 });
 
-```
 const stream = fs.createWriteStream(filePath);
 doc.pipe(stream);
 
@@ -125,7 +124,6 @@ doc.end();
 
 stream.on("finish", () => resolve(filePath));
 stream.on("error",  reject);
-```
 
 });
 }
@@ -138,11 +136,10 @@ return new Promise((resolve, reject) => {
 const nomFichier = `CV_${data.nom.replace(/\s+/g, "_")}_${Date.now()}`;
 const filePath   = path.join(storageDir, `${nomFichier}.pdf`);
 const doc        = new PDFDocument({
-size:    “A4”,
+size:    "A4",
 margins: { top: 0, bottom: 50, left: 0, right: 0 },
 });
 
-```
 const stream = fs.createWriteStream(filePath);
 doc.pipe(stream);
 
@@ -289,7 +286,6 @@ doc.fillColor(COULEURS.gris).fontSize(7)
 doc.end();
 stream.on("finish", () => resolve(filePath));
 stream.on("error",  reject);
-```
 
 });
 }
@@ -299,7 +295,7 @@ function supprimerFichier(filePath) {
 try {
 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 } catch (err) {
-console.error(“Erreur suppression fichier temporaire :”, err.message);
+console.error("Erreur suppression fichier temporaire :", err.message);
 }
 }
 

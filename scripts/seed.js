@@ -4,19 +4,18 @@
 //  Usage : node scripts/seed.js
 // ============================================================
 
-require(“dotenv”).config();
-const { query, initDatabase } = require(”../config/database”);
-const bcrypt = require(“bcryptjs”);
+require("dotenv").config();
+const { query, initDatabase } = require("../config/database");
+const bcrypt = require("bcryptjs");
 
 async function seed() {
-console.log(“🌱 Démarrage du seed EduConcoursCI…\n”);
+console.log("🌱 Démarrage du seed EduConcoursCI…\n");
 
 try {
 // Initialise les tables
 await initDatabase();
-console.log(“✅ Base de données initialisée\n”);
+console.log("✅ Base de données initialisée\n");
 
-```
 // ── 1. Utilisateurs de test ──────────────────────────────
 console.log("👥 Création des utilisateurs...");
 
@@ -355,10 +354,9 @@ console.log("   Admin    : (voir ADMIN_EMAIL dans .env)");
 console.log("");
 console.log("🚀 Lance le serveur : npm start");
 console.log("🌐 Frontend       : ouvre index.html dans un navigateur");
-```
 
 } catch (err) {
-console.error(”\n❌ Erreur lors du seed :”, err.message);
+console.error("\n❌ Erreur lors du seed :", err.message);
 console.error(err.stack);
 process.exit(1);
 }

@@ -3,9 +3,9 @@
 //  Inscription, connexion, déconnexion, profil connecté.
 // ============================================================
 
-const bcrypt = require(“bcryptjs”);
-const jwt    = require(“jsonwebtoken”);
-const User   = require(”../models/User”);
+const bcrypt = require("bcryptjs");
+const jwt    = require("jsonwebtoken");
+const User   = require("../models/User");
 
 // ── Générer un token JWT ──────────────────────────────────────
 function genererToken(user) {
@@ -18,7 +18,7 @@ role:    user.role,
 premium: user.premium,
 },
 process.env.JWT_SECRET,
-{ expiresIn: process.env.JWT_EXPIRES_IN || “7d” }
+{ expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
 );
 }
 
@@ -27,7 +27,6 @@ const register = async (req, res) => {
 try {
 const { nom, email, password } = req.body;
 
-```
 // Validation des champs
 if (!nom || !email || !password) {
   return res.status(400).json({
@@ -78,11 +77,10 @@ res.status(201).json({
     date_inscription: user.date_inscription,
   },
 });
-```
 
 } catch (err) {
-console.error(“Erreur register :”, err.message);
-res.status(500).json({ error: “Erreur lors de la création du compte.” });
+console.error("Erreur register :", err.message);
+res.status(500).json({ error: "Erreur lors de la création du compte." });
 }
 };
 
@@ -91,7 +89,6 @@ const login = async (req, res) => {
 try {
 const { email, password } = req.body;
 
-```
 if (!email || !password) {
   return res.status(400).json({
     error: "E-mail et mot de passe requis."
@@ -145,11 +142,10 @@ res.json({
     premium_expire: user.premium_expire,
   },
 });
-```
 
 } catch (err) {
-console.error(“Erreur login :”, err.message);
-res.status(500).json({ error: “Erreur lors de la connexion.” });
+console.error("Erreur login :", err.message);
+res.status(500).json({ error: "Erreur lors de la connexion." });
 }
 };
 
@@ -158,10 +154,9 @@ const me = async (req, res) => {
 try {
 const user = await User.findById(req.user.id);
 if (!user) {
-return res.status(404).json({ error: “Utilisateur introuvable.” });
+return res.status(404).json({ error: "Utilisateur introuvable." });
 }
 
-```
 res.json({
   user: {
     id:             user.id,
@@ -176,19 +171,18 @@ res.json({
     scores:   JSON.parse(user.scores_json   || "[]"),
   },
 });
-```
 
 } catch (err) {
-console.error(“Erreur me :”, err.message);
-res.status(500).json({ error: “Erreur lors de la récupération du profil.” });
+console.error("Erreur me :", err.message);
+res.status(500).json({ error: "Erreur lors de la récupération du profil." });
 }
 };
 
 // ── POST /api/auth/logout ─────────────────────────────────────
-// Côté serveur il n’y a rien à faire (JWT stateless).
+// Côté serveur il n'y a rien à faire (JWT stateless).
 // Le client doit supprimer le token de son localStorage.
 const logout = (req, res) => {
-res.json({ message: “Déconnexion réussie.” });
+res.json({ message: "Déconnexion réussie." });
 };
 
 // ── POST /api/auth/change-password ───────────────────────────
@@ -196,7 +190,6 @@ const changePassword = async (req, res) => {
 try {
 const { ancienPassword, nouveauPassword } = req.body;
 
-```
 if (!ancienPassword || !nouveauPassword) {
   return res.status(400).json({
     error: "Ancien et nouveau mot de passe requis."
@@ -224,11 +217,10 @@ await require("../config/database").query(
 );
 
 res.json({ message: "Mot de passe modifié avec succès." });
-```
 
 } catch (err) {
-console.error(“Erreur changePassword :”, err.message);
-res.status(500).json({ error: “Erreur lors du changement de mot de passe.” });
+console.error("Erreur changePassword :", err.message);
+res.status(500).json({ error: "Erreur lors du changement de mot de passe." });
 }
 };
 

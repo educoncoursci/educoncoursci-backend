@@ -1,15 +1,15 @@
 // ============================================================
 //  middleware/upload.js
-//  Configuration Multer pour l’upload de fichiers PDF.
+//  Configuration Multer pour l'upload de fichiers PDF.
 //  Limite : 20 MB, uniquement les fichiers PDF.
 // ============================================================
 
-const multer = require(“multer”);
-const path   = require(“path”);
-const fs     = require(“fs”);
+const multer = require("multer");
+const path   = require("path");
+const fs     = require("fs");
 
-// Crée le dossier uploads/pdf s’il n’existe pas
-const uploadDir = path.join(__dirname, “../uploads/pdf”);
+// Crée le dossier uploads/pdf s'il n'existe pas
+const uploadDir = path.join(__dirname, "../uploads/pdf");
 if (!fs.existsSync(uploadDir)) {
 fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -23,7 +23,7 @@ filename: (req, file, cb) => {
 // Nom unique : timestamp + nom nettoyé
 const ext      = path.extname(file.originalname);
 const baseName = path.basename(file.originalname, ext)
-.replace(/[^a-zA-Z0-9-*]/g, “*”)
+.replace(/[^a-zA-Z0-9-*]/g, "*")
 .substring(0, 60);
 const fileName = `${Date.now()}_${baseName}${ext}`;
 cb(null, fileName);
@@ -32,10 +32,10 @@ cb(null, fileName);
 
 // Filtre : uniquement les PDFs
 const fileFilter = (req, file, cb) => {
-if (file.mimetype === “application/pdf”) {
+if (file.mimetype === "application/pdf") {
 cb(null, true);
 } else {
-cb(new Error(“Seuls les fichiers PDF sont acceptés.”), false);
+cb(new Error("Seuls les fichiers PDF sont acceptés."), false);
 }
 };
 
@@ -51,7 +51,7 @@ limits: { fileSize: maxSize },
 // Gestion des erreurs Multer
 const handleUploadError = (err, req, res, next) => {
 if (err instanceof multer.MulterError) {
-if (err.code === “LIMIT_FILE_SIZE”) {
+if (err.code === "LIMIT_FILE_SIZE") {
 return res.status(400).json({
 error: `Fichier trop lourd. Maximum : ${process.env.MAX_FILE_SIZE_MB || 20} MB.`
 });
