@@ -221,21 +221,21 @@ console.log(`  ✅ ${pdfs.length} PDFs créés`);
 console.log("\n🎬 Création des vidéos...");
 
 const videos = [
-  { titre: "Introduction à la Culture Générale — Concours CI", categorie: "Culture Générale", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duree: "45:30", premium: false, vues: 3421 },
-  { titre: "Logique et Raisonnement — Cours Complet", categorie: "Logique", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duree: "1:12:45", premium: false, vues: 2107 },
-  { titre: "Mathématiques Appliquées — Concours Fonction Publique", categorie: "Mathématiques", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duree: "58:20", premium: true, vues: 1589 },
-  { titre: "Travail Social — Méthode A.V.E.C. Expliquée", categorie: "Travail Social", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duree: "32:15", premium: false, vues: 876 },
-  { titre: "Droit Administratif CI — Bases Fondamentales", categorie: "Droit", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duree: "1:05:00", premium: true, vues: 654 },
-  { titre: "Préparation BAC Maths Série C — Exercices Corrigés", categorie: "BAC", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duree: "1:30:22", premium: true, vues: 2341 },
+  { titre: "50 questions de culture générale pour concours de la fonction publique", categorie: "Culture Générale", ytId: "fQPCCVxJz4E", duree: "", premium: false, vues: 3421 },
+  { titre: "CV et lettre de motivation : les conseils d'un recruteur", categorie: "CV & Emploi", ytId: "XgNbAPyLb8U", duree: "", premium: false, vues: 2107 },
+  { titre: "Comment rédiger une lettre de motivation qui captive les recruteurs", categorie: "CV & Emploi", ytId: "8TbfmbLJrDw", duree: "", premium: false, vues: 1589 },
+  { titre: "Réussir l'oral de son concours : 40 questions pour s'entraîner (catégories A, B, C)", categorie: "Entretien Oral", ytId: "bk-oXiC1CRM", duree: "", premium: true, vues: 876 },
+  { titre: "Oral de concours fonction publique : 7 secrets pour le réussir", categorie: "Entretien Oral", ytId: "vwrHXelwxp4", duree: "", premium: true, vues: 654 },
+  { titre: "Présentez-vous à l'oral : les 7 erreurs fatales à éviter", categorie: "Entretien Oral", ytId: "BffD0I3aBAE", duree: "", premium: false, vues: 2341 },
 ];
 
 for (const v of videos) {
-  const ytId = "dQw4w9WgXcQ"; // Exemple
+  const ytId = v.ytId;
   await query(`
     INSERT INTO videos (titre, categorie, url, youtube_id, miniature, duree, premium, vues)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
     ON CONFLICT DO NOTHING`,
-    [v.titre, v.categorie, v.url, ytId,
+    [v.titre, v.categorie, `https://www.youtube.com/watch?v=${ytId}`, ytId,
      `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
      v.duree, v.premium, v.vues]
   );
