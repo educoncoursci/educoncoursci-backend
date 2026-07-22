@@ -26,7 +26,8 @@
     "pdfkit": "^0.14.0",
     "nodemailer": "^6.9.7",
     "node-fetch": "^2.7.0",
-    "express-validator": "^7.0.1"
+    "express-validator": "^7.0.1",
+    "docx": "^9.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

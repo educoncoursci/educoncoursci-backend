@@ -168,6 +168,58 @@ await client.query(`
   );
 `);
 
+// Table : offres_emploi
+await client.query(`
+  CREATE TABLE IF NOT EXISTS offres_emploi (
+    id              SERIAL PRIMARY KEY,
+    titre           VARCHAR(200) NOT NULL,
+    entreprise      VARCHAR(150) NOT NULL,
+    type_contrat    VARCHAR(30) NOT NULL
+                    CHECK (type_contrat IN ('CDI', 'CDD', 'Stage', 'Freelance', 'Alternance')),
+    ville           VARCHAR(100) DEFAULT 'Abidjan',
+    secteur         VARCHAR(100),
+    description     TEXT NOT NULL,
+    profil_recherche TEXT,
+    salaire         VARCHAR(100),
+    experience      VARCHAR(50),
+    date_limite     VARCHAR(100),
+    email_contact   VARCHAR(150),
+    lien_externe    TEXT,
+    statut          VARCHAR(20) DEFAULT 'publié'
+                    CHECK (statut IN ('publié', 'fermé', 'brouillon')),
+    vues            INTEGER DEFAULT 0,
+    created_at      TIMESTAMP DEFAULT NOW()
+  );
+`);
+
+// Table : candidatures (suivi de qui postule à quelle offre)
+await client.query(`
+  CREATE TABLE IF NOT EXISTS candidatures (
+    id           SERIAL PRIMARY KEY,
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    offre_id     INTEGER NOT NULL REFERENCES offres_emploi(id) ON DELETE CASCADE,
+    cv_snapshot  TEXT,
+    message      TEXT,
+    statut       VARCHAR(20) DEFAULT 'envoyée'
+                 CHECK (statut IN ('envoyée', 'vue', 'retenue', 'refusée')),
+    created_at   TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, offre_id)
+  );
+`);
+
+// Table : alertes_emploi (préférences de recherche pour notifications)
+await client.query(`
+  CREATE TABLE IF NOT EXISTS alertes_emploi (
+    id           SERIAL PRIMARY KEY,
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mot_cle      VARCHAR(150),
+    type_contrat VARCHAR(30),
+    ville        VARCHAR(100),
+    actif        BOOLEAN DEFAULT TRUE,
+    created_at   TIMESTAMP DEFAULT NOW()
+  );
+`);
+
 
 // ── Migrations : ajout de colonnes si manquantes ─────────────
 // Ajoute youtube_id et miniature à la table videos si absents

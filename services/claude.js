@@ -159,13 +159,85 @@ Un candidat vient d'obtenir ${scoreActuel}/${total} (${pourcentage}%) en ${matie
 Donne-lui :
 
 1. Une évaluation courte et bienveillante de son niveau (2 phrases max)
-1. Les 3 points clés à revoir en priorité pour ${matiere}
-1. Une méthode concrète de révision adaptée aux concours CI (3 étapes max)
-1. Un message d'encouragement personnalisé (1 phrase)
+2. Les 3 points clés à revoir en priorité pour ${matiere}
+3. Une méthode concrète de révision adaptée aux concours CI (3 étapes max)
+4. Un message d'encouragement personnalisé (1 phrase)
 
 Réponds en français, de façon directe et pratique. Maximum 150 mots au total.`;
 
 return appelClaude(prompt, 400);
 }
 
-module.exports = { genererCV, genererLM, genererConseilRevision };
+module.exports = { genererCV, genererLM, genererConseilRevision, analyserATS, adapterCVOffre };
+
+// ════════════════════════════════════════════════════════════
+//  Analyse la compatibilité ATS d'un CV (score + recommandations)
+// ════════════════════════════════════════════════════════════
+async function analyserATS(contenuCV, offreEmploi) {
+  const contexteOffre = offreEmploi
+    ? `\n\nVoici l'offre d'emploi visée par le candidat :\n"""${offreEmploi}"""\n\nCompare le CV à cette offre précise.`
+    : "\n\nAucune offre spécifique fournie — évalue la compatibilité ATS générale du CV.";
+
+  const prompt = `Tu es un expert en systèmes ATS (Applicant Tracking System) et recrutement.
+
+Voici le contenu d'un CV :
+"""
+${contenuCV}
+"""
+${contexteOffre}
+
+Analyse ce CV et réponds UNIQUEMENT avec un objet JSON valide (rien d'autre, pas de texte avant/après, pas de balises markdown), avec exactement cette structure :
+
+{
+  "score": <nombre entier de 0 à 100>,
+  "resume": "<1-2 phrases résumant la compatibilité ATS globale>",
+  "pointsForts": ["<point fort 1>", "<point fort 2>", "<point fort 3>"],
+  "motsClesManquants": ["<mot-clé 1>", "<mot-clé 2>", "<mot-clé 3>"],
+  "recommandations": ["<recommandation concrète 1>", "<recommandation concrète 2>", "<recommandation concrète 3>"]
+}
+
+Le score doit refléter : la présence de mots-clés pertinents, la clarté de la structure, l'absence d'éléments qui bloquent les ATS (tableaux complexes, icônes, etc.), et l'adéquation avec l'offre si fournie.`;
+
+  const reponse = await appelClaude(prompt, 800);
+  const nettoye = reponse.replace(/```json|```/g, "").trim();
+
+  try {
+    return JSON.parse(nettoye);
+  } catch {
+    // Repli si le modèle ne renvoie pas un JSON parfaitement valide
+    return {
+      score: null,
+      resume: "L'analyse n'a pas pu être structurée automatiquement. Réessaie dans quelques instants.",
+      pointsForts: [],
+      motsClesManquants: [],
+      recommandations: [],
+    };
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  Adapte un CV existant pour coller à une offre d'emploi précise
+// ════════════════════════════════════════════════════════════
+async function adapterCVOffre(contenuCV, offreEmploi) {
+  const prompt = `Tu es un expert RH et coach carrière ivoirien, spécialisé dans l'optimisation ATS.
+
+Voici le CV actuel du candidat :
+"""
+${contenuCV}
+"""
+
+Voici l'offre d'emploi à laquelle il souhaite postuler :
+"""
+${offreEmploi}
+"""
+
+Réécris ce CV pour qu'il corresponde mieux à cette offre précise :
+- Reprends la même structure générale (en-tête, profil, expériences, formations, compétences, langues)
+- Mets en avant en priorité les expériences et compétences les plus pertinentes pour cette offre
+- Intègre naturellement les mots-clés importants de l'offre (sans les inventer s'ils ne correspondent à rien de réel dans le parcours du candidat)
+- Ne modifie jamais les faits (dates, noms d'entreprises, diplômes) — reformule seulement la présentation et les priorités
+- Garde le même format de présentation avec séparateurs (═══, ───)
+- Ne génère QUE le CV adapté, sans commentaire ni explication autour`;
+
+  return appelClaude(prompt, 1800);
+}

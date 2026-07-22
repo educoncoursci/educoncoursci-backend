@@ -28,7 +28,7 @@ blanc:       "#FFFFFF",
 // ════════════════════════════════════════════════════════════
 //  Génère un PDF à partir d'un texte brut (CV ou LM)
 // ════════════════════════════════════════════════════════════
-async function genererPDFTexte(contenu, nomFichier, type = "cv") {
+async function genererPDFTexte(contenu, nomFichier, type = "cv", titrePersonnalise = null) {
 return new Promise((resolve, reject) => {
 const filePath = path.join(storageDir, `${nomFichier}.pdf`);
 const doc      = new PDFDocument({
@@ -39,6 +39,9 @@ margins: { top: 50, bottom: 50, left: 60, right: 60 },
 const stream = fs.createWriteStream(filePath);
 doc.pipe(stream);
 
+const TITRES = { cv: "CURRICULUM VITAE", lm: "LETTRE DE MOTIVATION" };
+const titreAffiche = titrePersonnalise || TITRES[type] || "DOCUMENT";
+
 // ── En-tête avec logo/titre ───────────────────────────────
 doc.rect(0, 0, doc.page.width, 80).fill(COULEURS.primaire);
 
@@ -46,7 +49,7 @@ doc.fillColor(COULEURS.blanc)
    .fontSize(22)
    .font("Helvetica-Bold")
    .text(
-     type === "cv" ? "CURRICULUM VITAE" : "LETTRE DE MOTIVATION",
+     titreAffiche,
      60, 25,
      { align: "center" }
    );
@@ -131,7 +134,7 @@ stream.on("error",  reject);
 // ════════════════════════════════════════════════════════════
 //  Génère un CV en PDF avec mise en page structurée
 // ════════════════════════════════════════════════════════════
-async function genererCVStructure(data, contenuIA) {
+async function genererCVStructure(data, contenuIA, modele) {
 return new Promise((resolve, reject) => {
 const nomFichier = `CV_${data.nom.replace(/\s+/g, "_")}_${Date.now()}`;
 const filePath   = path.join(storageDir, `${nomFichier}.pdf`);
@@ -140,6 +143,13 @@ size:    "A4",
 margins: { top: 0, bottom: 50, left: 0, right: 0 },
 });
 
+// Couleurs du modèle choisi, avec repli sur les couleurs par défaut
+const couleursModele = {
+  primaire:   modele?.couleurs?.primaire   || COULEURS.primaire,
+  secondaire: modele?.couleurs?.secondaire || COULEURS.secondaire,
+  accent:     modele?.couleurs?.accent     || COULEURS.accent,
+};
+
 const stream = fs.createWriteStream(filePath);
 doc.pipe(stream);
 
@@ -147,12 +157,12 @@ const largeur  = doc.page.width;
 const largeCol = largeur * 0.35; // Colonne gauche 35%
 
 // ── Colonne gauche (fond coloré) ──────────────────────────
-doc.rect(0, 0, largeCol, doc.page.height).fill(COULEURS.primaire);
+doc.rect(0, 0, largeCol, doc.page.height).fill(couleursModele.primaire);
 
 // Photo placeholder
 doc.circle(largeCol / 2, 90, 45)
    .fill(COULEURS.blanc);
-doc.fillColor(COULEURS.primaire)
+doc.fillColor(couleursModele.primaire)
    .fontSize(28)
    .text(data.nom[0].toUpperCase(), largeCol / 2 - 10, 73);
 
@@ -219,7 +229,7 @@ let yDroite = 30;
 
 // Profil
 if (data.profil) {
-  doc.fillColor(COULEURS.primaire).fontSize(12).font("Helvetica-Bold")
+  doc.fillColor(couleursModele.primaire).fontSize(12).font("Helvetica-Bold")
      .text("PROFIL PROFESSIONNEL", xDroite, yDroite, { width: largeurDroite });
   yDroite += 18;
   doc.fillColor(COULEURS.texte).fontSize(9).font("Helvetica")
@@ -232,7 +242,7 @@ if (data.profil) {
 
 // Expériences
 if (data.experiences?.length) {
-  doc.fillColor(COULEURS.primaire).fontSize(12).font("Helvetica-Bold")
+  doc.fillColor(couleursModele.primaire).fontSize(12).font("Helvetica-Bold")
      .text("EXPÉRIENCES PROFESSIONNELLES", xDroite, yDroite, { width: largeurDroite });
   yDroite += 18;
 
@@ -240,7 +250,7 @@ if (data.experiences?.length) {
     doc.fillColor(COULEURS.texte).fontSize(10).font("Helvetica-Bold")
        .text(exp.poste, xDroite, yDroite, { width: largeurDroite });
     yDroite = doc.y;
-    doc.fillColor(COULEURS.secondaire).fontSize(9).font("Helvetica")
+    doc.fillColor(couleursModele.secondaire).fontSize(9).font("Helvetica")
        .text(`${exp.entreprise} | ${exp.debut} – ${exp.fin || "Présent"}`,
              xDroite, yDroite, { width: largeurDroite });
     yDroite = doc.y + 3;
@@ -258,7 +268,7 @@ if (data.experiences?.length) {
 
 // Formations
 if (data.formations?.length) {
-  doc.fillColor(COULEURS.primaire).fontSize(12).font("Helvetica-Bold")
+  doc.fillColor(couleursModele.primaire).fontSize(12).font("Helvetica-Bold")
      .text("FORMATIONS", xDroite, yDroite, { width: largeurDroite });
   yDroite += 18;
 

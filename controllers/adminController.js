@@ -10,6 +10,7 @@ const Video       = require("../models/Video");
 const QCM         = require("../models/QCM");
 const Score       = require("../models/Score");
 const Transaction = require("../models/Transaction");
+const Emploi      = require("../models/Emploi");
 const { query }   = require("../config/database");
 
 // ════════════════════════════════════════════════════════════
@@ -26,6 +27,7 @@ totalPDFs,
 totalVideos,
 totalQCM,
 totalScores,
+totalOffresEmploi,
 revenusTotal,
 revenusQMois,
 totalTransactions,
@@ -39,6 +41,7 @@ PDF.count(),
 Video.count(),
 QCM.count(),
 Score.count(),
+Emploi.count(),
 Transaction.totalRevenus(),
 Transaction.revenusduMois(),
 Transaction.count(),
@@ -90,6 +93,7 @@ res.json({
     videos:   totalVideos,
     qcm:      totalQCM,
     scores:   totalScores,
+    offresEmploi: totalOffresEmploi,
   },
   finances: {
     revenus_total:       revenusTotal,

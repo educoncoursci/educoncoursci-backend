@@ -45,13 +45,41 @@ expiration.setDate(expiration.getDate() + dureeJours);
 return expiration.toISOString().split("T")[0]; // Format YYYY-MM-DD
 },
 
+// ── Retourne le lien de paiement Wave Business (générique, tous plans) ──
+// Configuré via la variable d'environnement WAVE_LIEN_PAIEMENT.
+// Tant que cette variable n'est pas remplie, retourne null (mode manuel utilisé à la place).
+getLienPaiement() {
+return process.env.WAVE_LIEN_PAIEMENT || null;
+},
+
 // ── Retourne les instructions de paiement Wave ──────────────
 getInstructions(plan, numeroWave) {
 const montant = Wave.getMontantPlan(plan);
+const lienPaiement = Wave.getLienPaiement();
+
+// Si un vrai lien de paiement Wave Business existe pour ce plan,
+// on privilégie ce mode (plus simple et plus fiable pour le client)
+if (lienPaiement) {
+  return {
+    moyen:        "Wave CI",
+    montant:      `${montant?.toLocaleString("fr-CI")} FCFA`,
+    lienPaiement,
+    modePaiement: "lien",
+    etapes: [
+      "Clique sur le bouton \"Payer avec Wave\" ci-dessous",
+      `Une fois sur Wave, saisis exactement ${montant?.toLocaleString("fr-CI")} FCFA`,
+      "Confirme le paiement avec ton code Wave",
+      "Reviens sur cette page une fois le paiement effectué",
+    ],
+  };
+}
+
+// Sinon, mode manuel (comme actuellement)
 return {
 moyen:      "Wave CI",
 numero:     numeroWave || process.env.WAVE_NUMERO,
 montant:    `${montant?.toLocaleString("fr-CI")} FCFA`,
+modePaiement: "manuel",
 etapes: [
 "Ouvre l'application Wave sur ton téléphone",
 `Envoie exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroWave || process.env.WAVE_NUMERO}`,

@@ -222,6 +222,8 @@ console.log("\n🎬 Création des vidéos...");
 
 const videos = [
   { titre: "50 questions de culture générale pour concours de la fonction publique", categorie: "Culture Générale", ytId: "fQPCCVxJz4E", duree: "", premium: false, vues: 3421 },
+  { titre: "Révision Physique-Chimie 3ème — type BEPC", categorie: "Cours Numériques", ytId: "SAxU7Axs3Oo", duree: "", premium: false, vues: 1834 },
+  { titre: "BEPC Côte d'Ivoire : résultats en hausse, actualité de l'éducation", categorie: "Actualité Éducation", ytId: "JfZonawsxFM", duree: "", premium: false, vues: 1245 },
   { titre: "CV et lettre de motivation : les conseils d'un recruteur", categorie: "CV & Emploi", ytId: "XgNbAPyLb8U", duree: "", premium: false, vues: 2107 },
   { titre: "Comment rédiger une lettre de motivation qui captive les recruteurs", categorie: "CV & Emploi", ytId: "8TbfmbLJrDw", duree: "", premium: false, vues: 1589 },
   { titre: "Réussir l'oral de son concours : 40 questions pour s'entraîner (catégories A, B, C)", categorie: "Entretien Oral", ytId: "bk-oXiC1CRM", duree: "", premium: true, vues: 876 },
@@ -241,6 +243,80 @@ for (const v of videos) {
   );
 }
 console.log(`  ✅ ${videos.length} vidéos créées`);
+
+// ── 4bis. Offres d'emploi de démonstration ───────────────
+console.log("\n💼 Création des offres d'emploi...");
+
+const offresEmploi = [
+  {
+    titre: "Gestionnaire de comptes PME/PMI senior (H/F)",
+    entreprise: "Versus Bank",
+    typeContrat: "CDI",
+    ville: "Abidjan",
+    secteur: "Banque & Finance",
+    description: "Versus Bank recrute un(e) Gestionnaire de comptes PME/PMI senior pour renforcer son équipe commerciale entreprises.",
+    profilRecherche: "BAC+5 en Banque, Finance ou domaine équivalent. Au moins 5 ans d'expérience à un poste de Gestionnaire de comptes entreprises ou PME/PMI.",
+    experience: "5 ans minimum",
+    dateLimite: "Voir annonce sur la plateforme partenaire",
+    emailContact: "recrutement@versusbank.com",
+    lienExterne: "https://www.abbih.com",
+  },
+  {
+    titre: "Gestionnaire Immobilier — Property Management Officer (H/F)",
+    entreprise: "GPFI-CI",
+    typeContrat: "CDI",
+    ville: "Abidjan",
+    secteur: "Immobilier",
+    description: "GPFI-CI recrute un(e) Gestionnaire Immobilier pour accompagner le développement de ses activités en Property Management à Abidjan.",
+    profilRecherche: "Personne organisée et rigoureuse, avec une solide expérience en gestion de biens immobiliers.",
+    lienExterne: "https://www.abbih.com",
+  },
+  {
+    titre: "Commercial(e) — Pièces de rechange véhicules lourds & engins BTP",
+    entreprise: "UNIAUTO",
+    typeContrat: "CDD",
+    ville: "Abidjan",
+    secteur: "Automobile & Distribution",
+    description: "UNIAUTO recrute un(e) Commercial(e) pour la vente de pièces de rechange de véhicules lourds et engins BTP.",
+    profilRecherche: "Bac+2, 1 année d'expérience minimum, moins de 30 ans. Ouvert aux étudiants et jeunes diplômés débutants.",
+    experience: "Débutant accepté",
+    lienExterne: "https://www.emploi.ci",
+  },
+  {
+    titre: "Chef Pâtissier Chocolatier (H/F)",
+    entreprise: "Maison Mandjou",
+    typeContrat: "CDI",
+    ville: "Abidjan",
+    secteur: "Hôtellerie & Restauration",
+    description: "Maison Mandjou recherche un Chef Pâtissier Chocolatier. Missions : rédaction du rapport journalier, maîtrise des produits et matières premières, respect du protocole de production.",
+    lienExterne: "https://www.emploi.ci",
+  },
+  {
+    titre: "Développeur(se) Angular",
+    entreprise: "AfricaShore",
+    typeContrat: "Freelance",
+    ville: "Abidjan",
+    secteur: "Informatique & Tech",
+    description: "AfricaShore recherche des profils Développeur Angular pour des missions clients. Travail en équipe pour déterminer les besoins et adapter les technologies existantes.",
+    profilRecherche: "Expérience de 2 à 5 ans en développement. Capacité à produire des spécifications détaillées.",
+    experience: "2 à 5 ans",
+    lienExterne: "https://www.emploi.ci",
+  },
+];
+
+for (const o of offresEmploi) {
+  await query(`
+    INSERT INTO offres_emploi
+      (titre, entreprise, type_contrat, ville, secteur, description,
+       profil_recherche, salaire, experience, date_limite, email_contact, lien_externe, statut)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'publié')
+    ON CONFLICT DO NOTHING`,
+    [o.titre, o.entreprise, o.typeContrat, o.ville, o.secteur, o.description,
+     o.profilRecherche || null, o.salaire || null, o.experience || null,
+     o.dateLimite || null, o.emailContact || null, o.lienExterne || null]
+  );
+}
+console.log(`  ✅ ${offresEmploi.length} offres d'emploi créées`);
 
 // ── 5. QCM de démonstration ──────────────────────────────
 console.log("\n📝 Création des QCM...");

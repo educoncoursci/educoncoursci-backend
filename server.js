@@ -69,6 +69,11 @@ app.use("/api/videos",   require("./routes/videos"));
 app.use("/api/qcm",      require("./routes/qcm"));
 app.use("/api/payment",  require("./routes/payment"));
 app.use("/api/cv",       require("./routes/cv"));
+app.use("/api/documents", require("./routes/documents"));
+app.use("/api/documents-admin", require("./routes/documentsAdmin"));
+app.use("/api/search", require("./routes/search"));
+app.use("/api/emploi", require("./routes/emploi"));
+app.use("/api/assistance-sociale", require("./routes/assistanceSociale"));
 app.use("/api/notifs",   require("./routes/notifs"));
 app.use("/api/admin",    require("./routes/admin"));
 
