@@ -220,6 +220,24 @@ await client.query(`
   );
 `);
 
+// Table : actualites (alimentée en continu par le flux RSS + ajouts admin)
+await client.query(`
+  CREATE TABLE IF NOT EXISTS actualites (
+    id          SERIAL PRIMARY KEY,
+    titre       VARCHAR(300) NOT NULL,
+    tag         VARCHAR(60)  DEFAULT 'Actualité',
+    source_nom  VARCHAR(150),
+    source_url  TEXT,
+    lien        TEXT,
+    hash        VARCHAR(64) UNIQUE NOT NULL,
+    publie_le   TIMESTAMP DEFAULT NOW(),
+    actif       BOOLEAN DEFAULT TRUE,
+    ordre       INTEGER DEFAULT 0,
+    origine     VARCHAR(20) DEFAULT 'auto' CHECK (origine IN ('auto', 'manuel')),
+    created_at  TIMESTAMP DEFAULT NOW()
+  );
+`);
+
 
 // ── Migrations : ajout de colonnes si manquantes ─────────────
 // Ajoute youtube_id et miniature à la table videos si absents

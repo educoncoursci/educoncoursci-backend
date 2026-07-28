@@ -1,0 +1,7 @@
+# Force npm install (au lieu de npm ci) car le lock file peut être
+# temporairement désynchronisé entre deux mises à jour de dépendances.
+[phases.install]
+cmds = ["npm install"]
+
+[start]
+cmd = "node server.js"

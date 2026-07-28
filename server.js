@@ -75,6 +75,7 @@ app.use("/api/search", require("./routes/search"));
 app.use("/api/emploi", require("./routes/emploi"));
 app.use("/api/assistance-sociale", require("./routes/assistanceSociale"));
 app.use("/api/notifs",   require("./routes/notifs"));
+app.use("/api/actualites", require("./routes/actualites"));
 app.use("/api/admin",    require("./routes/admin"));
 
 // ── Route de santé (vérifier que le serveur tourne) ───────────
@@ -108,6 +109,7 @@ const PORT = process.env.PORT || 3000;
 async function start() {
 try {
 await initDatabase(); // Crée les tables si nécessaire
+require("./services/actualitesFeed").demarrerPlanification(); // Flux d'actualités en continu
 app.listen(PORT, () => {
 console.log(`🚀 Serveur EduConcoursCI démarré sur le port ${PORT}`);
 console.log(`📡 API disponible : http://localhost:${PORT}/api/health`);
