@@ -11,10 +11,10 @@ const Emploi = require("../models/Emploi");
 // ════════════════════════════════════════════════════════════
 exports.liste = async (req, res) => {
 try {
-const { typeContrat, ville, secteur, recherche, limit, offset } = req.query;
+const { typeContrat, ville, secteur, recherche, statut, limit, offset } = req.query;
 
 const offres = await Emploi.findAll({
-  typeContrat, ville, secteur, search: recherche,
+  typeContrat, ville, secteur, search: recherche, statut,
   limit:  parseInt(limit)  || 20,
   offset: parseInt(offset) || 0,
 });

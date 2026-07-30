@@ -12,6 +12,7 @@
     "admin:init": "node scripts/init-admin.js",
     "db:reset": "node scripts/reset-db.js --confirmer",
     "actualites:sync": "node scripts/sync-actualites.js",
+    "videos:nettoyer-demo": "node scripts/nettoyer-videos-demo.js",
     "test": "bash scripts/test-local.sh"
   },
   "dependencies": {

@@ -48,11 +48,13 @@ const Emploi = {
       conditions.push(`secteur ILIKE $${idx++}`);
       params.push(`%${secteur}%`);
     }
-    if (statut) {
+    if (statut === "all") {
+      // Ne rien filtrer sur le statut (vue admin : tout voir, y compris brouillons/expirées)
+    } else if (statut) {
       conditions.push(`statut = $${idx++}`);
       params.push(statut);
     } else {
-      conditions.push(`statut = 'publié'`); // par défaut, on ne montre que les offres publiées
+      conditions.push(`statut = 'publié'`); // par défaut (site public), on ne montre que les offres publiées
     }
     if (search) {
       conditions.push(`(titre ILIKE $${idx} OR entreprise ILIKE $${idx++})`);
