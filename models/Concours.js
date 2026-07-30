@@ -178,6 +178,16 @@ const Concours = {
     return result.rows.map(formatConcours);
   },
 
+  // ── Liste des catégories distinctes (pour les filtres) ───────
+  async getCategories() {
+    const result = await query(
+      `SELECT DISTINCT categorie FROM concours
+       WHERE categorie IS NOT NULL AND categorie != ''
+       ORDER BY categorie`,
+    );
+    return result.rows.map((r) => r.categorie);
+  },
+
   // ── Compter les concours (stats admin) ──────────────────────
   async count() {
     const result = await query(`SELECT COUNT(*) FROM concours`);

@@ -93,16 +93,28 @@ res.status(500).json({ error: "Erreur serveur." });
 // ════════════════════════════════════════════════════════════
 exports.creer = async (req, res) => {
 try {
-const { titre, categorie, duree, url, description, premium, statut } = req.body;
+const data = { ...req.body };
 
-if (!titre || !url) {
-  return res.status(400).json({ error: "Titre et URL sont requis." });
+// Si un fichier vidéo est uploadé via Multer
+if (req.file) {
+  data.url = `/uploads/videos/${req.file.filename}`;
+  data.origine = "upload";
+} else {
+  data.origine = "lien";
+}
+
+if (!data.titre) {
+  return res.status(400).json({ error: "Titre requis." });
+}
+if (!data.url) {
+  return res.status(400).json({ error: "Un fichier vidéo ou une URL (YouTube ou lien direct) est requis." });
 }
 
 const video = await Video.create({
-  titre, categorie, duree, url, description,
-  premium: premium === "true" || premium === true,
-  statut,
+  titre: data.titre, categorie: data.categorie, duree: data.duree,
+  url: data.url, description: data.description,
+  premium: data.premium === "true" || data.premium === true,
+  statut: data.statut, origine: data.origine,
 });
 
 res.status(201).json({ message: "Vidéo ajoutée avec succès.", video });

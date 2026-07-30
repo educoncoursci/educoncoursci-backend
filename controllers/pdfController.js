@@ -85,7 +85,7 @@ if (pdf.premium && (!req.user || !req.user.premium)) {
 }
 
 // Incrémenter le compteur
-await PDF.incrementer(pdf.id);
+await PDF.incrementerTelechargement(pdf.id);
 
 // Si l'URL est un lien externe (Drive, etc.), rediriger
 if (pdf.url.startsWith("http")) {

@@ -157,7 +157,7 @@ res.status(500).json({ error: "Erreur serveur." });
 // ════════════════════════════════════════════════════════════
 exports.getAbonnes = async (req, res) => {
 try {
-const abonnes = await User.findPremium();
+const abonnes = await User.findAllPremium();
 const revenus = await Transaction.totalRevenus();
 
 res.json({

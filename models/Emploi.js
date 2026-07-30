@@ -48,13 +48,11 @@ const Emploi = {
       conditions.push(`secteur ILIKE $${idx++}`);
       params.push(`%${secteur}%`);
     }
-    if (statut === "all") {
-      // Ne rien filtrer sur le statut (vue admin : tout voir, y compris brouillons/expirées)
-    } else if (statut) {
+    if (statut) {
       conditions.push(`statut = $${idx++}`);
       params.push(statut);
     } else {
-      conditions.push(`statut = 'publié'`); // par défaut (site public), on ne montre que les offres publiées
+      conditions.push(`statut = 'publié'`); // par défaut, on ne montre que les offres publiées
     }
     if (search) {
       conditions.push(`(titre ILIKE $${idx} OR entreprise ILIKE $${idx++})`);
@@ -128,6 +126,31 @@ const Emploi = {
   async count() {
     const result = await query(`SELECT COUNT(*) FROM offres_emploi`);
     return parseInt(result.rows[0].count, 10);
+  },
+
+  // ── Insère les offres issues d'un flux externe, en évitant les
+  //    doublons grâce au hash (titre + entreprise + lien) ────────
+  async upsertDepuisFlux(entries) {
+    if (!entries || !entries.length) return 0;
+    let inserees = 0;
+
+    for (const e of entries) {
+      const result = await query(
+        `INSERT INTO offres_emploi
+          (titre, entreprise, type_contrat, ville, secteur, description,
+           date_limite, lien_externe, statut, source_nom, source_url, hash, origine)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'publié',$9,$10,$11,'auto')
+         ON CONFLICT (hash) DO NOTHING
+         RETURNING id`,
+        [
+          e.titre, e.entreprise, e.typeContrat || "CDI", e.ville || "Abidjan",
+          e.secteur || null, e.description, e.dateLimite || null,
+          e.lienExterne, e.sourceNom, e.sourceUrl, e.hash,
+        ],
+      );
+      if (result.rows.length) inserees++;
+    }
+    return inserees;
   },
 
   // ═══════════════════════════════════════════════════════════

@@ -35,7 +35,11 @@ try {
 if (parseInt(req.params.id) !== req.user.id && req.user.role !== "admin") {
 return res.status(403).json({ error: "Accès refusé." });
 }
-const updated = await User.update(req.params.id, req.body);
+// Champs modifiables par l'utilisateur lui-même : nom et email
+// uniquement. role/premium ne sont JAMAIS pris depuis req.body ici —
+// leur modification passe uniquement par les routes admin dédiées.
+const { nom, email } = req.body;
+const updated = await User.updateProfil(req.params.id, { nom, email });
 res.json({ message: "Profil mis à jour.", user: updated });
 } catch (err) {
 res.status(500).json({ error: err.message });

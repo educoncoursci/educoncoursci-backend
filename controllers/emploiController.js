@@ -11,10 +11,10 @@ const Emploi = require("../models/Emploi");
 // ════════════════════════════════════════════════════════════
 exports.liste = async (req, res) => {
 try {
-const { typeContrat, ville, secteur, recherche, statut, limit, offset } = req.query;
+const { typeContrat, ville, secteur, recherche, limit, offset } = req.query;
 
 const offres = await Emploi.findAll({
-  typeContrat, ville, secteur, search: recherche, statut,
+  typeContrat, ville, secteur, search: recherche,
   limit:  parseInt(limit)  || 20,
   offset: parseInt(offset) || 0,
 });
@@ -179,6 +179,25 @@ res.json({ message: "Offre supprimée avec succès." });
 } catch (err) {
 console.error("Erreur suppression offre :", err.message);
 res.status(500).json({ error: "Erreur lors de la suppression." });
+}
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/emploi/actualiser — Déclenche l'agrégation externe (admin)
+// ════════════════════════════════════════════════════════════
+exports.actualiser = async (req, res) => {
+try {
+const { synchroniser } = require("../services/emploiFeed");
+const nombre = await synchroniser();
+res.json({
+  message: nombre > 0
+    ? `${nombre} nouvelle(s) offre(s) agrégée(s).`
+    : "Synchronisation effectuée, aucune nouvelle offre.",
+  nombre,
+});
+} catch (err) {
+console.error("Erreur actualisation offres emploi :", err.message);
+res.status(500).json({ error: "Erreur lors de l'actualisation des offres." });
 }
 };
 

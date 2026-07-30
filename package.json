@@ -10,9 +10,10 @@
     "jwt:secret": "node scripts/generer-jwt-secret.js",
     "check": "node scripts/deploy-check.js",
     "admin:init": "node scripts/init-admin.js",
+    "password:reset": "node scripts/reset-password.js",
     "db:reset": "node scripts/reset-db.js --confirmer",
     "actualites:sync": "node scripts/sync-actualites.js",
-    "videos:nettoyer-demo": "node scripts/nettoyer-videos-demo.js",
+    "emploi:sync": "node scripts/sync-emploi.js",
     "test": "bash scripts/test-local.sh"
   },
   "dependencies": {

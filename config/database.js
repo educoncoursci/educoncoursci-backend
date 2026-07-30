@@ -255,6 +255,64 @@ await client.query(`
     ) THEN
       ALTER TABLE videos ADD COLUMN miniature TEXT;
     END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='videos' AND column_name='origine'
+    ) THEN
+      ALTER TABLE videos ADD COLUMN origine VARCHAR(20) DEFAULT 'lien'
+        CHECK (origine IN ('lien', 'upload'));
+    END IF;
+  END $$;
+`);
+
+// Ajoute les colonnes de traçabilité de source à offres_emploi si absentes
+// (nécessaires pour l'agrégation automatique depuis des flux externes :
+//  Educarriere et autres plateformes proposant un flux RSS/XML public)
+await client.query(`
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='source_nom'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN source_nom VARCHAR(150);
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='source_url'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN source_url TEXT;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='hash'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN hash VARCHAR(64) UNIQUE;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='origine'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN origine VARCHAR(20) DEFAULT 'manuel'
+        CHECK (origine IN ('auto', 'manuel'));
+    END IF;
+  END $$;
+`);
+
+// Ajoute les colonnes de réinitialisation de mot de passe à users
+await client.query(`
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='users' AND column_name='reset_token'
+    ) THEN
+      ALTER TABLE users ADD COLUMN reset_token VARCHAR(255) UNIQUE;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='users' AND column_name='reset_token_expire'
+    ) THEN
+      ALTER TABLE users ADD COLUMN reset_token_expire TIMESTAMP;
+    END IF;
   END $$;
 `);
 

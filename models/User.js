@@ -56,6 +56,19 @@ const User = {
     ]);
   },
 
+  // ── Activer/désactiver le Premium (utilisée par le paiement,
+  //     l'admin, et la désactivation auto à l'expiration) ──────
+  async setPremium(id, { premium, plan, expire }) {
+    const result = await query(
+      `UPDATE users
+       SET premium = $1, premium_plan = $2, premium_expire = $3
+       WHERE id = $4
+       RETURNING id, nom, email, role, premium, premium_plan, premium_expire`,
+      [premium, plan || null, expire || null, id],
+    );
+    return result.rows[0];
+  },
+
   // ── Activer le Premium ──────────────────────────────────────
   async activerPremium(id, { plan, dureeJours }) {
     const expire = new Date();
@@ -69,6 +82,16 @@ const User = {
        WHERE id = $3
        RETURNING id, nom, email, premium, premium_plan, premium_expire`,
       [plan, expire.toISOString().split("T")[0], id],
+    );
+    return result.rows[0];
+  },
+
+  // ── Changer le rôle d'un utilisateur (user/admin) ────────────
+  async setRole(id, role) {
+    const result = await query(
+      `UPDATE users SET role = $1 WHERE id = $2
+       RETURNING id, nom, email, role`,
+      [role, id],
     );
     return result.rows[0];
   },
@@ -130,6 +153,37 @@ const User = {
        ORDER BY date_inscription DESC`,
     );
     return result.rows;
+  },
+
+  // ── Réinitialisation de mot de passe ─────────────────────────
+  async setResetToken(email, token, expireDate) {
+    const result = await query(
+      `UPDATE users SET reset_token = $1, reset_token_expire = $2
+       WHERE email = $3
+       RETURNING id, nom, email`,
+      [token, expireDate, email],
+    );
+    return result.rows[0] || null;
+  },
+
+  async findByResetToken(token) {
+    const result = await query(
+      `SELECT id, nom, email FROM users
+       WHERE reset_token = $1 AND reset_token_expire > NOW()`,
+      [token],
+    );
+    return result.rows[0] || null;
+  },
+
+  async resetPassword(id, passwordHash) {
+    const result = await query(
+      `UPDATE users
+       SET password_hash = $1, reset_token = NULL, reset_token_expire = NULL
+       WHERE id = $2
+       RETURNING id, nom, email`,
+      [passwordHash, id],
+    );
+    return result.rows[0];
   },
 
   // ── Compter les utilisateurs (stats admin) ──────────────────

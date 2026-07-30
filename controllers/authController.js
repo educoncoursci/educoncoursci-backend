@@ -5,6 +5,7 @@
 
 const bcrypt = require("bcryptjs");
 const jwt    = require("jsonwebtoken");
+const crypto = require("crypto");
 const User   = require("../models/User");
 
 // ── Générer un token JWT ──────────────────────────────────────
@@ -224,4 +225,77 @@ res.status(500).json({ error: "Erreur lors du changement de mot de passe." });
 }
 };
 
-module.exports = { register, login, me, logout, changePassword };
+// ════════════════════════════════════════════════════════════
+//  Mot de passe oublié — étape 1 : demander le lien
+// ════════════════════════════════════════════════════════════
+const forgotPassword = async (req, res) => {
+try {
+const { email } = req.body;
+if (!email) {
+  return res.status(400).json({ error: "E-mail requis." });
+}
+
+// Réponse volontairement identique que le compte existe ou non
+// (évite de révéler quels e-mails sont inscrits sur le site).
+const reponseGenerique = {
+  message: "Si un compte existe avec cet e-mail, un lien de réinitialisation vient d'être envoyé.",
+};
+
+const user = await User.findByEmail(email.toLowerCase().trim());
+if (!user) {
+  return res.json(reponseGenerique);
+}
+
+const token  = crypto.randomBytes(32).toString("hex");
+const expire = new Date(Date.now() + 60 * 60 * 1000); // valable 1h
+
+await User.setResetToken(user.email, token, expire);
+
+const lienReset = `${process.env.FRONTEND_URL || "https://educoncoursci.netlify.app"}/auth/reset-password.html?token=${token}`;
+
+try {
+  await require("../services/email").envoyerResetMotDePasse(user, lienReset);
+} catch (errEmail) {
+  // L'échec d'envoi d'e-mail ne doit jamais faire planter la requête
+  // ni révéler d'information — on log seulement côté serveur.
+  console.error("Erreur envoi e-mail réinitialisation :", errEmail.message);
+}
+
+res.json(reponseGenerique);
+
+} catch (err) {
+console.error("Erreur forgotPassword :", err.message);
+res.status(500).json({ error: "Erreur lors de la demande de réinitialisation." });
+}
+};
+
+// ════════════════════════════════════════════════════════════
+//  Mot de passe oublié — étape 2 : définir le nouveau mot de passe
+// ════════════════════════════════════════════════════════════
+const resetPassword = async (req, res) => {
+try {
+const { token, password } = req.body;
+if (!token || !password) {
+  return res.status(400).json({ error: "Token et nouveau mot de passe requis." });
+}
+if (password.length < 6) {
+  return res.status(400).json({ error: "Le mot de passe doit contenir au moins 6 caractères." });
+}
+
+const user = await User.findByResetToken(token);
+if (!user) {
+  return res.status(400).json({ error: "Lien invalide ou expiré. Refais une demande de réinitialisation." });
+}
+
+const passwordHash = await bcrypt.hash(password, 12);
+await User.resetPassword(user.id, passwordHash);
+
+res.json({ message: "Mot de passe réinitialisé avec succès. Tu peux maintenant te connecter." });
+
+} catch (err) {
+console.error("Erreur resetPassword :", err.message);
+res.status(500).json({ error: "Erreur lors de la réinitialisation du mot de passe." });
+}
+};
+
+module.exports = { register, login, me, logout, changePassword, forgotPassword, resetPassword };

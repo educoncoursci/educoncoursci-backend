@@ -30,6 +30,7 @@ router.get("/:id", ctrl.detail);
 router.post("/:id/postuler", auth, ctrl.postuler);
 
 // ── Routes admin ──────────────────────────────────────────────
+router.post("/actualiser", auth, admin, ctrl.actualiser); // POST /api/emploi/actualiser
 router.post("/",   auth, admin, ctrl.creer);
 router.put("/:id", auth, admin, ctrl.modifier);
 router.delete("/:id", auth, admin, ctrl.supprimer);

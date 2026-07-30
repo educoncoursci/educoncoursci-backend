@@ -179,32 +179,6 @@ const concours = [
     ]),
     centres: JSON.stringify(["Abidjan — INSFS Cocody"])
   },
-  {
-    titre: "Concours direct de recrutement des Instituteurs Adjoints (CAFOP)",
-    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation",
-    categorie: "Éducation",
-    statut: "fermé",
-    niveau: "BAC",
-    places: 500,
-    frais: 5000,
-    ouverture: "01/11/2025",
-    cloture: "20/12/2025",
-    premium: false,
-    couleur: "#666666",
-    conditions: "Être de nationalité ivoirienne\nAvoir moins de 30 ans\nTitulaire du Baccalauréat toutes séries",
-    pieces: JSON.stringify([
-      "Extrait de naissance",
-      "Copie du Baccalauréat",
-      "Certificat de nationalité",
-      "Casier judiciaire",
-      "4 photos d'identité"
-    ]),
-    centres: JSON.stringify([
-      "Abidjan — CAFOP Bingerville",
-      "Bouaké — CAFOP Bouaké",
-      "Korhogo — CAFOP Korhogo"
-    ])
-  },
 ];
 
 for (const c of concours) {
@@ -246,16 +220,16 @@ console.log(`  ✅ ${pdfs.length} PDFs créés`);
 // ── 4. Vidéos YouTube de démonstration ──────────────────
 console.log("\n🎬 Création des vidéos...");
 
-// ⚠️ Volontairement vide : les vidéos précédemment ici utilisaient des
-// identifiants YouTube non vérifiés (impossible de garantir qu'il
-// s'agissait bien de contenu ivoirien réel plutôt que de vidéos
-// génériques/européennes). Ajoute tes propres vidéos vérifiées via
-// /admin/videos.html (bouton "+ Ajouter une vidéo" — il suffit de coller
-// l'URL YouTube). Quelques chaînes ivoiriennes à explorer pour du contenu
-// pertinent (à vérifier toi-même avant publication) : AbiCours
-// (abicours.com — programme CEPE/BEPC/BAC ivoirien, basé à Cocody
-// Abidjan), ou les chaînes officielles des ministères concernés.
-const videos = [];
+const videos = [
+  { titre: "50 questions de culture générale pour concours de la fonction publique", categorie: "Culture Générale", ytId: "fQPCCVxJz4E", duree: "", premium: false, vues: 3421 },
+  { titre: "Révision Physique-Chimie 3ème — type BEPC", categorie: "Cours Numériques", ytId: "SAxU7Axs3Oo", duree: "", premium: false, vues: 1834 },
+  { titre: "BEPC Côte d'Ivoire : résultats en hausse, actualité de l'éducation", categorie: "Actualité Éducation", ytId: "JfZonawsxFM", duree: "", premium: false, vues: 1245 },
+  { titre: "CV et lettre de motivation : les conseils d'un recruteur", categorie: "CV & Emploi", ytId: "XgNbAPyLb8U", duree: "", premium: false, vues: 2107 },
+  { titre: "Comment rédiger une lettre de motivation qui captive les recruteurs", categorie: "CV & Emploi", ytId: "8TbfmbLJrDw", duree: "", premium: false, vues: 1589 },
+  { titre: "Réussir l'oral de son concours : 40 questions pour s'entraîner (catégories A, B, C)", categorie: "Entretien Oral", ytId: "bk-oXiC1CRM", duree: "", premium: true, vues: 876 },
+  { titre: "Oral de concours fonction publique : 7 secrets pour le réussir", categorie: "Entretien Oral", ytId: "vwrHXelwxp4", duree: "", premium: true, vues: 654 },
+  { titre: "Présentez-vous à l'oral : les 7 erreurs fatales à éviter", categorie: "Entretien Oral", ytId: "BffD0I3aBAE", duree: "", premium: false, vues: 2341 },
+];
 
 for (const v of videos) {
   const ytId = v.ytId;

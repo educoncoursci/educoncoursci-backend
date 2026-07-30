@@ -69,7 +69,8 @@ if (lienPaiement) {
       "Clique sur le bouton \"Payer avec Wave\" ci-dessous",
       `Une fois sur Wave, saisis exactement ${montant?.toLocaleString("fr-CI")} FCFA`,
       "Confirme le paiement avec ton code Wave",
-      "Reviens sur cette page une fois le paiement effectué",
+      "Note l'identifiant de transaction reçu par SMS (ex: WA-AB12345678)",
+      "Reviens sur cette page et saisis cet identifiant ci-dessous pour activer ton Premium",
     ],
   };
 }

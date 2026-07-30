@@ -205,6 +205,34 @@ const echecs  = resultats.filter(r => r.status === "rejected").length;
 return { envoyes: succes, echecs, total: destinataires.length };
 }
 
+// ── 7. Réinitialisation de mot de passe ───────────────────────
+async function envoyerResetMotDePasse(user, lienReset) {
+const html = templateBase("Réinitialisation de mot de passe — EduConcoursCI", `
+  <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Réinitialisation de ton mot de passe 🔑</h2>
+  <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
+    Bonjour <strong>${user.nom}</strong>, tu as demandé à réinitialiser ton mot de passe sur EduConcoursCI.
+    Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+  </p>
+  <div style="text-align:center;margin:24px 0;">
+    <a href="${lienReset}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff;
+      text-decoration:none;padding:14px 28px;border-radius:10px;
+      font-weight:700;font-size:15px;display:inline-block;">
+      Réinitialiser mon mot de passe →
+    </a>
+  </div>
+  <p style="color:#888;font-size:13px;line-height:1.7;margin:20px 0 0;">
+    Ce lien est valable 1 heure. Si tu n'es pas à l'origine de cette demande, ignore simplement cet e-mail —
+    ton mot de passe actuel reste inchangé.
+  </p>
+`);
+
+return envoyer({
+to:      user.email,
+subject: "🔑 Réinitialisation de ton mot de passe",
+html,
+});
+}
+
 module.exports = {
 envoyer,
 envoyerBienvenue,
@@ -213,4 +241,5 @@ envoyerAlerteConcours,
 envoyerResultatQCM,
 envoyerRappelCloture,
 envoyerNotificationAdmin,
+envoyerResetMotDePasse,
 };

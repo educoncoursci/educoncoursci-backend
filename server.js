@@ -109,7 +109,26 @@ const PORT = process.env.PORT || 3000;
 async function start() {
 try {
 await initDatabase(); // Crée les tables si nécessaire
+
+// Garantit qu'akone97@hotmail.com (ou ADMIN_EMAIL) est l'unique admin.
+// Best-effort : si le compte n'existe pas encore, on log un avertissement
+// sans bloquer le démarrage du serveur (il suffira de redémarrer une fois
+// le compte créé, ou de lancer `npm run admin:init` manuellement).
+try {
+  const { assurerAdminUnique, demarrerVerificationPeriodique } = require("./services/adminBootstrap");
+  const resultat = await assurerAdminUnique();
+  if (resultat.ok) {
+    console.log(`👑 Admin unique confirmé : ${resultat.message}`);
+  } else {
+    console.warn(`⚠️  ${resultat.message}`);
+  }
+  demarrerVerificationPeriodique(); // revérifie toutes les 10 min (auto-résolution si le compte est créé après coup)
+} catch (err) {
+  console.warn("⚠️  Vérification admin au démarrage impossible :", err.message);
+}
+
 require("./services/actualitesFeed").demarrerPlanification(); // Flux d'actualités en continu
+require("./services/emploiFeed").demarrerPlanification();      // Agrégation des offres d'emploi externes
 app.listen(PORT, () => {
 console.log(`🚀 Serveur EduConcoursCI démarré sur le port ${PORT}`);
 console.log(`📡 API disponible : http://localhost:${PORT}/api/health`);

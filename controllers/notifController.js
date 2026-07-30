@@ -29,7 +29,7 @@ if (!titre || !message) {
 let destinataires = [];
 
 if (cible === "premium") {
-  destinataires = await User.findPremium();
+  destinataires = await User.findAllPremium();
 } else if (cible === "gratuit") {
   const tous = await User.findAll({ limit: 1000 });
   destinataires = tous.filter(u => !u.premium);
@@ -90,7 +90,7 @@ if (!concours) {
 // Récupère les destinataires
 let destinataires = [];
 if (cible === "premium") {
-  destinataires = await User.findPremium();
+  destinataires = await User.findAllPremium();
 } else {
   destinataires = await User.findAll({ limit: 1000 });
 }
