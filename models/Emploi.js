@@ -12,19 +12,19 @@ const Emploi = {
   async create({
     titre, entreprise, typeContrat, ville, secteur, description,
     profilRecherche, salaire, experience, dateLimite,
-    emailContact, lienExterne, statut,
+    emailContact, lienExterne, statut, imageUrl,
   }) {
     const result = await query(
       `INSERT INTO offres_emploi
         (titre, entreprise, type_contrat, ville, secteur, description,
          profil_recherche, salaire, experience, date_limite,
-         email_contact, lien_externe, statut)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         email_contact, lien_externe, statut, image_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING *`,
       [
         titre, entreprise, typeContrat, ville || "Abidjan", secteur, description,
         profilRecherche, salaire, experience, dateLimite,
-        emailContact, lienExterne, statut || "publié",
+        emailContact, lienExterne, statut || "publié", imageUrl || null,
       ],
     );
     return result.rows[0];
@@ -83,7 +83,7 @@ const Emploi = {
     const {
       titre, entreprise, typeContrat, ville, secteur, description,
       profilRecherche, salaire, experience, dateLimite,
-      emailContact, lienExterne, statut,
+      emailContact, lienExterne, statut, imageUrl,
     } = fields;
 
     const result = await query(
@@ -100,13 +100,14 @@ const Emploi = {
         date_limite      = COALESCE($10, date_limite),
         email_contact    = COALESCE($11, email_contact),
         lien_externe     = COALESCE($12, lien_externe),
-        statut           = COALESCE($13, statut)
-       WHERE id = $14
+        statut           = COALESCE($13, statut),
+        image_url        = COALESCE($14, image_url)
+       WHERE id = $15
        RETURNING *`,
       [
         titre, entreprise, typeContrat, ville, secteur, description,
         profilRecherche, salaire, experience, dateLimite,
-        emailContact, lienExterne, statut, id,
+        emailContact, lienExterne, statut, imageUrl, id,
       ],
     );
     return result.rows[0] || null;
@@ -138,14 +139,14 @@ const Emploi = {
       const result = await query(
         `INSERT INTO offres_emploi
           (titre, entreprise, type_contrat, ville, secteur, description,
-           date_limite, lien_externe, statut, source_nom, source_url, hash, origine)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'publié',$9,$10,$11,'auto')
+           date_limite, lien_externe, statut, source_nom, source_url, hash, origine, image_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'publié',$9,$10,$11,'auto',$12)
          ON CONFLICT (hash) DO NOTHING
          RETURNING id`,
         [
           e.titre, e.entreprise, e.typeContrat || "CDI", e.ville || "Abidjan",
           e.secteur || null, e.description, e.dateLimite || null,
-          e.lienExterne, e.sourceNom, e.sourceUrl, e.hash,
+          e.lienExterne, e.sourceNom, e.sourceUrl, e.hash, e.imageUrl || null,
         ],
       );
       if (result.rows.length) inserees++;

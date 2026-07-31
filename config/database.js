@@ -295,6 +295,12 @@ await client.query(`
       ALTER TABLE offres_emploi ADD COLUMN origine VARCHAR(20) DEFAULT 'manuel'
         CHECK (origine IN ('auto', 'manuel'));
     END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='image_url'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN image_url TEXT;
+    END IF;
   END $$;
 `);
 

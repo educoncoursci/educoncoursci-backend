@@ -13,10 +13,12 @@ let transporter = null;
 function getTransporter() {
 if (transporter) return transporter;
 
+const port = parseInt(process.env.EMAIL_PORT) || 587;
+
 transporter = nodemailer.createTransport({
 host:   process.env.EMAIL_HOST || "smtp.gmail.com",
-port:   parseInt(process.env.EMAIL_PORT) || 587,
-secure: false, // TLS
+port,
+secure: port === 465, // 465 = SSL implicite ; 587 = STARTTLS (secure:false, upgrade automatique)
 auth: {
 user: process.env.EMAIL_USER,
 pass: process.env.EMAIL_PASS,
@@ -24,6 +26,11 @@ pass: process.env.EMAIL_PASS,
 });
 
 return transporter;
+}
+
+// L'envoi est-il réellement configuré ? (sinon on simule pour ne jamais planter)
+function emailConfigure() {
+return Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
 }
 
 // ── Template HTML de base ────────────────────────────────────
@@ -87,13 +94,21 @@ return `
 
 // ── Envoi générique ──────────────────────────────────────────
 async function envoyer({ to, subject, html, text }) {
-const transport = getTransporter();
-
-// En développement, simule l'envoi (évite d'envoyer de vrais e-mails)
-if (process.env.NODE_ENV === "development" && !process.env.EMAIL_USER) {
-console.log(`📧 [DEV] E-mail simulé → ${to} | Sujet: ${subject}`);
+// Si EMAIL_USER/EMAIL_PASS ne sont pas configurés, on simule TOUJOURS
+// (peu importe NODE_ENV) plutôt que de laisser Nodemailer échouer avec
+// des identifiants vides — c'était le bug : en production sans ces
+// variables, l'envoi échouait silencieusement (erreur avalée par le
+// try/catch appelant) et l'utilisateur ne recevait jamais rien, sans
+// qu'aucune erreur claire n'apparaisse.
+if (!emailConfigure()) {
+console.warn(
+  `⚠️  E-mail NON envoyé (EMAIL_USER/EMAIL_PASS absents) → ${to} | Sujet: ${subject}. ` +
+  `Configure ces variables sur ton hébergeur pour activer l'envoi réel.`,
+);
 return { simule: true, to, subject };
 }
+
+const transport = getTransporter();
 
 const info = await transport.sendMail({
 from:    process.env.EMAIL_FROM || `EduConcoursCI <noreply@educoncoursci.ci>`,
@@ -103,6 +118,7 @@ html:    html || templateBase(subject, `<p>${text}</p>`),
 text:    text || subject,
 });
 
+console.log(`✅ E-mail envoyé → ${to} | Sujet: ${subject} | id: ${info.messageId}`);
 return { messageId: info.messageId, to };
 }
 
@@ -242,4 +258,6 @@ envoyerResultatQCM,
 envoyerRappelCloture,
 envoyerNotificationAdmin,
 envoyerResetMotDePasse,
+emailConfigure,
+getTransporter,
 };

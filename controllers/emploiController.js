@@ -137,7 +137,7 @@ try {
 const {
   titre, entreprise, typeContrat, ville, secteur, description,
   profilRecherche, salaire, experience, dateLimite,
-  emailContact, lienExterne, statut,
+  emailContact, lienExterne, statut, imageUrl,
 } = req.body;
 
 if (!titre || !entreprise || !typeContrat || !description) {
@@ -149,7 +149,7 @@ if (!titre || !entreprise || !typeContrat || !description) {
 const offre = await Emploi.create({
   titre, entreprise, typeContrat, ville, secteur, description,
   profilRecherche, salaire, experience, dateLimite,
-  emailContact, lienExterne, statut,
+  emailContact, lienExterne, statut, imageUrl,
 });
 
 res.status(201).json({ message: "Offre créée avec succès.", offre });
