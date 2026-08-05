@@ -309,4 +309,65 @@ console.error("Erreur suppression fichier temporaire :", err.message);
 }
 }
 
-module.exports = { genererPDFTexte, genererCVStructure, supprimerFichier };
+// ════════════════════════════════════════════════════════════
+//  Lot 12 — Génère un certificat PDF (badge ou examen blanc réussi)
+//  Mise en page paysage avec cadre décoratif, distincte des
+//  documents texte (CV/LM) générés plus haut dans ce fichier.
+// ════════════════════════════════════════════════════════════
+async function genererCertificatPDF(nomFichier, { titre, sousTitre, nomCandidat, detail, date }) {
+  return new Promise((resolve, reject) => {
+    const filePath = path.join(storageDir, `${nomFichier}.pdf`);
+    const doc = new PDFDocument({ size: "A4", layout: "landscape", margins: { top: 40, bottom: 40, left: 40, right: 40 } });
+
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
+
+    const largeur = doc.page.width;
+    const hauteur = doc.page.height;
+
+    // Fond et cadre décoratif
+    doc.rect(0, 0, largeur, hauteur).fill(COULEURS.blanc);
+    doc.rect(20, 20, largeur - 40, hauteur - 40)
+       .lineWidth(3).strokeColor(COULEURS.primaire).stroke();
+    doc.rect(28, 28, largeur - 56, hauteur - 56)
+       .lineWidth(1).strokeColor(COULEURS.accent).stroke();
+
+    doc.fillColor(COULEURS.primaire)
+       .font("Helvetica-Bold").fontSize(14)
+       .text("EDUCONCOURSCI", 0, 60, { align: "center" });
+    doc.fillColor(COULEURS.gris)
+       .font("Helvetica").fontSize(10)
+       .text("Préparation aux concours de Côte d'Ivoire", 0, 80, { align: "center" });
+
+    doc.fillColor(COULEURS.texte)
+       .font("Helvetica-Bold").fontSize(30)
+       .text(titre, 0, 140, { align: "center" });
+
+    if (sousTitre) {
+      doc.font("Helvetica").fontSize(13).fillColor(COULEURS.gris)
+         .text(sousTitre, 0, 185, { align: "center" });
+    }
+
+    doc.font("Helvetica").fontSize(12).fillColor(COULEURS.gris)
+       .text("Ce certificat est décerné à", 0, 230, { align: "center" });
+
+    doc.font("Helvetica-Bold").fontSize(24).fillColor(COULEURS.secondaire)
+       .text(nomCandidat, 0, 255, { align: "center" });
+
+    if (detail) {
+      doc.font("Helvetica").fontSize(13).fillColor(COULEURS.texte)
+         .text(detail, 100, 300, { align: "center", width: largeur - 200 });
+    }
+
+    doc.font("Helvetica").fontSize(10).fillColor(COULEURS.gris)
+       .text(`Délivré le ${date}`, 0, hauteur - 90, { align: "center" });
+    doc.font("Helvetica-Oblique").fontSize(9).fillColor(COULEURS.gris)
+       .text("Certificat auto-déclaratif généré par EduConcoursCI — ne remplace aucun diplôme ni attestation officielle.", 60, hauteur - 65, { align: "center", width: largeur - 120 });
+
+    doc.end();
+    stream.on("finish", () => resolve(filePath));
+    stream.on("error", reject);
+  });
+}
+
+module.exports = { genererPDFTexte, genererCVStructure, genererCertificatPDF, supprimerFichier };
