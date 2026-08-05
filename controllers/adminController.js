@@ -11,6 +11,7 @@ const QCM         = require("../models/QCM");
 const Score       = require("../models/Score");
 const Transaction = require("../models/Transaction");
 const Emploi      = require("../models/Emploi");
+const Journal     = require("../models/Journal");
 const { query }   = require("../config/database");
 
 // ════════════════════════════════════════════════════════════
@@ -205,6 +206,13 @@ if (premium !== undefined) {
 }
 
 const userMisAJour = await User.findById(id);
+
+const details = [
+  role ? `rôle → ${role}` : null,
+  premium !== undefined ? `premium → ${premium === true || premium === "true"}` : null,
+].filter(Boolean).join(", ");
+Journal.enregistrer(req.user.id, req.user.nom, "modification", "utilisateur", id, `${userMisAJour.email} : ${details}`);
+
 res.json({
   message: "Utilisateur mis à jour avec succès.",
   user:    userMisAJour,
@@ -236,6 +244,7 @@ if (!user) {
 }
 
 await User.delete(id);
+Journal.enregistrer(req.user.id, req.user.nom, "suppression", "utilisateur", id, `${user.nom} (${user.email})`);
 res.json({
   message: `Utilisateur ${user.nom} (${user.email}) supprimé avec succès.`
 });
@@ -292,4 +301,20 @@ res.send("\uFEFF" + csv); // BOM pour Excel
 console.error("Erreur export CSV :", err.message);
 res.status(500).json({ error: "Erreur lors de l'export." });
 }
+};
+// ════════════════════════════════════════════════════════════
+//  GET /api/admin/journal — Journal d'activité (Lot 4)
+// ════════════════════════════════════════════════════════════
+exports.journal = async (req, res) => {
+  try {
+    const { action, cibleType, limit, offset } = req.query;
+    const [entrees, total] = await Promise.all([
+      Journal.findAll({ action, cibleType, limit: parseInt(limit) || 100, offset: parseInt(offset) || 0 }),
+      Journal.count(),
+    ]);
+    res.json({ total, entrees });
+  } catch (err) {
+    console.error("Erreur journal d'activité :", err.message);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
 };

@@ -9,12 +9,13 @@ const express = require("express");
 const router  = express.Router();
 const ctrl    = require("../controllers/documentsAdminController");
 const auth    = require("../middleware/auth");
+const quotaIA = require("../middleware/quotaIA");
 
 // GET  /api/documents-admin/types    — Liste des types disponibles (public)
 router.get("/types", ctrl.listerTypes);
 
 // POST /api/documents-admin/generate — Générer un document (connecté requis)
-router.post("/generate", auth, ctrl.genererDocument);
+router.post("/generate", auth, quotaIA("document-admin"), ctrl.genererDocument);
 
 // POST /api/documents-admin/pdf      — Exporter en PDF (connecté requis)
 router.post("/pdf", auth, ctrl.exportPDF);

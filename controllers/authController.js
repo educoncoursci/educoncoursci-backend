@@ -112,6 +112,17 @@ if (!motDePasseCorrect) {
   });
 }
 
+// 2FA activée ? On ne délivre pas le token final tout de suite —
+// le front doit d'abord passer par /api/auth/2fa/verify-login
+if (user.two_factor_enabled) {
+  const tempToken = jwt.sign(
+    { id: user.id, purpose: "2fa-pending" },
+    process.env.JWT_SECRET,
+    { expiresIn: "10m" },
+  );
+  return res.json({ requires2FA: true, tempToken });
+}
+
 // Vérifier si le Premium a expiré
 let premium = user.premium;
 if (premium && user.premium_expire) {
@@ -141,6 +152,7 @@ res.json({
     premium,
     premium_plan:   user.premium_plan,
     premium_expire: user.premium_expire,
+    photo_url:      user.photo_url,
   },
 });
 
@@ -168,8 +180,10 @@ res.json({
     premium_plan:   user.premium_plan,
     premium_expire: user.premium_expire,
     date_inscription: user.date_inscription,
+    photo_url: user.photo_url,
     favoris:  JSON.parse(user.favoris_json  || "[]"),
     scores:   JSON.parse(user.scores_json   || "[]"),
+    two_factor_enabled: user.two_factor_enabled || false,
   },
 });
 

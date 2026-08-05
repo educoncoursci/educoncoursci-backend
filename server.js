@@ -64,6 +64,17 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth",     authLimiter, require("./routes/auth"));
 app.use("/api/users",    require("./routes/users"));
 app.use("/api/concours", require("./routes/concours"));
+app.use("/api/referentiels", require("./routes/referentiels"));
+app.use("/api/eligibilite", require("./routes/eligibilite"));
+app.use("/api/alertes", require("./routes/alertes"));
+app.use("/api/progression", require("./routes/progression"));
+app.use("/api/candidatures-concours", require("./routes/candidaturesConcours"));
+app.use("/api/assistant-concours", require("./routes/assistantConcours"));
+app.use("/api/push", require("./routes/push"));
+app.use("/api/forum", require("./routes/forum"));
+app.use("/api/marketplace", require("./routes/marketplace"));
+app.use("/api/messages", require("./routes/messages"));
+app.use("/api/vitrine", require("./routes/vitrine"));
 app.use("/api/pdfs",     require("./routes/pdfs"));
 app.use("/api/videos",   require("./routes/videos"));
 app.use("/api/qcm",      require("./routes/qcm"));
@@ -129,6 +140,7 @@ try {
 
 require("./services/actualitesFeed").demarrerPlanification(); // Flux d'actualités en continu
 require("./services/emploiFeed").demarrerPlanification();      // Agrégation des offres d'emploi externes
+require("./services/rappelsScheduler").demarrerPlanification(); // Rappels de clôture J-7/J-3/J-1 (Module 4)
 app.listen(PORT, () => {
 console.log(`🚀 Serveur EduConcoursCI démarré sur le port ${PORT}`);
 console.log(`📡 API disponible : http://localhost:${PORT}/api/health`);

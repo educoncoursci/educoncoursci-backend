@@ -7,12 +7,15 @@ const express = require("express");
 const router  = express.Router();
 const ctrl    = require("../controllers/videoController");
 const auth    = require("../middleware/auth");
+const authOptionnel = require("../middleware/authOptionnel");
 const admin   = require("../middleware/admin");
 const { uploadVideo, handleUploadError } = require("../middleware/upload");
 
-// Lecture publique
-router.get("/",    ctrl.liste);       // GET /api/videos
-router.get("/:id", ctrl.detail);      // GET /api/videos/:id
+// Lecture publique — authOptionnel : même correctif que pdfs.js/concours.js,
+// sans quoi les abonnés Premium voyaient toutes les vidéos Premium comme
+// verrouillées.
+router.get("/",    authOptionnel, ctrl.liste);       // GET /api/videos
+router.get("/:id", authOptionnel, ctrl.detail);      // GET /api/videos/:id
 
 // Écriture admin
 router.post(  "/",    auth, admin, uploadVideo.single("fichier"), handleUploadError, ctrl.creer);  // POST   /api/videos

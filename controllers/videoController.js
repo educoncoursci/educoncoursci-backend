@@ -33,7 +33,7 @@ const videos = await Video.findAll({
 // Ajoute l'ID YouTube et la miniature pour chaque vidéo
 const videosFormatees = videos.map(v => {
   const ytId = getYoutubeId(v.url || "");
-  const verrouille = v.premium && (!req.user || !req.user.premium);
+  const verrouille = v.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true);
   return {
     ...v,
     youtube_id: ytId,
@@ -61,7 +61,7 @@ try {
 const video = await Video.findById(req.params.id);
 if (!video) return res.status(404).json({ error: "Vidéo introuvable." });
 
-if (video.premium && (!req.user || !req.user.premium)) {
+if (video.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true)) {
   return res.status(403).json({
     error:   "Contenu réservé aux abonnés Premium.",
     premium: true,

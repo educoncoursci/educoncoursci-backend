@@ -26,6 +26,27 @@ const result = await query(
 return result.rows.length > 0;
 },
 
+// ── Trouver une transaction par son id (validation admin) ────
+async findById(id) {
+const result = await query("SELECT * FROM transactions WHERE id = $1", [id]);
+return result.rows[0] || null;
+},
+
+// ── Trouver une transaction par son tx_id (webhook CinetPay) ──
+async findByTxId(txId) {
+const result = await query("SELECT * FROM transactions WHERE tx_id = $1", [txId.toUpperCase()]);
+return result.rows[0] || null;
+},
+
+// ── Changer le statut d'une transaction (admin valide/rejette) ─
+async updateStatut(id, statut) {
+const result = await query(
+`UPDATE transactions SET statut = $1 WHERE id = $2 RETURNING *`,
+[statut, id]
+);
+return result.rows[0] || null;
+},
+
 // ── Historique d'un utilisateur ─────────────────────────────
 async findByUser(userId) {
 const result = await query(

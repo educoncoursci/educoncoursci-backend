@@ -27,7 +27,7 @@ const qcmListe = await QCM.findAll({
 // Marque les QCM verrouillés pour les non-Premium
 const liste = qcmListe.map(q => ({
   ...q,
-  verrouille: q.premium && (!req.user || !req.user.premium),
+  verrouille: q.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true),
 }));
 
 res.json({ total: liste.length, qcm: liste });
@@ -49,7 +49,7 @@ return res.status(404).json({ error: "QCM introuvable." });
 }
 
 // Vérifie les droits Premium
-if (qcm.premium && (!req.user || !req.user.premium)) {
+if (qcm.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true)) {
   return res.status(403).json({
     error:   "Contenu réservé aux abonnés Premium.",
     premium: true,
@@ -225,5 +225,43 @@ res.json({ message: "QCM supprimé avec succès." });
 } catch (err) {
 console.error("Erreur supprimer QCM :", err.message);
 res.status(500).json({ error: "Erreur lors de la suppression." });
+}
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/qcm/examen-blanc/score — Enregistrer un examen blanc
+//  (Module 7). L'examen blanc combine plusieurs matières et n'est
+//  donc pas rattaché à un seul QCM (qcm_id reste NULL) — il compte
+//  dans "examens blancs réalisés" mais pas dans le détail par matière.
+//  Ne modifie pas le moteur de QCM existant, réutilise juste le
+//  modèle Score déjà en place.
+// ════════════════════════════════════════════════════════════
+exports.soumettreExamenBlanc = async (req, res) => {
+try {
+if (!req.user) {
+  return res.json({ enregistre: false, raison: "non_connecte" });
+}
+
+const { score, total } = req.body;
+if (
+  typeof score !== "number" || typeof total !== "number" ||
+  total <= 0 || score < 0 || score > total
+) {
+  return res.status(400).json({ error: "score/total invalides." });
+}
+
+const enregistrement = await Score.create({
+  userId:   req.user.id,
+  qcmId:    null,
+  qcmTitre: `Examen blanc — ${new Date().toLocaleDateString("fr-FR")}`,
+  score,
+  total,
+});
+
+res.json({ enregistre: true, score: enregistrement });
+
+} catch (err) {
+console.error("Erreur enregistrement examen blanc :", err.message);
+res.status(500).json({ error: "Erreur lors de l'enregistrement." });
 }
 };

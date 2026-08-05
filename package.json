@@ -35,7 +35,10 @@
     "express-validator": "^7.0.1",
     "docx": "^9.0.2",
     "rss-parser": "^3.13.0",
-    "node-cron": "^3.0.3"
+    "node-cron": "^3.0.3",
+    "web-push": "^3.6.7",
+    "speakeasy": "^2.0.0",
+    "qrcode": "^1.5.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

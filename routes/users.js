@@ -9,6 +9,49 @@ const router  = express.Router();
 const auth    = require("../middleware/auth");
 const User    = require("../models/User");
 const Score   = require("../models/Score");
+const { uploadPhoto, handleUploadError } = require("../middleware/upload");
+
+// PATCH /api/users/:id/photo — Définir la photo via un lien externe
+// (méthode recommandée — pas de risque de perte au redéploiement)
+router.patch("/:id/photo", auth, async (req, res) => {
+try {
+if (parseInt(req.params.id) !== req.user.id) {
+  return res.status(403).json({ error: "Accès refusé." });
+}
+const { photoUrl } = req.body;
+if (photoUrl && !/^https?:\/\//.test(photoUrl)) {
+  return res.status(400).json({ error: "Le lien doit commencer par http:// ou https://." });
+}
+const user = await User.setPhoto(req.params.id, photoUrl || null);
+res.json({ message: "Photo de profil mise à jour.", user });
+} catch (err) {
+res.status(500).json({ error: err.message });
+}
+});
+
+// POST /api/users/:id/photo/upload — Uploader directement un fichier
+// ⚠️ Stockage sur disque local — voir avertissement dans middleware/upload.js
+router.post(
+  "/:id/photo/upload",
+  auth,
+  uploadPhoto.single("photo"),
+  handleUploadError,
+  async (req, res) => {
+    try {
+      if (parseInt(req.params.id) !== req.user.id) {
+        return res.status(403).json({ error: "Accès refusé." });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "Aucune image reçue." });
+      }
+      const photoUrl = `/uploads/photos/${req.file.filename}`;
+      const user = await User.setPhoto(req.params.id, photoUrl);
+      res.json({ message: "Photo de profil mise à jour.", user });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
 
 // GET /api/users/:id — Profil public
 router.get("/:id", auth, async (req, res) => {

@@ -67,6 +67,19 @@ const uploadVideo = creerUploadeur({
   maxSizeMb: parseInt(process.env.MAX_VIDEO_SIZE_MB) || 200,
 });
 
+// ── Upload Photo de profil ──────────────────────────────────
+// ⚠️ Même avertissement que pour les vidéos : le disque est éphémère
+// sur la plupart des hébergeurs (dont Railway sans volume persistant
+// configuré) — une photo uploadée ainsi peut disparaître au prochain
+// déploiement. C'est pourquoi l'utilisateur peut aussi coller un lien
+// d'image externe à la place (voir dashboard/profil.html).
+const uploadPhoto = creerUploadeur({
+  dossier: "photos",
+  mimetypesAutorises: ["image/jpeg", "image/png", "image/webp"],
+  messageErreur: "Formats acceptés : JPG, PNG, WebP.",
+  maxSizeMb: parseInt(process.env.MAX_PHOTO_SIZE_MB) || 5,
+});
+
 // ── Gestion des erreurs Multer (partagée) ──────────────────────
 const handleUploadError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
@@ -83,4 +96,4 @@ const handleUploadError = (err, req, res, next) => {
   next();
 };
 
-module.exports = { upload, uploadVideo, handleUploadError };
+module.exports = { upload, uploadVideo, uploadPhoto, handleUploadError };

@@ -12,7 +12,7 @@ const PDF  = require("../models/PDF");
 // ════════════════════════════════════════════════════════════
 exports.liste = async (req, res) => {
 try {
-const { categorie, premium, recherche, limit, offset } = req.query;
+const { categorie, premium, recherche, type, concoursId, limit, offset } = req.query;
 
 let filtrerPremium;
 if (premium !== undefined) filtrerPremium = premium === "true";
@@ -21,13 +21,15 @@ const pdfs = await PDF.findAll({
   categorie,
   premium:  filtrerPremium,
   recherche,
+  type,
+  concoursId: concoursId ? parseInt(concoursId) : undefined,
   limit:    parseInt(limit)  || 50,
   offset:   parseInt(offset) || 0,
 });
 
 // Masque l'URL réelle des PDFs Premium pour les non-abonnés
 const pdfsFiltres = pdfs.map(pdf => {
-  if (pdf.premium && (!req.user || !req.user.premium)) {
+  if (pdf.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true)) {
     const { url, ...sanUrl } = pdf;
     return { ...sanUrl, url: null, verrouille: true };
   }
@@ -53,14 +55,16 @@ try {
 const pdf = await PDF.findById(req.params.id);
 if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
-if (pdf.premium && (!req.user || !req.user.premium)) {
+if (pdf.premium && req.user && req.user.role !== "admin" && !req.user.premium) {
   return res.status(403).json({
     error:   "Contenu réservé aux abonnés Premium.",
     premium: true,
   });
 }
 
-res.json({ pdf });
+const concoursIds = await PDF.findConcoursIds(pdf.id);
+
+res.json({ pdf: { ...pdf, concoursIds } });
 
 } catch (err) {
 console.error("Erreur détail PDF :", err.message);
@@ -77,7 +81,7 @@ const pdf = await PDF.findById(req.params.id);
 if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
 // Vérifie les droits Premium
-if (pdf.premium && (!req.user || !req.user.premium)) {
+if (pdf.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true)) {
   return res.status(403).json({
     error:   "Abonnement Premium requis pour télécharger ce document.",
     premium: true,
@@ -86,6 +90,13 @@ if (pdf.premium && (!req.user || !req.user.premium)) {
 
 // Incrémenter le compteur
 await PDF.incrementerTelechargement(pdf.id);
+
+// Suivi de progression (Module 7) — n'enregistre que pour les connectés
+if (req.user) {
+  PDF.enregistrerConsultation(req.user.id, pdf.id).catch((err) =>
+    console.error("Erreur enregistrement consultation PDF :", err.message),
+  );
+}
 
 // Si l'URL est un lien externe (Drive, etc.), rediriger
 if (pdf.url.startsWith("http")) {
@@ -129,7 +140,24 @@ if (!data.url) {
 }
 
 data.premium = data.premium === "true" || data.premium === true;
+
+// concoursIds arrive en JSON string via FormData (upload), ou en tableau
+// direct si jamais envoyé en JSON classique — on gère les deux.
+let concoursIds = [];
+if (data.concoursIds) {
+  try {
+    concoursIds = typeof data.concoursIds === "string"
+      ? JSON.parse(data.concoursIds)
+      : data.concoursIds;
+  } catch { concoursIds = []; }
+  delete data.concoursIds;
+}
+
 const pdf = await PDF.create(data);
+
+if (Array.isArray(concoursIds) && concoursIds.length > 0) {
+  await PDF.definirConcours(pdf.id, concoursIds);
+}
 
 res.status(201).json({
   message: "PDF ajouté avec succès.",
@@ -151,6 +179,11 @@ const pdf = await PDF.findById(req.params.id);
 if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
 const modifie = await PDF.update(req.params.id, req.body);
+
+if (Array.isArray(req.body.concoursIds)) {
+  await PDF.definirConcours(req.params.id, req.body.concoursIds);
+}
+
 res.json({ message: "PDF modifié avec succès.", pdf: modifie });
 
 } catch (err) {

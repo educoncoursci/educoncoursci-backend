@@ -23,12 +23,25 @@ const Concours = {
     premium,
     statut,
     couleur,
+    structureId,
+    ageMin,
+    ageMax,
+    sexe,
+    historique,
+    salaire,
+    debouches,
+    adresse,
+    communiques,
+    faq,
   }) {
     const result = await query(
       `INSERT INTO concours
         (titre, organisme, categorie, ouverture, cloture, frais, places,
-         niveau, conditions, pieces, centres, premium, statut, couleur)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         niveau, conditions, pieces, centres, premium, statut, couleur,
+         structure_id, age_min, age_max, sexe,
+         historique, salaire, debouches, adresse, communiques, faq)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
+               $19,$20,$21,$22,$23,$24)
        RETURNING *`,
       [
         titre,
@@ -45,6 +58,16 @@ const Concours = {
         premium || false,
         statut || "à venir",
         couleur || "#1A6B3C",
+        structureId || null,
+        ageMin || null,
+        ageMax || null,
+        sexe || "tous",
+        historique || null,
+        salaire || null,
+        debouches || null,
+        adresse || null,
+        JSON.stringify(communiques || []),
+        JSON.stringify(faq || []),
       ],
     );
     return formatConcours(result.rows[0]);
@@ -56,6 +79,7 @@ const Concours = {
     statut,
     premium,
     search,
+    structureId,
     limit = 50,
     offset = 0,
   } = {}) {
@@ -74,6 +98,10 @@ const Concours = {
     if (premium !== undefined) {
       conditions.push(`premium = $${idx++}`);
       params.push(premium);
+    }
+    if (structureId) {
+      conditions.push(`structure_id = $${idx++}`);
+      params.push(structureId);
     }
     if (search) {
       conditions.push(
@@ -119,25 +147,45 @@ const Concours = {
       premium,
       statut,
       couleur,
+      structureId,
+      ageMin,
+      ageMax,
+      sexe,
+      historique,
+      salaire,
+      debouches,
+      adresse,
+      communiques,
+      faq,
     } = fields;
 
     const result = await query(
       `UPDATE concours SET
-        titre      = COALESCE($1,  titre),
-        organisme  = COALESCE($2,  organisme),
-        categorie  = COALESCE($3,  categorie),
-        ouverture  = COALESCE($4,  ouverture),
-        cloture    = COALESCE($5,  cloture),
-        frais      = COALESCE($6,  frais),
-        places     = COALESCE($7,  places),
-        niveau     = COALESCE($8,  niveau),
-        conditions = COALESCE($9,  conditions),
-        pieces     = COALESCE($10, pieces),
-        centres    = COALESCE($11, centres),
-        premium    = COALESCE($12, premium),
-        statut     = COALESCE($13, statut),
-        couleur    = COALESCE($14, couleur)
-       WHERE id = $15
+        titre        = COALESCE($1,  titre),
+        organisme    = COALESCE($2,  organisme),
+        categorie    = COALESCE($3,  categorie),
+        ouverture    = COALESCE($4,  ouverture),
+        cloture      = COALESCE($5,  cloture),
+        frais        = COALESCE($6,  frais),
+        places       = COALESCE($7,  places),
+        niveau       = COALESCE($8,  niveau),
+        conditions   = COALESCE($9,  conditions),
+        pieces       = COALESCE($10, pieces),
+        centres      = COALESCE($11, centres),
+        premium      = COALESCE($12, premium),
+        statut       = COALESCE($13, statut),
+        couleur      = COALESCE($14, couleur),
+        structure_id = COALESCE($15, structure_id),
+        age_min      = COALESCE($16, age_min),
+        age_max      = COALESCE($17, age_max),
+        sexe         = COALESCE($18, sexe),
+        historique   = COALESCE($19, historique),
+        salaire      = COALESCE($20, salaire),
+        debouches    = COALESCE($21, debouches),
+        adresse      = COALESCE($22, adresse),
+        communiques  = COALESCE($23, communiques),
+        faq          = COALESCE($24, faq)
+       WHERE id = $25
        RETURNING *`,
       [
         titre,
@@ -154,11 +202,47 @@ const Concours = {
         premium,
         statut,
         couleur,
+        structureId,
+        ageMin,
+        ageMax,
+        sexe,
+        historique,
+        salaire,
+        debouches,
+        adresse,
+        communiques ? JSON.stringify(communiques) : null,
+        faq ? JSON.stringify(faq) : null,
         id,
       ],
     );
     if (!result.rows[0]) return null;
     return formatConcours(result.rows[0]);
+  },
+
+  // ── Trouver un concours enrichi (structure + matières + diplômes) ──
+  // Base pour la fiche concours complète du Module 2 et pour le futur
+  // moteur d'éligibilité (Module 3). N'affecte pas findById() existant.
+  async findByIdEnrichi(id) {
+    const base = await this.findById(id);
+    if (!base) return null;
+
+    const Matiere  = require("./Matiere");
+    const Diplome  = require("./Diplome");
+
+    const [structureRes, matieres, diplomes] = await Promise.all([
+      base.structure_id
+        ? query("SELECT * FROM structures WHERE id = $1", [base.structure_id])
+        : Promise.resolve({ rows: [] }),
+      Matiere.findByConcours(id),
+      Diplome.findByConcours(id),
+    ]);
+
+    return {
+      ...base,
+      structure: structureRes.rows[0] || null,
+      matieres,
+      diplomes,
+    };
   },
 
   // ── Supprimer un concours ────────────────────────────────────
@@ -209,6 +293,8 @@ function formatConcours(row) {
     ...row,
     pieces: tryParse(row.pieces, []),
     centres: tryParse(row.centres, []),
+    communiques: tryParse(row.communiques, []),
+    faq: tryParse(row.faq, []),
   };
 }
 

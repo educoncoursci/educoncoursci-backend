@@ -21,7 +21,17 @@ router.get("/history", auth, ctrl.history); // GET /api/payment/history
 // Admin : voir toutes les transactions
 router.get("/all", auth, admin, ctrl.allTransactions); // GET /api/payment/all
 
+// Admin : valider une transaction en attente (active le Premium du client)
+router.post("/valider/:id", auth, admin, ctrl.validerTransaction); // POST /api/payment/valider/:id
+
+// Admin : rejeter une transaction en attente
+router.post("/rejeter/:id", auth, admin, ctrl.rejeterTransaction); // POST /api/payment/rejeter/:id
+
 // Admin : résilier un abonnement
 router.post("/resiliation", auth, admin, ctrl.resilier); // POST /api/payment/resiliation
+
+// ── CinetPay (Lot 17) ─────────────────────────────────────────
+router.post("/cinetpay/initier", auth, ctrl.initierCinetPay);  // POST /api/payment/cinetpay/initier
+router.post("/cinetpay/webhook", ctrl.webhookCinetPay);        // POST /api/payment/cinetpay/webhook (public — appelé par CinetPay)
 
 module.exports = router;

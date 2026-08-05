@@ -6,8 +6,12 @@
 
 const Transaction = require("../models/Transaction");
 const User        = require("../models/User");
+const Journal     = require("../models/Journal");
 const Wave        = require("../services/wave");
-const Orange      = require("../services/orange");
+const Orange       = require("../services/orange");
+const MTN         = require("../services/mtn");
+const Moov        = require("../services/moov");
+const CinetPay    = require("../services/cinetpay");
 
 // Plans disponibles
 const PLANS = {
@@ -36,10 +40,12 @@ if (plan && PLANS[plan]) {
   instructions = {
     wave:   Wave.getInstructions(plan),
     orange: Orange.getInstructions(plan),
+    mtn:    MTN.getInstructions(plan),
+    moov:   Moov.getInstructions(plan),
   };
 }
 
-res.json({ plans, instructions });
+res.json({ plans, instructions, cinetpayDisponible: CinetPay.API_CONFIGUREE });
 
 } catch (err) {
 console.error("Erreur getPlans :", err.message);
@@ -68,26 +74,24 @@ if (!PLANS[plan]) {
 }
 
 // ── Normaliser l'ID ───────────────────────────────────────
-const txIdNormalise = moyen === "wave"
-  ? Wave.normaliserTxId(txId)
-  : Orange.normaliserTxId(txId);
-
-// ── Valider le format selon le moyen de paiement ─────────
-let formatValide = false;
-if (moyen === "wave") {
-  formatValide = Wave.validerFormatId(txIdNormalise);
-} else if (moyen === "orange") {
-  formatValide = Orange.validerFormatId(txIdNormalise);
-} else {
+const SERVICES_MOYEN = { wave: Wave, orange: Orange, mtn: MTN, moov: Moov };
+const service = SERVICES_MOYEN[moyen];
+if (!service) {
   return res.status(400).json({
-    error: "Moyen de paiement invalide. Utilise 'wave' ou 'orange'."
+    error: "Moyen de paiement invalide. Utilise 'wave', 'orange', 'mtn' ou 'moov'."
   });
 }
+const txIdNormalise = service.normaliserTxId(txId);
+
+// ── Valider le format selon le moyen de paiement ─────────
+const formatValide = service.validerFormatId(txIdNormalise);
+
+const LABELS_MOYEN = { wave: "Wave", orange: "Orange Money", mtn: "MTN Money", moov: "Moov Money" };
+const EXEMPLES_MOYEN = { wave: "WA-AB12345678", orange: "987654321", mtn: "MP-AB1234567", moov: "MV-AB1234567" };
 
 if (!formatValide) {
-  const exemple = moyen === "wave" ? "WA-AB12345678" : "987654321";
   return res.status(400).json({
-    error: `Format d'identifiant invalide pour ${moyen === "wave" ? "Wave" : "Orange Money"}. Exemple attendu : ${exemple}`
+    error: `Format d'identifiant invalide pour ${LABELS_MOYEN[moyen]}. Exemple attendu : ${EXEMPLES_MOYEN[moyen]}`
   });
 }
 
@@ -99,47 +103,109 @@ if (dejaUtilise) {
   });
 }
 
-// ── Calculer expiration & enregistrer la transaction ──────
-const { dureeJours, montant } = PLANS[plan];
-const expiration = moyen === "wave"
-  ? Wave.calculerExpiration(dureeJours)
-  : Orange.calculerExpiration(dureeJours);
+// ── Enregistrer la transaction en attente de validation ───
+// IMPORTANT : le format de l'ID ne prouve pas que le paiement a eu
+// lieu (il peut être inventé). Sans intégration d'un agrégateur
+// mobile money officiel (CinetPay, etc.) fournissant un vrai webhook
+// de confirmation, la seule vérification fiable est humaine : un
+// admin confirme la réception réelle des fonds avant activation.
+const { montant } = PLANS[plan];
 
-await Transaction.create({
+const transaction = await Transaction.create({
   txId:    txIdNormalise,
   userId:  req.user.id,
   email:   req.user.email,
-  moyen:   moyen === "wave" ? "Wave CI" : "Orange Money CI",
+  moyen:   `${LABELS_MOYEN[moyen]} CI`,
   plan,
   montant,
-  statut:  "validé",
-});
-
-// ── Activer le Premium sur le profil utilisateur ──────────
-const userMisAJour = await User.setPremium(req.user.id, {
-  premium: true,
-  plan,
-  expire:  expiration,
+  statut:  "en attente",
 });
 
 res.json({
-  message:    `Paiement validé ! Ton abonnement Premium ${plan} est maintenant actif.`,
-  premium:    true,
-  plan,
-  expiration,
-  user:       userMisAJour,
-  transaction: {
-    txId:   txIdNormalise,
-    moyen:  moyen === "wave" ? "Wave CI" : "Orange Money CI",
-    plan,
-    montant,
-    date:   new Date().toLocaleDateString("fr-FR"),
-  },
+  message: `Identifiant reçu ! Ton paiement ${LABELS_MOYEN[moyen]} est en cours de vérification par notre équipe. Ton Premium ${plan} sera activé sous peu (généralement quelques heures) une fois le paiement confirmé.`,
+  enAttente: true,
+  transaction,
 });
 
 } catch (err) {
 console.error("Erreur vérification paiement :", err.message);
 res.status(500).json({ error: "Erreur lors de la vérification du paiement." });
+}
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/payment/valider/:id — Valider une transaction (admin)
+//  Confirme que le paiement a réellement été reçu et active le
+//  Premium correspondant sur le compte du client.
+// ════════════════════════════════════════════════════════════
+exports.validerTransaction = async (req, res) => {
+try {
+const { id } = req.params;
+const transaction = await Transaction.findById(id);
+
+if (!transaction) {
+  return res.status(404).json({ error: "Transaction introuvable." });
+}
+if (transaction.statut === "validé") {
+  return res.status(409).json({ error: "Cette transaction est déjà validée." });
+}
+if (!PLANS[transaction.plan]) {
+  return res.status(400).json({ error: "Plan de la transaction invalide." });
+}
+
+const { dureeJours } = PLANS[transaction.plan];
+const expiration = Wave.calculerExpiration(dureeJours); // même formule pour les deux moyens
+
+const userMisAJour = await User.setPremium(transaction.user_id, {
+  premium: true,
+  plan:    transaction.plan,
+  expire:  expiration,
+});
+
+const transactionMiseAJour = await Transaction.updateStatut(id, "validé");
+
+Journal.enregistrer(req.user.id, req.user.nom, "validation", "transaction", id, `${transaction.email} — ${transaction.plan} (${transaction.montant} FCFA)`);
+
+res.json({
+  message: `Transaction validée. Premium ${transaction.plan} activé pour ${transaction.email}.`,
+  transaction: transactionMiseAJour,
+  user: userMisAJour,
+});
+
+} catch (err) {
+console.error("Erreur validation transaction :", err.message);
+res.status(500).json({ error: "Erreur lors de la validation de la transaction." });
+}
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/payment/rejeter/:id — Rejeter une transaction (admin)
+//  Ex : identifiant invalide, paiement introuvable côté Wave/Orange.
+// ════════════════════════════════════════════════════════════
+exports.rejeterTransaction = async (req, res) => {
+try {
+const { id } = req.params;
+const transaction = await Transaction.findById(id);
+
+if (!transaction) {
+  return res.status(404).json({ error: "Transaction introuvable." });
+}
+if (transaction.statut === "validé") {
+  return res.status(409).json({ error: "Impossible de rejeter une transaction déjà validée. Résilie l'abonnement si besoin." });
+}
+
+const transactionMiseAJour = await Transaction.updateStatut(id, "échoué");
+
+Journal.enregistrer(req.user.id, req.user.nom, "rejet", "transaction", id, `${transaction.email} — ${transaction.plan}`);
+
+res.json({
+  message: "Transaction rejetée.",
+  transaction: transactionMiseAJour,
+});
+
+} catch (err) {
+console.error("Erreur rejet transaction :", err.message);
+res.status(500).json({ error: "Erreur lors du rejet de la transaction." });
 }
 };
 
@@ -214,4 +280,85 @@ res.json({
 console.error("Erreur résiliation :", err.message);
 res.status(500).json({ error: "Erreur lors de la résiliation." });
 }
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/payment/cinetpay/initier — Démarrer un paiement CinetPay
+//  (connecté requis). Contrairement aux moyens manuels, aucune saisie
+//  d'ID de transaction n'est nécessaire : CinetPay confirme lui-même
+//  via webhook dès que le paiement (carte ou mobile money) aboutit.
+// ════════════════════════════════════════════════════════════
+exports.initierCinetPay = async (req, res) => {
+  try {
+    if (!CinetPay.API_CONFIGUREE) {
+      return res.status(503).json({
+        error: "Le paiement en ligne CinetPay n'est pas encore configuré sur ce serveur. Utilise Wave, Orange Money, MTN Money ou Moov Money en attendant.",
+      });
+    }
+
+    const { plan } = req.body;
+    if (!PLANS[plan]) {
+      return res.status(400).json({ error: `Plan invalide. Plans disponibles : ${Object.keys(PLANS).join(", ")}` });
+    }
+
+    const { montant } = PLANS[plan];
+    const transactionId = `CP-${req.user.id}-${Date.now()}`;
+
+    const { paymentUrl } = await CinetPay.creerPaiement({
+      transactionId,
+      montant,
+      description: `Abonnement Premium EduConcoursCI — ${plan}`,
+      email: req.user.email,
+      nom: req.user.nom,
+    });
+
+    await Transaction.create({
+      txId: transactionId,
+      userId: req.user.id,
+      email: req.user.email,
+      moyen: "CinetPay",
+      plan,
+      montant,
+      statut: "en attente",
+    });
+
+    res.json({ paymentUrl, transactionId });
+  } catch (err) {
+    console.error("Erreur initiation CinetPay :", err.message);
+    res.status(500).json({ error: err.message || "Erreur lors de l'initialisation du paiement." });
+  }
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/payment/cinetpay/webhook — Notification CinetPay (public)
+//  Appelé automatiquement par CinetPay quand un paiement aboutit ou
+//  échoue. Ne JAMAIS faire confiance au corps de la requête seul :
+//  on revérifie systématiquement le statut auprès de l'API CinetPay
+//  avant d'activer quoi que ce soit.
+// ════════════════════════════════════════════════════════════
+exports.webhookCinetPay = async (req, res) => {
+  try {
+    const transactionId = req.body.cpm_trans_id || req.body.transaction_id;
+    if (!transactionId) return res.status(400).send("transaction_id manquant");
+
+    const transaction = await Transaction.findByTxId(transactionId);
+
+    const verification = await CinetPay.verifierPaiement(transactionId);
+
+    if (verification.succes && transaction && transaction.statut !== "validé") {
+      const { dureeJours } = PLANS[transaction.plan] || {};
+      if (dureeJours) {
+        const expiration = Wave.calculerExpiration(dureeJours);
+        await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
+        await Transaction.updateStatut(transaction.id, "validé");
+      }
+    } else if (!verification.succes && transaction) {
+      await Transaction.updateStatut(transaction.id, "échoué");
+    }
+
+    res.status(200).send("OK");
+  } catch (err) {
+    console.error("Erreur webhook CinetPay :", err.message);
+    res.status(200).send("OK"); // on renvoie 200 quoi qu'il arrive pour éviter les re-essais en boucle de CinetPay
+  }
 };

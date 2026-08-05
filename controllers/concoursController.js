@@ -4,13 +4,14 @@
 // ============================================================
 
 const Concours = require("../models/Concours");
+const Journal  = require("../models/Journal");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/concours — Liste avec filtres
 // ════════════════════════════════════════════════════════════
 exports.liste = async (req, res) => {
 try {
-const { categorie, statut, recherche, premium, limit, offset } = req.query;
+const { categorie, statut, recherche, premium, structureId, limit, offset } = req.query;
 
 // Les utilisateurs non-premium ne voient que le contenu gratuit
 let filtrerPremium;
@@ -23,6 +24,7 @@ const concours = await Concours.findAll({
   statut,
   recherche,
   premium: filtrerPremium,
+  structureId: structureId ? parseInt(structureId) : undefined,
   limit:  parseInt(limit)  || 50,
   offset: parseInt(offset) || 0,
 });
@@ -47,17 +49,18 @@ res.status(500).json({ error: "Erreur lors de la récupération des concours." }
 // ════════════════════════════════════════════════════════════
 exports.detail = async (req, res) => {
 try {
-const concours = await Concours.findById(req.params.id);
+const concours = await Concours.findByIdEnrichi(req.params.id);
 if (!concours) {
 return res.status(404).json({ error: "Concours introuvable." });
 }
 
-// Parse les colonnes JSON stockées en texte
-concours.pieces  = JSON.parse(concours.pieces  || "[]");
-concours.centres = JSON.parse(concours.centres || "[]");
+// NOTE : concours.pieces / concours.centres sont déjà des tableaux
+// (parsés par le modèle) — ne pas les re-parser avec JSON.parse ici,
+// ça provoquait une erreur 500 systématique sur cette route.
 
 // Vérifie si le contenu est Premium et si l'utilisateur a accès
-if (concours.premium && req.user && !req.user.premium) {
+// (les admins voient toujours tout, y compris pour l'édition en back-office)
+if (concours.premium && req.user && req.user.role !== "admin" && !req.user.premium) {
   return res.status(403).json({
     error:   "Contenu réservé aux abonnés Premium.",
     premium: true,
@@ -86,10 +89,22 @@ if (!champs.titre || !champs.organisme || !champs.categorie) {
 }
 
 const nouveau = await Concours.create(champs);
+
+// Relations optionnelles matières / diplômes (Module 1)
+const Matiere = require("../models/Matiere");
+const Diplome = require("../models/Diplome");
+if (Array.isArray(champs.matiereIds)) {
+  await Matiere.definirPourConcours(nouveau.id, champs.matiereIds);
+}
+if (Array.isArray(champs.diplomeIds)) {
+  await Diplome.definirPourConcours(nouveau.id, champs.diplomeIds);
+}
+
 res.status(201).json({
   message:  "Concours créé avec succès.",
   concours: nouveau,
 });
+Journal.enregistrer(req.user.id, req.user.nom, "création", "concours", nouveau.id, nouveau.titre);
 
 } catch (err) {
 console.error("Erreur créer concours :", err.message);
@@ -108,10 +123,22 @@ return res.status(404).json({ error: "Concours introuvable." });
 }
 
 const modifie = await Concours.update(req.params.id, req.body);
+
+// Relations optionnelles matières / diplômes (Module 1)
+const Matiere = require("../models/Matiere");
+const Diplome = require("../models/Diplome");
+if (Array.isArray(req.body.matiereIds)) {
+  await Matiere.definirPourConcours(req.params.id, req.body.matiereIds);
+}
+if (Array.isArray(req.body.diplomeIds)) {
+  await Diplome.definirPourConcours(req.params.id, req.body.diplomeIds);
+}
+
 res.json({
   message:  "Concours modifié avec succès.",
   concours: modifie,
 });
+Journal.enregistrer(req.user.id, req.user.nom, "modification", "concours", req.params.id, modifie.titre);
 
 } catch (err) {
 console.error("Erreur modifier concours :", err.message);
@@ -130,6 +157,7 @@ return res.status(404).json({ error: "Concours introuvable." });
 }
 
 await Concours.delete(req.params.id);
+Journal.enregistrer(req.user.id, req.user.nom, "suppression", "concours", req.params.id, concours.titre);
 res.json({ message: "Concours supprimé avec succès." });
 
 } catch (err) {

@@ -28,7 +28,18 @@ const User = {
   async findById(id) {
     const result = await query(
       `SELECT id, nom, email, role, premium, premium_plan,
-              premium_expire, date_inscription, favoris_json, scores_json
+              premium_expire, date_inscription, favoris_json, scores_json,
+              two_factor_enabled
+       FROM users WHERE id = $1`,
+      [id],
+    );
+    return result.rows[0] || null;
+  },
+
+  // ── 2FA : lecture du secret/codes (usage interne uniquement) ──
+  async findAvecSecretDeuxFacteur(id) {
+    const result = await query(
+      `SELECT id, nom, email, two_factor_secret, two_factor_enabled, two_factor_recovery_codes
        FROM users WHERE id = $1`,
       [id],
     );
@@ -69,7 +80,44 @@ const User = {
     return result.rows[0];
   },
 
-  // ── Activer le Premium ──────────────────────────────────────
+  // ── Photo de profil (Lot 6) ──────────────────────────────────
+async setPhoto(id, photoUrl) {
+const result = await query(
+  `UPDATE users SET photo_url = $1 WHERE id = $2 RETURNING id, nom, email, photo_url`,
+  [photoUrl, id],
+);
+return result.rows[0];
+},
+
+// ── 2FA (Lot 16) ─────────────────────────────────────────────
+// Enregistre un secret TOTP en attente de confirmation (2FA pas
+// encore active tant que l'utilisateur n'a pas validé un code).
+async setDeuxFacteurSecretEnAttente(id, secret) {
+  await query(`UPDATE users SET two_factor_secret = $1 WHERE id = $2`, [secret, id]);
+},
+
+async activerDeuxFacteur(id, codesRecuperationHashes) {
+  await query(
+    `UPDATE users SET two_factor_enabled = TRUE, two_factor_recovery_codes = $1 WHERE id = $2`,
+    [JSON.stringify(codesRecuperationHashes), id],
+  );
+},
+
+async desactiverDeuxFacteur(id) {
+  await query(
+    `UPDATE users SET two_factor_enabled = FALSE, two_factor_secret = NULL, two_factor_recovery_codes = '[]' WHERE id = $1`,
+    [id],
+  );
+},
+
+async definirCodesRecuperation(id, codesRecuperationHashes) {
+  await query(
+    `UPDATE users SET two_factor_recovery_codes = $1 WHERE id = $2`,
+    [JSON.stringify(codesRecuperationHashes), id],
+  );
+},
+
+// ── Activer le Premium ──────────────────────────────────────
   async activerPremium(id, { plan, dureeJours }) {
     const expire = new Date();
     expire.setDate(expire.getDate() + dureeJours);
