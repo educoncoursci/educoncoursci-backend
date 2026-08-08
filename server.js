@@ -15,6 +15,16 @@ const { initDatabase } = require("./config/database");
 
 const app = express();
 
+// Railway (comme la plupart des hébergeurs modernes) place le serveur
+// derrière un proxy inverse, qui ajoute un en-tête X-Forwarded-For avec
+// la vraie IP du visiteur. Sans cette ligne, Express n'y fait pas
+// confiance par défaut (sécurité), ce qui fait planter
+// express-rate-limit (il en a besoin pour identifier qui fait quoi) —
+// erreur ERR_ERL_UNEXPECTED_X_FORWARDED_FOR. "1" = fait confiance au
+// premier proxy uniquement (celui de Railway), pas à toute la chaîne,
+// ce qui reste sûr contre une IP falsifiée par le visiteur lui-même.
+app.set("trust proxy", 1);
+
 // ── Sécurité ──────────────────────────────────────────────────
 app.use(helmet());
 
