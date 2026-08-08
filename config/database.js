@@ -910,16 +910,70 @@ const CATALOGUE_REFERENCE = [
   { titre: "Concours ENSTP — Travaux publics", organisme: "École Nationale Supérieure des Travaux Publics (ENSTP)", categorie: "Ingénierie", niveau: "Bac à Bac+2 selon la filière", ouverture: null, cloture: null },
 ];
 
+// Vérifie si la contrainte anti-doublon a réellement pu être posée
+// juste au-dessus — si la base contient déjà des doublons préexistants
+// (ancienne version du projet, avant cette protection), elle ne l'a
+// pas été, et un ON CONFLICT dessus échouerait aussitôt ("no unique or
+// exclusion constraint matching..."), cassant toute la transaction
+// pour le reste du démarrage. On adapte donc la requête d'insertion
+// du catalogue selon que la contrainte existe vraiment ou non.
+const contrainteExiste = await client.query(
+  `SELECT 1 FROM pg_constraint WHERE conname = 'concours_titre_organisme_uniq'`,
+);
+const peutUtiliserOnConflict = contrainteExiste.rows.length > 0;
+if (!peutUtiliserOnConflict) {
+  console.warn("⚠️  Contrainte anti-doublon absente (doublons existants en base) — le catalogue de référence utilise une vérification manuelle à la place de ON CONFLICT.");
+  const doublons = await client.query(`
+    SELECT titre, organisme, COUNT(*) as nombre
+    FROM concours
+    GROUP BY titre, organisme
+    HAVING COUNT(*) > 1
+  `);
+  if (doublons.rows.length > 0) {
+    console.warn(`⚠️  ${doublons.rows.length} concours en double détecté(s) en base — à nettoyer depuis /admin/concours :`);
+    doublons.rows.forEach((d) => console.warn(`   - "${d.titre}" (${d.organisme}) : ${d.nombre} exemplaires`));
+  }
+}
+
 for (const c of CATALOGUE_REFERENCE) {
-  await client.query(
-    `INSERT INTO concours (titre, organisme, categorie, niveau, ouverture, cloture, statut, statut_auto, conditions)
-     VALUES ($1,$2,$3,$4,$5,$6,'à venir', FALSE, $7)
-     ON CONFLICT (titre, organisme) DO NOTHING`,
-    [
-      c.titre, c.organisme, c.categorie, c.niveau, c.ouverture, c.cloture,
-      "Dates et conditions précises à confirmer sur le communiqué officiel de l'organisme — fiche créée à titre indicatif pour référencer ce concours récurrent, complétez-la dès l'ouverture officielle de la session.",
-    ],
-  ).catch(() => {}); // si la contrainte anti-doublon n'a pas pu être posée plus haut, on ignore plutôt que de planter le démarrage
+  if (peutUtiliserOnConflict) {
+    await client.query(
+      `INSERT INTO concours (titre, organisme, categorie, niveau, ouverture, cloture, statut, statut_auto, conditions)
+       VALUES ($1,$2,$3,$4,$5,$6,'à venir', FALSE, $7)
+       ON CONFLICT (titre, organisme) DO NOTHING`,
+      [
+        c.titre, c.organisme, c.categorie, c.niveau, c.ouverture, c.cloture,
+        "Dates et conditions précises à confirmer sur le communiqué officiel de l'organisme — fiche créée à titre indicatif pour référencer ce concours récurrent, complétez-la dès l'ouverture officielle de la session.",
+      ],
+    ).catch((err) => {
+      console.error(`❌ Insertion catalogue concours échouée pour "${c.titre}" :`, err.message);
+      if (err.code)       console.error("   Code PostgreSQL :", err.code);
+      if (err.detail)     console.error("   Détail :", err.detail);
+      if (err.hint)       console.error("   Suggestion :", err.hint);
+      if (err.constraint) console.error("   Contrainte concernée :", err.constraint);
+      throw err;
+    });
+  } else {
+    // Repli sans ON CONFLICT : vérifie manuellement l'existence avant
+    // d'insérer, pour rester tout aussi non-duplicant.
+    const existeDeja = await client.query(
+      `SELECT 1 FROM concours WHERE titre = $1 AND organisme = $2`,
+      [c.titre, c.organisme],
+    );
+    if (existeDeja.rows.length === 0) {
+      await client.query(
+        `INSERT INTO concours (titre, organisme, categorie, niveau, ouverture, cloture, statut, statut_auto, conditions)
+         VALUES ($1,$2,$3,$4,$5,$6,'à venir', FALSE, $7)`,
+        [
+          c.titre, c.organisme, c.categorie, c.niveau, c.ouverture, c.cloture,
+          "Dates et conditions précises à confirmer sur le communiqué officiel de l'organisme — fiche créée à titre indicatif pour référencer ce concours récurrent, complétez-la dès l'ouverture officielle de la session.",
+        ],
+      ).catch((err) => {
+        console.error(`❌ Insertion catalogue concours échouée pour "${c.titre}" :`, err.message);
+        throw err;
+      });
+    }
+  }
 }
 
 // Import "best effort" ponctuel : pour les concours déjà en base sans
