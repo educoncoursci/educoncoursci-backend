@@ -8,11 +8,11 @@ const { query } = require("../config/database");
 
 const Video = {
   // ── Créer une vidéo ─────────────────────────────────────────
-  async create({ titre, categorie, duree, url, description, premium, statut }) {
+  async create({ titre, categorie, duree, url, description, premium, statut, origine }) {
     const result = await query(
       `INSERT INTO videos
-        (titre, categorie, duree, url, description, premium, statut)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
+        (titre, categorie, duree, url, description, premium, statut, origine)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING *`,
       [
         titre,
@@ -22,6 +22,7 @@ const Video = {
         description || "",
         premium || false,
         statut || "publié",
+        origine || "lien",
       ],
     );
     return result.rows[0];
