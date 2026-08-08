@@ -28,6 +28,30 @@ console.log("✅ Connexion PostgreSQL établie");
 // ── Crée toutes les tables si elles n'existent pas ────────────
 async function initDatabase() {
 const client = await pool.connect();
+
+// Diagnostic : PostgreSQL n'expose en détail que la PREMIÈRE erreur
+// d'une transaction — toutes les commandes suivantes échouent avec le
+// message générique "current transaction is aborted" (code 25P02), qui
+// ne dit rien sur la vraie cause. On intercepte donc chaque appel
+// individuellement pour savoir exactement laquelle des ~66 requêtes de
+// cette fonction a échoué en premier, avec un extrait de son SQL.
+let numeroRequete = 0;
+const queryOriginal = client.query.bind(client);
+client.query = async (...args) => {
+  numeroRequete++;
+  try {
+    return await queryOriginal(...args);
+  } catch (err) {
+    if (err.code !== "25P02") {
+      // Erreur d'origine (pas juste la conséquence du blocage) — celle
+      // qui nous intéresse vraiment.
+      const sql = typeof args[0] === "string" ? args[0] : "";
+      console.error(`❌ Requête #${numeroRequete} en échec (premier extrait) :`, sql.trim().slice(0, 200).replace(/\s+/g, " "));
+    }
+    throw err;
+  }
+};
+
 try {
 await client.query("BEGIN");
 
