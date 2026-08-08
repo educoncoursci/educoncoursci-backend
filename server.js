@@ -141,6 +141,8 @@ try {
 require("./services/actualitesFeed").demarrerPlanification(); // Flux d'actualités en continu
 require("./services/emploiFeed").demarrerPlanification();      // Agrégation des offres d'emploi externes
 require("./services/rappelsScheduler").demarrerPlanification(); // Rappels de clôture J-7/J-3/J-1 (Module 4)
+require("./services/concoursStatutScheduler").demarrerPlanification(); // Lot 18 — statut automatique des concours
+require("./services/concoursFeed").demarrerPlanification(); // Lot 18 — détection automatique de nouveaux concours
 app.listen(PORT, () => {
 console.log(`🚀 Serveur EduConcoursCI démarré sur le port ${PORT}`);
 console.log(`📡 API disponible : http://localhost:${PORT}/api/health`);

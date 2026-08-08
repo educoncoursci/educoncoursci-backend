@@ -6,11 +6,15 @@
 const Wave = {
 
 // ── Valide le format d'un ID de transaction Wave ────────────
-// Formats acceptés : WA-XXXXXXXXXX / W-XXXXXXXXX / WV-XXXXXXXXX
+// Wave CI envoie généralement des identifiants purement numériques
+// par SMS (pas de préfixe lettre). On reste volontairement souple sur
+// la longueur (6 à 20 chiffres) plutôt que de figer un nombre exact,
+// pour ne pas rejeter par erreur un vrai identifiant si sa longueur
+// varie selon le type de transaction.
 validerFormatId(txId) {
 if (!txId || typeof txId !== "string") return false;
-const clean = txId.trim().toUpperCase();
-return /^(WA|W|WV)-[A-Z0-9]{4,20}$/.test(clean);
+const clean = txId.trim();
+return /^[0-9]{6,20}$/.test(clean);
 },
 
 // ── Nettoie et normalise un ID Wave ─────────────────────────
@@ -69,7 +73,7 @@ if (lienPaiement) {
       "Clique sur le bouton \"Payer avec Wave\" ci-dessous",
       `Une fois sur Wave, saisis exactement ${montant?.toLocaleString("fr-CI")} FCFA`,
       "Confirme le paiement avec ton code Wave",
-      "Note l'identifiant de transaction reçu par SMS (ex: WA-AB12345678)",
+      "Note l'identifiant de transaction reçu par SMS (ex: 123456789012)",
       "Reviens sur cette page et saisis cet identifiant ci-dessous pour activer ton Premium",
     ],
   };
@@ -84,10 +88,10 @@ modePaiement: "manuel",
 etapes: [
 "Ouvre l'application Wave sur ton téléphone",
 `Envoie exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroWave || process.env.WAVE_NUMERO}`,
-"Note l'identifiant de transaction reçu par SMS (ex: WA-AB12345678)",
+"Note l'identifiant de transaction reçu par SMS (ex: 123456789012)",
 "Reviens sur le site et saisis cet identifiant pour activer ton compte",
 ],
-format_exemple: "WA-AB12345678",
+format_exemple: "123456789012",
 };
 },
 };

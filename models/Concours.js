@@ -6,6 +6,25 @@
 
 const { query } = require("../config/database");
 
+// ── Lot 18 : dates fiables → texte affiché + statut automatique ──
+const MOIS_FR = [
+  "janvier", "février", "mars", "avril", "mai", "juin",
+  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+];
+function formaterDateFr(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return `${d.getDate()} ${MOIS_FR[d.getMonth()]} ${d.getFullYear()}`;
+}
+function calculerStatutDepuisDates(dateOuverture, dateCloture) {
+  const aujourdHui = new Date();
+  aujourdHui.setHours(0, 0, 0, 0);
+  if (dateOuverture && aujourdHui < new Date(dateOuverture)) return "à venir";
+  if (dateCloture && aujourdHui > new Date(dateCloture)) return "fermé";
+  return "ouvert";
+}
+
 const Concours = {
   // ── Créer un concours ───────────────────────────────────────
   async create({
@@ -33,22 +52,36 @@ const Concours = {
     adresse,
     communiques,
     faq,
+    dateOuverture,
+    dateCloture,
+    statutAuto,
+    dateVerifiee,
   }) {
+    // Lot 18 — si de vraies dates sont fournies, elles priment : on en
+    // déduit le texte affiché et le statut automatiquement, plutôt que
+    // de faire confiance à un texte libre potentiellement incohérent.
+    const ouvertureTexte = dateOuverture ? formaterDateFr(dateOuverture) : ouverture;
+    const clotureTexte   = dateCloture   ? formaterDateFr(dateCloture)   : cloture;
+    const statutCalcule  = (dateOuverture || dateCloture) && statutAuto !== false
+      ? calculerStatutDepuisDates(dateOuverture, dateCloture)
+      : statut;
+
     const result = await query(
       `INSERT INTO concours
         (titre, organisme, categorie, ouverture, cloture, frais, places,
          niveau, conditions, pieces, centres, premium, statut, couleur,
          structure_id, age_min, age_max, sexe,
-         historique, salaire, debouches, adresse, communiques, faq)
+         historique, salaire, debouches, adresse, communiques, faq,
+         date_ouverture, date_cloture, statut_auto, date_verifiee)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
-               $19,$20,$21,$22,$23,$24)
+               $19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
        RETURNING *`,
       [
         titre,
         organisme,
         categorie,
-        ouverture,
-        cloture,
+        ouvertureTexte,
+        clotureTexte,
         frais || 0,
         places || null,
         niveau,
@@ -56,7 +89,7 @@ const Concours = {
         JSON.stringify(pieces || []),
         JSON.stringify(centres || []),
         premium || false,
-        statut || "à venir",
+        statutCalcule || "à venir",
         couleur || "#1A6B3C",
         structureId || null,
         ageMin || null,
@@ -68,6 +101,10 @@ const Concours = {
         adresse || null,
         JSON.stringify(communiques || []),
         JSON.stringify(faq || []),
+        dateOuverture || null,
+        dateCloture || null,
+        statutAuto !== false,
+        dateVerifiee !== false,
       ],
     );
     return formatConcours(result.rows[0]);
@@ -157,7 +194,28 @@ const Concours = {
       adresse,
       communiques,
       faq,
+      dateOuverture,
+      dateCloture,
+      statutAuto,
+      dateVerifiee,
     } = fields;
+
+    // Lot 18 — si une nouvelle date est fournie, on régénère le texte
+    // affiché et (sauf désactivation explicite) le statut à partir
+    // d'elle, plutôt que de laisser un texte libre désynchronisé.
+    const ouvertureFinale = dateOuverture ? formaterDateFr(dateOuverture) : ouverture;
+    const clotureFinale   = dateCloture   ? formaterDateFr(dateCloture)   : cloture;
+    const statutFinal = (dateOuverture || dateCloture) && statutAuto !== false && !statut
+      ? calculerStatutDepuisDates(dateOuverture, dateCloture)
+      : statut;
+    // Si l'admin fournit explicitement dateVerifiee, on le respecte tel
+    // quel. Sinon, corriger une date (ouverture ou clôture) vaut
+    // vérification implicite — l'admin qui corrige une date l'a fait
+    // parce qu'il l'a confirmée quelque part, pas besoin d'une case à
+    // cocher séparée en plus du geste de correction lui-même.
+    const dateVerifieeFinale = dateVerifiee !== undefined
+      ? dateVerifiee
+      : (dateOuverture || dateCloture) ? true : undefined;
 
     const result = await query(
       `UPDATE concours SET
@@ -184,15 +242,19 @@ const Concours = {
         debouches    = COALESCE($21, debouches),
         adresse      = COALESCE($22, adresse),
         communiques  = COALESCE($23, communiques),
-        faq          = COALESCE($24, faq)
-       WHERE id = $25
+        faq          = COALESCE($24, faq),
+        date_ouverture = COALESCE($25, date_ouverture),
+        date_cloture   = COALESCE($26, date_cloture),
+        statut_auto    = COALESCE($27, statut_auto),
+        date_verifiee  = COALESCE($28, date_verifiee)
+       WHERE id = $29
        RETURNING *`,
       [
         titre,
         organisme,
         categorie,
-        ouverture,
-        cloture,
+        ouvertureFinale,
+        clotureFinale,
         frais,
         places,
         niveau,
@@ -200,7 +262,7 @@ const Concours = {
         pieces ? JSON.stringify(pieces) : null,
         centres ? JSON.stringify(centres) : null,
         premium,
-        statut,
+        statutFinal,
         couleur,
         structureId,
         ageMin,
@@ -212,6 +274,10 @@ const Concours = {
         adresse,
         communiques ? JSON.stringify(communiques) : null,
         faq ? JSON.stringify(faq) : null,
+        dateOuverture,
+        dateCloture,
+        statutAuto,
+        dateVerifieeFinale,
         id,
       ],
     );

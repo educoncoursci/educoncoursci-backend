@@ -9,6 +9,8 @@ const router  = express.Router();
 const admin   = require("../controllers/adminController");
 const notifs  = require("../controllers/notifController");
 const market  = require("../controllers/adminMarketplaceController");
+const { recalculerStatuts } = require("../services/concoursStatutScheduler");
+const sourcesConcours = require("../controllers/concoursSourcesController");
 const auth    = require("../middleware/auth");
 const isAdmin = require("../middleware/admin");
 
@@ -41,6 +43,27 @@ router.patch("/notifs/whatsapp-file/:id",   notifs.marquerWhatsappEnvoye); // PA
 router.get( "/notifs/sms-file",             notifs.fileSms);              // GET   /api/admin/notifs/sms-file
 router.patch("/notifs/sms-file/:id",        notifs.marquerSmsEnvoye);     // PATCH /api/admin/notifs/sms-file/:id
 router.get( "/notifs/history",         notifs.historique);      // GET  /api/admin/notifs/history
+
+// ── Automatisation statut concours (Lot 18) ──────────────────
+router.post("/concours/recalculer-statuts", async (req, res) => {
+  try {
+    const total = await recalculerStatuts();
+    res.json({ message: `${total} concours mis à jour.`, total });
+  } catch (err) {
+    console.error("Erreur recalcul statuts (admin) :", err.message);
+    res.status(500).json({ error: "Erreur lors du recalcul." });
+  }
+}); // POST /api/admin/concours/recalculer-statuts
+
+// ── Sources et suggestions de concours (Lot 18) ──────────────
+router.get(   "/concours-sources",           sourcesConcours.listerSources);
+router.post(  "/concours-sources",           sourcesConcours.ajouterSource);
+router.patch( "/concours-sources/:id",       sourcesConcours.basculerSource);
+router.delete("/concours-sources/:id",       sourcesConcours.supprimerSource);
+router.post(  "/concours-sources/detecter",  sourcesConcours.declencherDetection);
+router.get(   "/concours-suggestions",           sourcesConcours.listerSuggestions);
+router.post(  "/concours-suggestions/:id/approuver", sourcesConcours.approuverSuggestion);
+router.post(  "/concours-suggestions/:id/rejeter",   sourcesConcours.rejeterSuggestion);
 
 // ── Marketplace (Lot 14) ─────────────────────────────────────
 router.get(   "/partenaires",     market.listerPartenaires);   // GET    /api/admin/partenaires

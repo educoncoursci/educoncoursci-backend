@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node scripts/seed.js",
+    "concours:seed": "node scripts/seed-concours-ci.js",
     "jwt:secret": "node scripts/generer-jwt-secret.js",
     "check": "node scripts/deploy-check.js",
     "admin:init": "node scripts/init-admin.js",
