@@ -1013,7 +1013,17 @@ await createDefaultAdmin();
 
 } catch (err) {
 await client.query("ROLLBACK");
+// err.message seul est souvent trop vague pour PostgreSQL (ex: "current
+// transaction is aborted" masque la vraie erreur qui a déclenché le
+// rollback). err.detail/err.hint/err.position/err.code pointent
+// précisément la commande, la colonne ou la contrainte en cause.
 console.error("❌ Erreur initialisation base de données :", err.message);
+if (err.code)     console.error("   Code PostgreSQL :", err.code);
+if (err.detail)   console.error("   Détail :", err.detail);
+if (err.hint)      console.error("   Suggestion :", err.hint);
+if (err.table)     console.error("   Table concernée :", err.table);
+if (err.constraint) console.error("   Contrainte concernée :", err.constraint);
+if (err.position)  console.error("   Position dans la requête :", err.position);
 throw err;
 } finally {
 client.release();
