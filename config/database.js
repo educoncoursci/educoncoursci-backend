@@ -758,6 +758,169 @@ await client.query(`
   ON CONFLICT (nom) DO NOTHING;
 `);
 
+// Table : concours_sources (Lot 18 — sources RSS surveillées pour
+// détecter automatiquement de nouveaux concours publiés)
+await client.query(`
+  CREATE TABLE IF NOT EXISTS concours_sources (
+    id         SERIAL PRIMARY KEY,
+    nom        VARCHAR(150) NOT NULL,
+    url        TEXT NOT NULL UNIQUE,
+    actif      BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+`);
+
+// Table : concours_suggestions (Lot 18 — file de validation. Un
+// concours détecté automatiquement n'est JAMAIS publié directement :
+// une mauvaise date extraite pourrait induire en erreur des milliers
+// de candidats. Il atterrit ici, un admin le valide ou le rejette en
+// un clic — c'est la seule étape humaine qui reste dans la chaîne.)
+await client.query(`
+  CREATE TABLE IF NOT EXISTS concours_suggestions (
+    id              SERIAL PRIMARY KEY,
+    titre           VARCHAR(300) NOT NULL,
+    extrait         TEXT,
+    source_nom      VARCHAR(150),
+    source_url      TEXT,
+    lien            TEXT,
+    hash            VARCHAR(64) UNIQUE NOT NULL,
+    statut          VARCHAR(20) DEFAULT 'en_attente'
+                    CHECK (statut IN ('en_attente', 'approuvee', 'rejetee')),
+    concours_id_cree INTEGER REFERENCES concours(id) ON DELETE SET NULL,
+    created_at      TIMESTAMP DEFAULT NOW()
+  );
+`);
+await client.query(`
+  CREATE INDEX IF NOT EXISTS idx_concours_suggestions_statut
+  ON concours_suggestions (statut, created_at DESC);
+`);
+
+// Ajoute des colonnes DATE fiables pour ouverture/clôture (Lot 18 —
+// automatisation du statut). Les colonnes historiques `ouverture` et
+// `cloture` (VARCHAR, texte libre affiché partout dans le frontend)
+// sont conservées telles quelles pour ne rien casser ; ces nouvelles
+// colonnes DATE servent de source de vérité pour calculer le statut
+// automatiquement. Un import "best effort" tente de déduire les dates
+// à partir du texte existant, sans jamais rien écraser d'incertain.
+await client.query(`
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='concours' AND column_name='date_ouverture'
+    ) THEN
+      ALTER TABLE concours ADD COLUMN date_ouverture DATE;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='concours' AND column_name='date_cloture'
+    ) THEN
+      ALTER TABLE concours ADD COLUMN date_cloture DATE;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='concours' AND column_name='statut_auto'
+    ) THEN
+      -- Si TRUE (par défaut), le statut est recalculé chaque nuit à
+      -- partir de date_ouverture/date_cloture. Un admin peut le passer
+      -- à FALSE pour forcer un statut manuel (cas particulier, report...).
+      ALTER TABLE concours ADD COLUMN statut_auto BOOLEAN DEFAULT TRUE;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='concours' AND column_name='date_verifiee'
+    ) THEN
+      -- FALSE = dates saisies à titre indicatif (ex: bibliothèque de
+      -- départ scripts/seed-concours-ci.js, basée sur le calendrier
+      -- habituel de chaque concours), pas encore confirmées contre un
+      -- communiqué officiel de l'année en cours. Un admin passe ce
+      -- champ à TRUE dans /admin/concours une fois la date vérifiée —
+      -- ça fait disparaître le badge d'alerte correspondant.
+      ALTER TABLE concours ADD COLUMN date_verifiee BOOLEAN DEFAULT TRUE;
+    END IF;
+  END $$;
+`);
+
+// Contrainte anti-doublon (Lot 18 — répond directement au problème
+// "certains concours sont répétés") : un même titre ne peut plus être
+// enregistré deux fois pour le même organisme. Posée en best-effort :
+// si des doublons existent déjà, on log un avertissement au lieu de
+// bloquer le démarrage (l'admin doit alors les nettoyer manuellement
+// avant que la contrainte puisse être appliquée).
+await client.query(`
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint WHERE conname = 'concours_titre_organisme_uniq'
+    ) THEN
+      ALTER TABLE concours ADD CONSTRAINT concours_titre_organisme_uniq UNIQUE (titre, organisme);
+    END IF;
+  EXCEPTION WHEN unique_violation OR others THEN
+    RAISE NOTICE 'Contrainte anti-doublon concours non posée (doublons existants à nettoyer manuellement).';
+  END $$;
+`).catch((err) => console.warn("⚠️  Contrainte anti-doublon concours non posée :", err.message));
+
+// Catalogue de référence (Lot 18) — les grands concours récurrents de
+// Côte d'Ivoire, pour que la plateforme ne parte jamais d'une liste
+// vide même avant que la détection automatique ou un admin n'aient
+// renseigné les dates précises de la session en cours. Volontairement
+// SANS dates exactes (date_ouverture/date_cloture laissées NULL,
+// statut_auto = FALSE) : seules les vraies dates officielles doivent
+// déclencher un changement de statut automatique — celles ci-dessous
+// sont des fenêtres indicatives à confirmer par un admin. Ne s'exécute
+// qu'une fois par concours grâce à ON CONFLICT DO NOTHING (contrainte
+// ci-dessus), donc aucun risque de doublon au redémarrage.
+const CATALOGUE_REFERENCE = [
+  { titre: "Concours CAFOP — Instituteur adjoint", organisme: "CAFOP (Centre d'Animation et de Formation Pédagogique)", categorie: "Enseignement", niveau: "BEPC", ouverture: "Décembre (indicatif, à confirmer)", cloture: "Février (indicatif, à confirmer)" },
+  { titre: "Concours ENA — Cycles moyen supérieur et supérieur", organisme: "École Nationale d'Administration (ENA)", categorie: "Administration", niveau: "Bac+2 à Bac+4 selon le cycle", ouverture: "Mars (indicatif, à confirmer)", cloture: "Avril (indicatif, à confirmer)" },
+  { titre: "Concours ENS — Professeur de collège/lycée", organisme: "École Normale Supérieure (ENS)", categorie: "Enseignement", niveau: "Licence/Bac+3", ouverture: "Février (indicatif, à confirmer)", cloture: "Avril (indicatif, à confirmer)" },
+  { titre: "Concours INFAS — Auxiliaire de santé, infirmier, sage-femme", organisme: "Institut National de Formation des Agents de Santé (INFAS)", categorie: "Santé", niveau: "BEPC à Bac selon la filière", ouverture: "Juin (indicatif, à confirmer)", cloture: "Juillet (indicatif, à confirmer)" },
+  { titre: "Concours administratifs — Fonction Publique", organisme: "Ministère de la Fonction Publique et de la Modernisation de l'Administration", categorie: "Fonction Publique", niveau: "Variable selon le poste (BEPC à Bac+5)", ouverture: "Mars (indicatif, à confirmer)", cloture: "Avril/Juin (indicatif, à confirmer)" },
+  { titre: "Concours Police Nationale — Sous-officier", organisme: "Police Nationale de Côte d'Ivoire", categorie: "Sécurité", niveau: "BEPC/Bac selon le grade visé", ouverture: null, cloture: null },
+  { titre: "Concours Gendarmerie Nationale — Sous-officier", organisme: "Gendarmerie Nationale de Côte d'Ivoire", categorie: "Sécurité", niveau: "BEPC/Bac selon le grade visé", ouverture: null, cloture: null },
+  { titre: "Concours Douanes Ivoiriennes", organisme: "Direction Générale des Douanes", categorie: "Sécurité", niveau: "BEPC/Bac selon le grade visé", ouverture: null, cloture: null },
+  { titre: "Concours Eaux et Forêts", organisme: "Ministère des Eaux et Forêts", categorie: "Sécurité", niveau: "BEPC/Bac selon le grade visé", ouverture: "Annonce attendue en début d'année (à confirmer)", cloture: null },
+  { titre: "Concours de recrutement militaire", organisme: "Ministère de la Défense de Côte d'Ivoire", categorie: "Armée", niveau: "Variable selon le corps", ouverture: null, cloture: null },
+  { titre: "Concours INFJ — Magistrat et greffier", organisme: "Institut National de Formation Judiciaire (INFJ)", categorie: "Justice", niveau: "Licence en droit (magistrat) / BEPC-Bac (greffier)", ouverture: null, cloture: null },
+  { titre: "Concours INJS — Formation aux métiers du sport et de la jeunesse", organisme: "Institut National de la Jeunesse et des Sports (INJS)", categorie: "Jeunesse et Sports", niveau: "BEPC à Bac selon la filière", ouverture: null, cloture: null },
+  { titre: "Concours IPNETP — Enseignement technique et professionnel", organisme: "Institut Pédagogique National de l'Enseignement Technique et Professionnel (IPNETP)", categorie: "Enseignement", niveau: "Bac à Bac+3 selon la filière", ouverture: null, cloture: null },
+  { titre: "Concours INSFS — Travail social", organisme: "Institut National Supérieur de Formation Sociale (INSFS)", categorie: "Social", niveau: "BEPC à Bac selon la filière", ouverture: null, cloture: null },
+  { titre: "Concours ENSTP — Travaux publics", organisme: "École Nationale Supérieure des Travaux Publics (ENSTP)", categorie: "Ingénierie", niveau: "Bac à Bac+2 selon la filière", ouverture: null, cloture: null },
+];
+
+for (const c of CATALOGUE_REFERENCE) {
+  await client.query(
+    `INSERT INTO concours (titre, organisme, categorie, niveau, ouverture, cloture, statut, statut_auto, conditions)
+     VALUES ($1,$2,$3,$4,$5,$6,'à venir', FALSE, $7)
+     ON CONFLICT (titre, organisme) DO NOTHING`,
+    [
+      c.titre, c.organisme, c.categorie, c.niveau, c.ouverture, c.cloture,
+      "Dates et conditions précises à confirmer sur le communiqué officiel de l'organisme — fiche créée à titre indicatif pour référencer ce concours récurrent, complétez-la dès l'ouverture officielle de la session.",
+    ],
+  ).catch(() => {}); // si la contrainte anti-doublon n'a pas pu être posée plus haut, on ignore plutôt que de planter le démarrage
+}
+
+// Import "best effort" ponctuel : pour les concours déjà en base sans
+// date_ouverture/date_cloture, on tente de parser le texte existant
+// (formats "15 mars 2026" ou "2026-03-15"). Ne touche jamais aux lignes
+// déjà pourvues d'une vraie date, et ignore silencieusement ce qu'il
+// n'arrive pas à comprendre (mieux vaut une date absente qu'une date
+// fausse déduite au hasard).
+await client.query(`
+  UPDATE concours
+  SET date_cloture = to_date(cloture, 'DD Month YYYY')
+  WHERE date_cloture IS NULL
+    AND cloture ~* '^[0-9]{1,2} (janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre) [0-9]{4}$'
+`).catch(() => {}); // la locale FR de to_date() n'est pas garantie sur tous les serveurs Postgres — on ignore l'échec plutôt que de bloquer le démarrage
+await client.query(`
+  UPDATE concours
+  SET date_cloture = cloture::date
+  WHERE date_cloture IS NULL AND cloture ~ '^\\d{4}-\\d{2}-\\d{2}$'
+`).catch(() => {});
+await client.query(`
+  UPDATE concours
+  SET date_ouverture = ouverture::date
+  WHERE date_ouverture IS NULL AND ouverture ~ '^\\d{4}-\\d{2}-\\d{2}$'
+`).catch(() => {});
+
 // Ajoute les champs "fiche enrichie" à concours si absents (Lot 7 —
 // historique, salaire/débouchés, adresse pour la carte, communiqués
 // officiels et FAQ spécifique au concours). Additif et nullable/vide
