@@ -13,15 +13,22 @@
 //   3. Chaque article est haché (titre + lien) pour éviter les
 //      doublons en base (ON CONFLICT DO NOTHING).
 //
-//  ⚠️ Important : les URLs de flux par défaut ci-dessous sont
-//  des flux publics de médias ivoiriens généralistes. Comme cet
-//  environnement de développement n'a pas d'accès réseau pour
-//  les vérifier en direct, vérifie/ajuste-les une fois en ligne
-//  (ex: via un test manuel sur POST /api/actualites/actualiser
-//  ou en consultant les logs Railway). Tu peux aussi surcharger
-//  entièrement la liste via la variable d'environnement
-//  ACTUALITES_FLUX_URLS (séparées par des virgules), par ex.
-//  pour brancher un flux ablanian.ci si celui-ci en expose un.
+//  ⚠️ Recherche effectuée (08/2026) pour trouver des flux RSS fiables
+//  de médias ivoiriens (Fraternité Matin, Abidjan.net, AIP) : aucune
+//  URL de flux RSS actuelle et fonctionnelle n'a pu être confirmée
+//  avec certitude — ces sites ont soit changé de plateforme
+//  (Fraternité Matin a migré vers beta.fratmat.info), soit bloquent
+//  l'accès automatisé (robots.txt), soit n'ont pas de flux RSS
+//  identifiable. C'est pour ça que les logs de production montraient
+//  des erreurs 404 sur ces deux URLs. Plutôt que de deviner de
+//  nouvelles URLs probablement cassées aussi, aucune source par
+//  défaut n'est fournie : configure ACTUALITES_FLUX_URLS (variable
+//  d'environnement, URLs séparées par des virgules) avec de vraies
+//  URLs de flux RSS que tu as vérifiées toi-même au préalable (colle
+//  l'URL dans un lecteur RSS ou ouvre-la dans un navigateur — un vrai
+//  flux RSS affiche du XML, pas une page d'erreur). Sans cette
+//  variable, ce service ne fait simplement rien, sans erreur ni
+//  fausse information.
 // ============================================================
 
 const Parser = require("rss-parser");
@@ -31,13 +38,6 @@ const Actualite = require("../models/Actualite");
 
 const parser = new Parser({ timeout: 10000 });
 
-// ── Sources par défaut (modifiables sans toucher au code) ────
-const SOURCES_PAR_DEFAUT = [
-  { nom: "Fraternité Matin", url: "https://www.fratmat.info/feed", tag: "Actualité" },
-  { nom: "Abidjan.net",      url: "https://news.abidjan.net/xml/rss.xml", tag: "Actualité" },
-  { nom: "AIP",              url: "https://aip.ci/feed/", tag: "Actualité" },
-];
-
 function chargerSources() {
   if (process.env.ACTUALITES_FLUX_URLS) {
     return process.env.ACTUALITES_FLUX_URLS.split(",")
@@ -45,7 +45,7 @@ function chargerSources() {
       .filter(Boolean)
       .map((url) => ({ nom: new URL(url).hostname.replace("www.", ""), url, tag: "Actualité" }));
   }
-  return SOURCES_PAR_DEFAUT;
+  return [];
 }
 
 // ── Mots-clés définissant ce qui intéresse EduConcoursCI ─────

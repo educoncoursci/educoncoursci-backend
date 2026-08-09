@@ -144,7 +144,25 @@ function chargerRequetesGoogle() {
   if (process.env.GOOGLE_SEARCH_REQUETES) {
     return process.env.GOOGLE_SEARCH_REQUETES.split(",").map((q) => q.trim()).filter(Boolean);
   }
-  return ["emploi recrutement Côte d'Ivoire"];
+  // Requêtes ciblées avec l'opérateur site: sur les plateformes emploi
+  // légitimes identifiées pour la Côte d'Ivoire (voir liste complète
+  // et statut gratuit/payant en tête de fichier). CoinAfrique, Afribaba,
+  // Jumia Deals et les groupes Facebook sont volontairement exclus de
+  // cette liste par défaut : ce sont des petites annonces informelles,
+  // sans structure d'offre standardisée, plus difficiles à filtrer
+  // proprement et plus exposées aux fausses annonces — un admin peut
+  // les ajouter explicitement via GOOGLE_SEARCH_REQUETES s'il le
+  // souhaite, en connaissance de cause. LinkedIn est exclu car son
+  // scraping est interdit par ses CGU (voir note de tête de fichier).
+  return [
+    "site:emploi.educarriere.ci recrutement",
+    "site:rmo-jobcenter.com offre emploi",
+    "site:novojob.com/cote-d-ivoire",
+    "site:jobmejobs.com Côte d'Ivoire",
+    "site:ci.trabajo.org",
+    "site:fr.indeed.com emploi Côte d'Ivoire",
+    "site:agenceemploijeunes.ci offre",
+  ];
 }
 
 async function rechercherViaGoogle(requete) {
