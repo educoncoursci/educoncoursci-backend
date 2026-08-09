@@ -57,6 +57,12 @@ origin: (origin, callback) => {
 if (!origin || originesAutorisees.includes(origin)) {
 callback(null, true);
 } else {
+// Journalisé côté serveur (visible dans les logs Railway) — ça
+// permet de savoir immédiatement si un problème de connexion
+// frontend/backend vient de CORS (ex: FRONTEND_URL mal configurée
+// sur Railway) plutôt que de deviner depuis la console du
+// navigateur seule.
+console.warn(`⚠️  CORS refusé pour l'origine "${origin}" — vérifie FRONTEND_URL sur Railway. Origines autorisées : ${originesAutorisees.join(", ")}`);
 callback(new Error("CORS non autorisé pour cette origine"));
 }
 },
@@ -64,7 +70,17 @@ credentials: true,
 }));
 
 // ── Parsers ───────────────────────────────────────────────────
-app.use(express.json({ limit: "10mb" }));
+// L'option verify capture le corps brut de la requête dans
+// req.rawBody, nécessaire pour vérifier la signature HMAC-SHA256 du
+// webhook Wave (controllers/paymentController.js → webhookWave) —
+// le JSON re-sérialisé par Express ne redonnerait pas exactement le
+// même buffer que celui signé par Wave (ordre des clés, espaces).
+// N'affecte aucune autre route : req.body reste disponible partout
+// comme avant, req.rawBody est juste une info supplémentaire.
+app.use(express.json({
+  limit: "10mb",
+  verify: (req, res, buf) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ── Fichiers statiques (PDFs uploadés) ───────────────────────
@@ -151,6 +167,7 @@ try {
 require("./services/actualitesFeed").demarrerPlanification(); // Flux d'actualités en continu
 require("./services/emploiFeed").demarrerPlanification();      // Agrégation des offres d'emploi externes
 require("./services/rappelsScheduler").demarrerPlanification(); // Rappels de clôture J-7/J-3/J-1 (Module 4)
+require("./services/transactionsScheduler").demarrerPlanification(); // Nettoyage des transactions de paiement abandonnées
 require("./services/concoursStatutScheduler").demarrerPlanification(); // Lot 18 — statut automatique des concours
 require("./services/concoursFeed").demarrerPlanification(); // Lot 18 — détection automatique de nouveaux concours
 app.listen(PORT, () => {

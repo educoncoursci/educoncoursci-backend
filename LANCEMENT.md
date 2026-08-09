@@ -142,3 +142,20 @@ communiqués officiels.
   peut être ajouté progressivement après le lancement.
 - Nom de domaine personnalisé — l'URL Netlify actuelle fonctionne
   très bien pour démarrer et valider le marché.
+
+## Activer la détection automatique d'offres d'emploi (optionnel)
+
+Le site peut agréger automatiquement des offres depuis Educarriere,
+RMO, Novojob, JobMe, Trabajo, Indeed et l'Agence Emploi Jeunes — mais
+ça nécessite une clé Google gratuite (100 requêtes/jour) :
+
+1. https://programmablesearchengine.google.com/ → créer un moteur de
+   recherche → récupérer l'identifiant "cx".
+2. https://console.cloud.google.com/apis/library/customsearch.googleapis.com
+   → activer l'API, créer une clé API.
+3. Sur Railway, renseigner `GOOGLE_SEARCH_API_KEY` et
+   `GOOGLE_SEARCH_CX` — les requêtes ciblées sur ces plateformes sont
+   déjà incluses par défaut dans le code, rien d'autre à configurer.
+
+Sans ces clés, le site fonctionne normalement — seule cette détection
+automatique reste inactive.
