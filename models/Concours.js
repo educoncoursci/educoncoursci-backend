@@ -56,6 +56,7 @@ const Concours = {
     dateCloture,
     statutAuto,
     dateVerifiee,
+    lienOfficiel,
   }) {
     // Lot 18 — si de vraies dates sont fournies, elles priment : on en
     // déduit le texte affiché et le statut automatiquement, plutôt que
@@ -72,9 +73,9 @@ const Concours = {
          niveau, conditions, pieces, centres, premium, statut, couleur,
          structure_id, age_min, age_max, sexe,
          historique, salaire, debouches, adresse, communiques, faq,
-         date_ouverture, date_cloture, statut_auto, date_verifiee)
+         date_ouverture, date_cloture, statut_auto, date_verifiee, lien_officiel)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
-               $19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
+               $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29)
        RETURNING *`,
       [
         titre,
@@ -105,6 +106,7 @@ const Concours = {
         dateCloture || null,
         statutAuto !== false,
         dateVerifiee !== false,
+        lienOfficiel || null,
       ],
     );
     return formatConcours(result.rows[0]);
@@ -198,6 +200,7 @@ const Concours = {
       dateCloture,
       statutAuto,
       dateVerifiee,
+      lienOfficiel,
     } = fields;
 
     // Lot 18 — si une nouvelle date est fournie, on régénère le texte
@@ -246,8 +249,9 @@ const Concours = {
         date_ouverture = COALESCE($25, date_ouverture),
         date_cloture   = COALESCE($26, date_cloture),
         statut_auto    = COALESCE($27, statut_auto),
-        date_verifiee  = COALESCE($28, date_verifiee)
-       WHERE id = $29
+        date_verifiee  = COALESCE($28, date_verifiee),
+        lien_officiel  = COALESCE($29, lien_officiel)
+       WHERE id = $30
        RETURNING *`,
       [
         titre,
@@ -278,6 +282,7 @@ const Concours = {
         dateCloture,
         statutAuto,
         dateVerifieeFinale,
+        lienOfficiel,
         id,
       ],
     );

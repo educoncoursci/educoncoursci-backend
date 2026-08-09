@@ -47,6 +47,27 @@ const result = await query(
 return result.rows[0] || null;
 },
 
+// ── Marque comme "échoué" les transactions restées "en attente"
+// trop longtemps (ex: client qui ferme l'onglet avant de payer, ou
+// qui abandonne dans Wave/CinetPay sans jamais aller au bout). Sans
+// ça, ces transactions restent indéfiniment "en attente" — elles
+// polluent /admin/paiements avec des demandes fantômes, et rien ne
+// dit à l'utilisateur que sa tentative n'a pas abouti. Un client qui
+// paie réellement via Wave ou CinetPay le fait en quelques minutes,
+// donc 24h est une marge large avant de considérer l'essai comme
+// abandonné. Retourne le nombre de transactions marquées.
+async marquerExpireesCommeEchouees(heuresMax = 24) {
+const result = await query(
+`UPDATE transactions
+ SET statut = 'échoué'
+ WHERE statut = 'en attente'
+   AND date < NOW() - INTERVAL '1 hour' * $1
+ RETURNING id, tx_id, email, plan`,
+[heuresMax],
+);
+return result.rows;
+},
+
 // ── Historique d'un utilisateur ─────────────────────────────
 async findByUser(userId) {
 const result = await query(

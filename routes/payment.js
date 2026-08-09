@@ -34,4 +34,8 @@ router.post("/resiliation", auth, admin, ctrl.resilier); // POST /api/payment/re
 router.post("/cinetpay/initier", auth, ctrl.initierCinetPay);  // POST /api/payment/cinetpay/initier
 router.post("/cinetpay/webhook", ctrl.webhookCinetPay);        // POST /api/payment/cinetpay/webhook (public — appelé par CinetPay)
 
+// ── Wave (API Checkout officielle) ──────────────────────────────
+router.post("/wave/initier", auth, ctrl.initierWave);  // POST /api/payment/wave/initier
+router.post("/wave/webhook", ctrl.webhookWave);         // POST /api/payment/wave/webhook (public — appelé par Wave)
+
 module.exports = router;
