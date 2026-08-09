@@ -861,6 +861,15 @@ await client.query(`
       -- ça fait disparaître le badge d'alerte correspondant.
       ALTER TABLE concours ADD COLUMN date_verifiee BOOLEAN DEFAULT TRUE;
     END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='concours' AND column_name='lien_officiel'
+    ) THEN
+      -- Lien vers le communiqué ou la plateforme d'inscription
+      -- officielle de l'organisme (ex: insfs.ciconcours.com) — permet
+      -- à l'utilisateur de vérifier l'information à la source.
+      ALTER TABLE concours ADD COLUMN lien_officiel TEXT;
+    END IF;
   END $$;
 `);
 

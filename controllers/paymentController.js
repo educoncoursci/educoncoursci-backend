@@ -45,7 +45,7 @@ if (plan && PLANS[plan]) {
   };
 }
 
-res.json({ plans, instructions, cinetpayDisponible: CinetPay.API_CONFIGUREE });
+res.json({ plans, instructions, cinetpayDisponible: CinetPay.API_CONFIGUREE, waveApiDisponible: Wave.API_CONFIGUREE });
 
 } catch (err) {
 console.error("Erreur getPlans :", err.message);
@@ -87,7 +87,7 @@ const txIdNormalise = service.normaliserTxId(txId);
 const formatValide = service.validerFormatId(txIdNormalise);
 
 const LABELS_MOYEN = { wave: "Wave", orange: "Orange Money", mtn: "MTN Money", moov: "Moov Money" };
-const EXEMPLES_MOYEN = { wave: "123456789012", orange: "987654321", mtn: "MP-AB1234567", moov: "MV-AB1234567" };
+const EXEMPLES_MOYEN = { wave: "T_5L7D2SFHD3VMTIPJ", orange: "987654321", mtn: "MP-AB1234567", moov: "MV-AB1234567" };
 
 if (!formatValide) {
   return res.status(400).json({
@@ -360,5 +360,117 @@ exports.webhookCinetPay = async (req, res) => {
   } catch (err) {
     console.error("Erreur webhook CinetPay :", err.message);
     res.status(200).send("OK"); // on renvoie 200 quoi qu'il arrive pour éviter les re-essais en boucle de CinetPay
+  }
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/payment/wave/initier — Démarrer un paiement Wave via
+//  l'API officielle Wave Checkout (connecté requis). Le montant est
+//  déterminé UNIQUEMENT par le plan choisi (jamais par une valeur
+//  envoyée par le frontend) — voir PLANS ci-dessus. Contrairement au
+//  lien statique ou au mode manuel, aucune saisie d'ID de transaction
+//  n'est nécessaire : Wave confirme lui-même via webhook dès que le
+//  paiement aboutit, avec le montant déjà attaché à la session.
+// ════════════════════════════════════════════════════════════
+exports.initierWave = async (req, res) => {
+  try {
+    if (!Wave.API_CONFIGUREE) {
+      return res.status(503).json({
+        error: "Le paiement Wave via API n'est pas encore configuré sur ce serveur. Utilise le mode manuel Wave en attendant.",
+      });
+    }
+
+    const { plan } = req.body;
+    if (!PLANS[plan]) {
+      return res.status(400).json({ error: `Plan invalide. Plans disponibles : ${Object.keys(PLANS).join(", ")}` });
+    }
+
+    // Le montant vient exclusivement de PLANS[plan], jamais du corps
+    // de la requête — un utilisateur ne peut donc pas modifier le
+    // montant côté frontend pour payer moins cher.
+    const { montant } = PLANS[plan];
+    const transactionId = `WV-${req.user.id}-${Date.now()}`;
+
+    const { paymentUrl, sessionId } = await Wave.creerSessionPaiement({
+      transactionId,
+      montant,
+      successUrl: process.env.WAVE_SUCCESS_URL || `${process.env.FRONTEND_URL}/dashboard/paiements.html?statut=succes`,
+      errorUrl: process.env.WAVE_ERROR_URL || `${process.env.FRONTEND_URL}/dashboard/paiements.html?statut=echec`,
+    });
+
+    await Transaction.create({
+      txId: transactionId,
+      userId: req.user.id,
+      email: req.user.email,
+      moyen: "Wave (API)",
+      plan,
+      montant,
+      statut: "en attente",
+      // sessionId Wave stocké dans txId côté recherche webhook — voir
+      // webhookWave ci-dessous, qui retrouve la transaction par
+      // client_reference (= transactionId envoyé à Wave).
+    });
+
+    res.json({ paymentUrl, transactionId, sessionId });
+  } catch (err) {
+    console.error("Erreur initiation Wave :", err.message);
+    res.status(500).json({ error: err.message || "Erreur lors de l'initialisation du paiement Wave." });
+  }
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/payment/wave/webhook — Notification Wave (public)
+//  Appelé automatiquement par Wave quand un paiement aboutit ou
+//  échoue (événement checkout.session.completed). Ne JAMAIS faire
+//  confiance au corps de la requête seul : on vérifie d'abord la
+//  signature HMAC-SHA256 (WAVE_WEBHOOK_SECRET), PUIS on revérifie le
+//  statut auprès de l'API Wave avant d'activer quoi que ce soit —
+//  même principe de défense en profondeur que webhookCinetPay.
+//
+//  Important : la vérification de signature a besoin du corps BRUT
+//  de la requête (avant parsing JSON) — voir server.js, qui doit
+//  exposer req.rawBody pour cette route spécifiquement.
+// ════════════════════════════════════════════════════════════
+exports.webhookWave = async (req, res) => {
+  try {
+    const signature = req.headers["wave-signature"] || req.headers["authorization"]?.replace("Bearer ", "");
+    const corpsBrut = req.rawBody || JSON.stringify(req.body);
+
+    if (!Wave.verifierSignatureWebhook(corpsBrut, signature)) {
+      console.error("Webhook Wave : signature invalide, requête ignorée.");
+      return res.status(401).send("Signature invalide");
+    }
+
+    const evenement = req.body;
+    if (evenement.type !== "checkout.session.completed") {
+      return res.status(200).send("OK"); // événement non pertinent, ignoré sans erreur
+    }
+
+    const sessionId = evenement.data?.id;
+    const clientReference = evenement.data?.client_reference;
+    if (!sessionId || !clientReference) return res.status(400).send("Données manquantes");
+
+    const transaction = await Transaction.findByTxId(clientReference);
+    if (!transaction) return res.status(200).send("OK"); // transaction inconnue, on ignore silencieusement
+
+    // Revérification systématique auprès de l'API Wave — jamais de
+    // confiance aveugle dans le corps du webhook, même signé.
+    const verification = await Wave.verifierSessionPaiement(sessionId);
+
+    if (verification.succes && transaction.statut !== "validé") {
+      const { dureeJours } = PLANS[transaction.plan] || {};
+      if (dureeJours) {
+        const expiration = Wave.calculerExpiration(dureeJours);
+        await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
+        await Transaction.updateStatut(transaction.id, "validé");
+      }
+    } else if (!verification.succes) {
+      await Transaction.updateStatut(transaction.id, "échoué");
+    }
+
+    res.status(200).send("OK");
+  } catch (err) {
+    console.error("Erreur webhook Wave :", err.message);
+    res.status(200).send("OK"); // on renvoie 200 quoi qu'il arrive pour éviter les re-essais en boucle de Wave
   }
 };
