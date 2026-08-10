@@ -30,8 +30,7 @@ const PAIEMENT = [
 ];
 
 const OPTIONNEL = [
-  ["EMAIL_HOST", "Les emails transactionnels (bienvenue, reçu de paiement...) ne partiront pas."],
-  ["EMAIL_USER", "Les emails transactionnels (bienvenue, reçu de paiement...) ne partiront pas."],
+  ["BREVO_API_KEY", "Les emails transactionnels (bienvenue, reçu de paiement, reset mot de passe...) ne partiront pas."],
   ["ANTHROPIC_API_KEY", "L'assistant IA sera indisponible."],
   ["GOOGLE_SEARCH_API_KEY", "La détection automatique de nouveaux concours restera limitée aux flux RSS."],
   ["VAPID_PUBLIC_KEY", "Les notifications push navigateur seront indisponibles."],

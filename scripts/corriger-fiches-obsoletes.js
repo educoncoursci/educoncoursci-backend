@@ -105,6 +105,12 @@ const FICHES_A_RETIRER = [
   // génériques (${AN}), remplacé avec les vraies conditions et dates
   // de la session 2026 confirmées par le communiqué officiel.
   { titre: "Recrutement Militaire des Forces Armées (FACI)", organisme: "Forces Armées de Côte d'Ivoire (FACI)" },
+  // Assistant Social INSFS — retiré à la demande explicite de
+  // l'utilisateur (le concours existe mais n'est pas lancé cette
+  // année ; plutôt que de le garder visible avec un statut "fermé",
+  // il ne doit plus apparaître du tout tant qu'une nouvelle session
+  // n'est pas officiellement annoncée).
+  { titre: "Concours INSFS — Assistant Social (non lancé en 2026)", organisme: "Institut National Supérieur de Formation Sociale (INSFS)" },
 ];
 
 (async () => {

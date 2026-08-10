@@ -1,36 +1,39 @@
 // ============================================================
 //  services/email.js
-//  Envoi d'e-mails via Nodemailer (Gmail SMTP).
+//  Envoi d'e-mails via l'API HTTPS de Brevo (ex-Sendinblue).
 //  Utilisé pour : bienvenue, paiement, alertes concours,
-//                 scores QCM, rappels clôture.
+//                 scores QCM, rappels clôture, reset mot de passe.
+//
+//  ⚠️ Pourquoi l'API HTTPS et pas le SMTP (Gmail/Yahoo) ?
+//  Railway bloque les connexions SMTP sortantes sur son plan
+//  gratuit/Hobby (confirmé en production : "Connection timeout" sur
+//  smtp.mail.yahoo.com, alors que les identifiants étaient corrects).
+//  L'API Brevo passe par une requête HTTPS classique (comme n'importe
+//  quel appel à l'API du site) — elle n'est jamais bloquée, gratuite
+//  jusqu'à 300 emails/jour. Voir BREVO_API_KEY dans .env.example.
 // ============================================================
 
-const nodemailer = require("nodemailer");
+const fetch = require("node-fetch");
 
-// ── Configuration du transporteur SMTP ───────────────────────
-let transporter = null;
-
-function getTransporter() {
-if (transporter) return transporter;
-
-const port = parseInt(process.env.EMAIL_PORT) || 587;
-
-transporter = nodemailer.createTransport({
-host:   process.env.EMAIL_HOST || "smtp.gmail.com",
-port,
-secure: port === 465, // 465 = SSL implicite ; 587 = STARTTLS (secure:false, upgrade automatique)
-auth: {
-user: process.env.EMAIL_USER,
-pass: process.env.EMAIL_PASS,
-},
-});
-
-return transporter;
-}
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
 // L'envoi est-il réellement configuré ? (sinon on simule pour ne jamais planter)
 function emailConfigure() {
-return Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+return Boolean(process.env.BREVO_API_KEY);
+}
+
+// Conservé pour compatibilité avec scripts/test-email.js — l'ancien
+// test appelait getTransporter().verify() (spécifique à Nodemailer/
+// SMTP) ; avec l'API HTTPS il n'y a pas de connexion à "vérifier" à
+// l'avance de la même façon, donc cette fonction sert seulement à
+// exposer l'URL/la config utilisée pour un diagnostic simple.
+function getTransporter() {
+return {
+verify: async () => {
+  if (!emailConfigure()) throw new Error("BREVO_API_KEY absente.");
+  return true;
+},
+};
 }
 
 // ── Template HTML de base ────────────────────────────────────
@@ -94,33 +97,54 @@ return `
 
 // ── Envoi générique ──────────────────────────────────────────
 async function envoyer({ to, subject, html, text }) {
-// Si EMAIL_USER/EMAIL_PASS ne sont pas configurés, on simule TOUJOURS
-// (peu importe NODE_ENV) plutôt que de laisser Nodemailer échouer avec
-// des identifiants vides — c'était le bug : en production sans ces
-// variables, l'envoi échouait silencieusement (erreur avalée par le
-// try/catch appelant) et l'utilisateur ne recevait jamais rien, sans
-// qu'aucune erreur claire n'apparaisse.
+// Si BREVO_API_KEY n'est pas configurée, on simule TOUJOURS (peu
+// importe NODE_ENV) plutôt que de laisser la requête échouer — sans
+// ça, en production sans cette variable, l'envoi échouerait
+// silencieusement (erreur avalée par le try/catch appelant) et
+// l'utilisateur ne recevrait jamais rien, sans qu'aucune erreur
+// claire n'apparaisse dans les logs.
 if (!emailConfigure()) {
 console.warn(
-  `⚠️  E-mail NON envoyé (EMAIL_USER/EMAIL_PASS absents) → ${to} | Sujet: ${subject}. ` +
-  `Configure ces variables sur ton hébergeur pour activer l'envoi réel.`,
+  `⚠️  E-mail NON envoyé (BREVO_API_KEY absente) → ${to} | Sujet: ${subject}. ` +
+  `Configure cette variable sur Railway pour activer l'envoi réel.`,
 );
 return { simule: true, to, subject };
 }
 
-const transport = getTransporter();
+const nomExpediteur = (process.env.EMAIL_FROM || "EduConcoursCI <noreply@educoncoursci.ci>")
+.match(/^(.*?)\s*<(.+)>$/);
+const senderName  = nomExpediteur ? nomExpediteur[1].trim() : "EduConcoursCI";
+const senderEmail = nomExpediteur ? nomExpediteur[2].trim() : (process.env.EMAIL_FROM || "noreply@educoncoursci.ci");
 
-const info = await transport.sendMail({
-from:    process.env.EMAIL_FROM || `EduConcoursCI <noreply@educoncoursci.ci>`,
-to,
-subject,
-html:    html || templateBase(subject, `<p>${text}</p>`),
-text:    text || subject,
+const response = await fetch(BREVO_API_URL, {
+method: "POST",
+headers: {
+  "accept": "application/json",
+  "api-key": process.env.BREVO_API_KEY,
+  "content-type": "application/json",
+},
+body: JSON.stringify({
+  sender: { name: senderName, email: senderEmail },
+  to: [{ email: to }],
+  subject,
+  htmlContent: html || templateBase(subject, `<p>${text}</p>`),
+  textContent: text || subject,
+}),
 });
 
-console.log(`✅ E-mail envoyé → ${to} | Sujet: ${subject} | id: ${info.messageId}`);
-return { messageId: info.messageId, to };
+const data = await response.json();
+
+if (!response.ok) {
+// Cause la plus fréquente à ce stade : l'adresse dans EMAIL_FROM
+// n'est pas un expéditeur vérifié dans Brevo (obligatoire — voir
+// .env.example). Le message d'erreur de Brevo l'indique clairement.
+throw new Error(data.message || `Erreur Brevo (${response.status})`);
 }
+
+console.log(`✅ E-mail envoyé → ${to} | Sujet: ${subject} | id: ${data.messageId}`);
+return { messageId: data.messageId, to };
+}
+
 
 // ════════════════════════════════════════════════════════════
 //  Templates e-mail spécifiques

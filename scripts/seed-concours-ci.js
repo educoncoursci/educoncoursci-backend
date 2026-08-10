@@ -200,32 +200,6 @@ const INSTITUTIONS = [
     dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026
   },
   {
-    titre: "Concours INSFS — Assistant Social (non lancé en 2026)",
-    organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
-    categorie: "Santé & Social",
-    niveau: "BEPC/BAC/DEUG (à confirmer selon la session)",
-    ageMin: 18, ageMax: 35,
-    frais: 33000,
-    // Ce concours existe réellement et a été lancé en 2023, mais n'est
-    // pas organisé chaque année — confirmé directement par l'utilisateur
-    // du projet (recoupement avec sources officielles à faire lors
-    // d'une prochaine session). Non lancé pour la session 2026, à la
-    // différence des 4 filières EP/EPA/ES/MESP qui, elles, sont bien
-    // actives cette année. Fiche conservée pour que le concours reste
-    // visible et identifiable, avec un statut clairement "fermé" plutôt
-    // que de disparaître entièrement du catalogue — à réactiver avec de
-    // vraies dates dès qu'une nouvelle session sera officiellement
-    // annoncée par l'INSFS.
-    dateOuverture: null, dateCloture: null,
-    statut: "fermé",
-    conditions: "Concours non lancé pour la session 2026 — dernière édition connue en 2023. Vérifier le site officiel de l'INSFS pour une éventuelle réouverture.",
-    pieces: [],
-    centres: ["Abidjan — INSFS Cocody"],
-    couleur: "#9CA3AF",
-    lienOfficiel: "https://insfs.ciconcours.com/",
-    dateVerifiee: true,
-  },
-  {
     titre: "Concours INJS — Jeunesse et Sports",
     organisme: "Institut National de la Jeunesse et des Sports (INJS)",
     categorie: "Fonction publique",
