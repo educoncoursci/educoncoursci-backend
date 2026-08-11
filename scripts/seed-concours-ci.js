@@ -34,7 +34,12 @@ require("dotenv").config();
 const { initDatabase, pool } = require("../config/database");
 const Concours = require("../models/Concours");
 
-const AN = new Date().getFullYear();
+// Note : toutes les fiches ci-dessous utilisent désormais des dates
+// vérifiées en dur (issues de sources officielles réelles) plutôt
+// qu'un calcul dynamique sur l'année courante — voir le commentaire
+// de chaque fiche pour sa source. Les quelques fiches sans date
+// confirmée (Police, Douanes, IPNETP, INJS) ont volontairement
+// dateOuverture/dateCloture à null plutôt qu'une date inventée.
 
 const INSTITUTIONS = [
   {
@@ -200,17 +205,25 @@ const INSTITUTIONS = [
     dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026
   },
   {
-    titre: "Concours INJS — Jeunesse et Sports",
+    titre: "Concours INJS — Professeur de Collège d'EPS (PC-EPS)",
     organisme: "Institut National de la Jeunesse et des Sports (INJS)",
     categorie: "Fonction publique",
     niveau: "BAC",
     ageMin: 18, ageMax: 30,
     frais: 3000,
-    dateOuverture: `${AN}-02-20`, dateCloture: `${AN}-04-30`,
-    conditions: "Titulaire du Baccalauréat. Bonne condition physique (épreuves sportives).",
-    pieces: ["Acte de naissance", "Copie du BAC", "Certificat médical d'aptitude sportive", "Casier judiciaire"],
-    centres: ["Abidjan — INJS Yopougon"],
+    // Plateforme officielle confirmée : concours.injsabidjan.net
+    // (source : ablanian.ci/concours_admin, youthmedia.net, 06/2026).
+    // Formation de 3 ans. Je n'ai pas trouvé de date précise de
+    // clôture pour la session 2026 dans mes recherches — à vérifier
+    // directement sur le site officiel avant publication, plutôt que
+    // d'afficher une date non confirmée.
+    dateOuverture: null, dateCloture: null,
+    conditions: "Titulaire du Baccalauréat (attestation de réussite ou diplôme). Certificat de visite médicale d'aptitude délivré exclusivement par le Centre de la Médecine du Sport de l'INJS. Bulletins de Seconde, Première et Terminale (ou livret scolaire).",
+    pieces: ["Attestation de réussite ou diplôme du Baccalauréat", "Bulletins de Seconde, Première et Terminale (ou livret scolaire)", "Certificat de visite médicale d'aptitude sportive (Centre de Médecine du Sport de l'INJS)", "Demande d'inscription (fiche bleue) adressée au Directeur Général de l'INJS"],
+    centres: ["Abidjan — INJS Marcory (salle 4)"],
     couleur: "#0A6EBD",
+    lienOfficiel: "https://concours.injsabidjan.net/preinscription.php",
+    dateVerifiee: false,
   },
   {
     titre: "Concours ENS — Professeur de Collège (CAP-PC)",

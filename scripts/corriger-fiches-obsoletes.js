@@ -111,6 +111,12 @@ const FICHES_A_RETIRER = [
   // il ne doit plus apparaître du tout tant qu'une nouvelle session
   // n'est pas officiellement annoncée).
   { titre: "Concours INSFS — Assistant Social (non lancé en 2026)", organisme: "Institut National Supérieur de Formation Sociale (INSFS)" },
+  // INJS — ancien titre trop générique ("Jeunesse et Sports" alors
+  // que le vrai concours vise spécifiquement le PC-EPS) et dates
+  // génériques (${AN}) jamais corrigées lors de l'audit précédent —
+  // oubli identifié et corrigé, remplacé par une fiche honnête sans
+  // fausse date (aucune date de session 2026 confirmée trouvée).
+  { titre: "Concours INJS — Jeunesse et Sports", organisme: "Institut National de la Jeunesse et des Sports (INJS)" },
 ];
 
 (async () => {
