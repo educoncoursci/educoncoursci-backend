@@ -6,7 +6,6 @@
 const path = require("path");
 const fs   = require("fs");
 const PDF  = require("../models/PDF");
-const User = require("../models/User");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/pdfs — Liste avec filtres
@@ -81,29 +80,12 @@ try {
 const pdf = await PDF.findById(req.params.id);
 if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
-// Vérifie les droits Premium — relit l'état réel en base plutôt que
-// de se fier à req.user.premium (qui vient du token JWT, valable 7
-// jours : un compte payé "1 Mois" peut avoir un Premium expiré en
-// base avant même que son token n'expire). Seulement quand le
-// document est effectivement premium — pas de coût inutile sur les
-// téléchargements gratuits.
-if (pdf.premium) {
-  let aAccesPremium = false;
-  if (req.user) {
-    if (req.user.role === "admin") {
-      aAccesPremium = true;
-    } else {
-      const utilisateurFrais = await User.findById(req.user.id);
-      const expirePassee = utilisateurFrais?.premium_expire && new Date(utilisateurFrais.premium_expire) < new Date();
-      aAccesPremium = utilisateurFrais?.premium === true && !expirePassee;
-    }
-  }
-  if (!aAccesPremium) {
-    return res.status(403).json({
-      error:   "Abonnement Premium requis pour télécharger ce document.",
-      premium: true,
-    });
-  }
+// Vérifie les droits Premium
+if (pdf.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true)) {
+  return res.status(403).json({
+    error:   "Abonnement Premium requis pour télécharger ce document.",
+    premium: true,
+  });
 }
 
 // Incrémenter le compteur

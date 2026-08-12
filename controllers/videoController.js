@@ -4,20 +4,6 @@
 // ============================================================
 
 const Video = require("../models/Video");
-const User  = require("../models/User");
-
-// Revérifie le statut Premium DIRECTEMENT EN BASE plutôt que de se
-// fier à req.user.premium (qui vient du token JWT, valable 7 jours —
-// un compte payé "1 Mois" peut avoir un Premium expiré en base avant
-// même que son token n'expire). Utilisée partout où ce contrôleur
-// décide de donner ou non accès à une vidéo premium.
-async function aAccesPremium(user) {
-if (!user) return false;
-if (user.role === "admin") return true;
-const frais = await User.findById(user.id);
-const expirePassee = frais?.premium_expire && new Date(frais.premium_expire) < new Date();
-return frais?.premium === true && !expirePassee;
-}
 
 // Extrait l'ID YouTube d'une URL
 function getYoutubeId(url) {
@@ -44,13 +30,10 @@ const videos = await Video.findAll({
   offset:   parseInt(offset) || 0,
 });
 
-// Calculé une seule fois pour toute la liste, pas par vidéo.
-const accesPremiumUtilisateur = await aAccesPremium(req.user);
-
 // Ajoute l'ID YouTube et la miniature pour chaque vidéo
 const videosFormatees = videos.map(v => {
   const ytId = getYoutubeId(v.url || "");
-  const verrouille = v.premium && !accesPremiumUtilisateur;
+  const verrouille = v.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true);
   return {
     ...v,
     youtube_id: ytId,
@@ -78,7 +61,7 @@ try {
 const video = await Video.findById(req.params.id);
 if (!video) return res.status(404).json({ error: "Vidéo introuvable." });
 
-if (video.premium && !(await aAccesPremium(req.user))) {
+if (video.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true)) {
   return res.status(403).json({
     error:   "Contenu réservé aux abonnés Premium.",
     premium: true,

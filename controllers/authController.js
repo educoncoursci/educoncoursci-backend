@@ -23,6 +23,28 @@ process.env.JWT_SECRET,
 );
 }
 
+// ── Vérifie si le Premium d'un utilisateur a expiré et le
+//    désactive en base le cas échéant. Utilisée par /login ET /me
+//    (avant ce correctif, seule /login faisait cette vérification :
+//    un abonnement expiré restait affiché "Premium" indéfiniment
+//    tant que l'utilisateur ne se déconnectait/reconnectait pas,
+//    puisque /me — rappelée à chaque chargement de page par
+//    rafraîchirProfil() — renvoyait premium tel quel sans contrôle
+//    de date). Renvoie le statut premium à jour (bool).
+async function verifierEtExpirerPremiumSiBesoin(user) {
+let premium = user.premium;
+if (premium && user.premium_expire) {
+const expire = new Date(user.premium_expire);
+if (expire < new Date()) {
+  await User.setPremium(user.id, { premium: false, plan: null, expire: null });
+  premium = false;
+  user.premium_plan   = null;
+  user.premium_expire = null;
+}
+}
+return premium;
+}
+
 // ── POST /api/auth/register ───────────────────────────────────
 const register = async (req, res) => {
 try {
@@ -124,19 +146,7 @@ if (user.two_factor_enabled) {
 }
 
 // Vérifier si le Premium a expiré
-let premium = user.premium;
-if (premium && user.premium_expire) {
-  const expire = new Date(user.premium_expire);
-  if (expire < new Date()) {
-    // Premium expiré — on le désactive automatiquement
-    await User.setPremium(user.id, {
-      premium: false,
-      plan:    null,
-      expire:  null,
-    });
-    premium = false;
-  }
-}
+const premium = await verifierEtExpirerPremiumSiBesoin(user);
 
 // Générer le token
 const token = genererToken({ ...user, premium });
@@ -170,13 +180,18 @@ if (!user) {
 return res.status(404).json({ error: "Utilisateur introuvable." });
 }
 
+// Même vérification qu'au login : sans ça, un abonnement expiré
+// restait affiché "Premium" à chaque rafraîchissement de page tant
+// que l'utilisateur ne se déconnectait/reconnectait pas.
+const premium = await verifierEtExpirerPremiumSiBesoin(user);
+
 res.json({
   user: {
     id:             user.id,
     nom:            user.nom,
     email:          user.email,
     role:           user.role,
-    premium:        user.premium,
+    premium,
     premium_plan:   user.premium_plan,
     premium_expire: user.premium_expire,
     date_inscription: user.date_inscription,

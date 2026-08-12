@@ -13,13 +13,20 @@ exports.liste = async (req, res) => {
 try {
 const { typeContrat, ville, secteur, recherche, limit, offset } = req.query;
 
-const offres = await Emploi.findAll({
-  typeContrat, ville, secteur, search: recherche,
-  limit:  parseInt(limit)  || 20,
-  offset: parseInt(offset) || 0,
-});
+const filtres = { typeContrat, ville, secteur, search: recherche };
+const limitApplique  = parseInt(limit)  || 50; // avant : 20 — relevé pour ne pas tronquer des listes plus fournies
+const offsetApplique = parseInt(offset) || 0;
 
-res.json({ total: offres.length, offres });
+const [offres, total] = await Promise.all([
+  Emploi.findAll({ ...filtres, limit: limitApplique, offset: offsetApplique }),
+  Emploi.countAvecFiltres(filtres), // vrai total correspondant aux filtres, indépendant de la pagination
+]);
+
+res.json({
+  total,                                          // total réel (toutes pages confondues)
+  offres,                                          // uniquement les offres de cette page
+  hasMore: offsetApplique + offres.length < total, // reste-t-il des offres à charger ?
+});
 
 } catch (err) {
 console.error("Erreur liste offres emploi :", err.message);
