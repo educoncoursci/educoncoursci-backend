@@ -152,7 +152,7 @@ return { messageId: data.messageId, to };
 
 // ── 1. Bienvenue ─────────────────────────────────────────────
 async function envoyerBienvenue(user) {
-const html = templateBase("Bienvenue sur EduConcoursCI !", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Bienvenue, ${user.nom} ! 🎉 </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;"> Ton compte a été créé avec succès sur <strong>EduConcoursCI</strong>, la plateforme de référence pour la préparation aux concours de Côte d'Ivoire. </p> <div style="background:#F0FDF4;border-radius:12px;padding:18px;margin:20px 0;"> <p style="margin:0 0 10px;font-weight:700;color:#1A6B3C;">Tu as maintenant accès à :</p> <ul style="margin:0;padding-left:20px;color:#333;line-height:1.9;font-size:14px;"> <li>📋 La liste complète des concours et examens CI</li> <li>🧠 Des QCM de préparation gratuits</li> <li>📰 Les dernières actualités et alertes</li> <li>📚 Des ressources de préparation</li> </ul> </div> <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px;"> Pour accéder aux cours complets, sujets corrigés et vidéos de formation, passe en <strong>Premium</strong> dès 2 000 FCFA/mois. </p> <div style="text-align:center;margin:24px 0;"> <a href="${process.env.FRONTEND_URL || "https://educoncoursci.netlify.app"}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Accéder à la plateforme → </a> </div>`);
+const html = templateBase("Bienvenue sur EduConcoursCI !", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Bienvenue, ${user.nom} ! 🎉 </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;"> Ton compte a été créé avec succès sur <strong>EduConcoursCI</strong>, la plateforme de référence pour la préparation aux concours de Côte d'Ivoire. </p> <div style="background:#F0FDF4;border-radius:12px;padding:18px;margin:20px 0;"> <p style="margin:0 0 10px;font-weight:700;color:#1A6B3C;">Tu as maintenant accès à :</p> <ul style="margin:0;padding-left:20px;color:#333;line-height:1.9;font-size:14px;"> <li>📋 La liste complète des concours et examens CI</li> <li>🧠 Des QCM de préparation gratuits</li> <li>📰 Les dernières actualités et alertes</li> <li>📚 Des ressources de préparation</li> </ul> </div> <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px;"> Pour accéder aux cours complets, sujets corrigés et vidéos de formation, passe en <strong>Premium</strong> dès 2 000 FCFA/mois. </p> <div style="text-align:center;margin:24px 0;"> <a href="${process.env.FRONTEND_URL || "https://educoncoursci.netlify.app"}" style="background-color:#1A6B3C;color:#ffffff !important; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;border:2px solid #1A6B3C;"><span style="color:#ffffff;">Accéder à la plateforme →</span></a> </div>`);
 
 return envoyer({
 to:      user.email,
@@ -184,7 +184,7 @@ const html = templateBase("Nouveau concours disponible", `<h2 style="color:#1A6B
 <td style="padding:6px 0;color:#555;font-size:13px;">${k}</td>
 <td style="padding:6px 0;font-weight:600;font-size:13px;text-align:right;">${v}</td>
 </tr>
-`).join("")} </table> </div> <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/concours-detail.html?id=${concours.id}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Voir les détails du concours → </a> </div> `);
+`).join("")} </table> </div> <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/concours-detail.html?id=${concours.id}" style="background-color:#1A6B3C;color:#ffffff !important; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;border:2px solid #1A6B3C;"><span style="color:#ffffff;">Voir les détails du concours →</span></a> </div> `);
 
 return envoyer({
 to:      email,
@@ -228,7 +228,7 @@ async function envoyerNotificationAdmin(destinataires, { titre, message, urgent 
 const html = templateBase(titre, `${urgent ?`<div style="background:#FEF2F2;border:1px solid #D9000D;border-radius:10px;
 padding:12px 16px;margin:0 0 20px;text-align:center;">
 <span style="color:#D9000D;font-weight:700;font-size:14px;">🔴 NOTIFICATION URGENTE</span>
-</div>`: ""} <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">${titre}</h2> <div style="color:#333;font-size:15px;line-height:1.8;white-space:pre-line;"> ${message} </div> <div style="text-align:center;margin-top:24px;"> <a href="${process.env.FRONTEND_URL}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Voir sur EduConcoursCI → </a> </div>`);
+</div>`: ""} <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">${titre}</h2> <div style="color:#333;font-size:15px;line-height:1.8;white-space:pre-line;"> ${message} </div> <div style="text-align:center;margin-top:24px;"> <a href="${process.env.FRONTEND_URL}" style="background-color:#1A6B3C;color:#ffffff !important; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;border:2px solid #1A6B3C;"><span style="color:#ffffff;">Voir sur EduConcoursCI →</span></a> </div>`);
 
 // Envoie à tous les destinataires
 const resultats = await Promise.allSettled(
@@ -254,12 +254,16 @@ const html = templateBase("Réinitialisation de mot de passe — EduConcoursCI",
     Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe.
   </p>
   <div style="text-align:center;margin:24px 0;">
-    <a href="${lienReset}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff;
+    <a href="${lienReset}" style="background-color:#1A6B3C;color:#ffffff !important;
       text-decoration:none;padding:14px 28px;border-radius:10px;
-      font-weight:700;font-size:15px;display:inline-block;">
-      Réinitialiser mon mot de passe →
+      font-weight:700;font-size:15px;display:inline-block;border:2px solid #1A6B3C;">
+      <span style="color:#ffffff;">Réinitialiser mon mot de passe →</span>
     </a>
   </div>
+  <p style="color:#555;font-size:13px;line-height:1.6;margin:16px 0 0;text-align:center;">
+    Si le bouton ne s'affiche pas correctement, copie-colle ce lien dans ton navigateur :<br>
+    <a href="${lienReset}" style="color:#0A6EBD;word-break:break-all;">${lienReset}</a>
+  </p>
   <p style="color:#888;font-size:13px;line-height:1.7;margin:20px 0 0;">
     Ce lien est valable 1 heure. Si tu n'es pas à l'origine de cette demande, ignore simplement cet e-mail —
     ton mot de passe actuel reste inchangé.
