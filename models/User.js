@@ -80,24 +80,6 @@ const User = {
     return result.rows[0];
   },
 
-  // ── Désactive automatiquement le Premium des comptes dont la
-  // date d'expiration est dépassée. Sans ce nettoyage, un compte
-  // reste marqué premium=true indéfiniment en base une fois
-  // activé — rien ne le remet à false tout seul à l'échéance
-  // réelle du plan payé (1/3/12 mois). Retourne la liste des
-  // comptes désactivés (pour journalisation).
-  async desactiverPremiumExpires() {
-    const result = await query(
-      `UPDATE users
-       SET premium = FALSE, premium_plan = NULL
-       WHERE premium = TRUE
-         AND premium_expire IS NOT NULL
-         AND premium_expire < CURRENT_DATE
-       RETURNING id, nom, email`,
-    );
-    return result.rows;
-  },
-
   // ── Photo de profil (Lot 6) ──────────────────────────────────
 async setPhoto(id, photoUrl) {
 const result = await query(

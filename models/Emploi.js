@@ -30,8 +30,17 @@ const Emploi = {
     return result.rows[0];
   },
 
-  // ── Liste des offres avec filtres ───────────────────────────
-  async findAll({ typeContrat, ville, secteur, search, statut, limit = 20, offset = 0 } = {}) {
+  // ── Construit les conditions WHERE communes à findAll/count ──
+  // Comparaison de `statut` insensible à la casse et aux espaces
+  // superflus (TRIM+LOWER des deux côtés) : une offre enregistrée
+  // avec "Publié", " publié " ou "PUBLIÉ" (saisie admin, import RSS,
+  // ancien script de seed…) doit être traitée comme "publié" et pas
+  // silencieusement exclue de la page publique par une comparaison
+  // stricte `=`. C'est cette exclusion silencieuse qui explique
+  // qu'un sous-ensemble seulement des offres réellement publiées
+  // remontait sur /emploi.html alors qu'elles apparaissaient dans
+  // l'admin (qui, lui, n'applique aucun filtre de statut au chargement).
+  _construireFiltres({ typeContrat, ville, secteur, search, statut }) {
     let conditions = [];
     let params = [];
     let idx = 1;
@@ -49,10 +58,10 @@ const Emploi = {
       params.push(`%${secteur}%`);
     }
     if (statut) {
-      conditions.push(`statut = $${idx++}`);
+      conditions.push(`LOWER(TRIM(statut)) = LOWER(TRIM($${idx++}))`);
       params.push(statut);
     } else {
-      conditions.push(`statut = 'publié'`); // par défaut, on ne montre que les offres publiées
+      conditions.push(`LOWER(TRIM(statut)) = 'publié'`); // par défaut, on ne montre que les offres publiées
     }
     if (search) {
       conditions.push(`(titre ILIKE $${idx} OR entreprise ILIKE $${idx++})`);
@@ -60,16 +69,41 @@ const Emploi = {
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    return { where, params, idx };
+  },
+
+  // ── Liste des offres avec filtres ───────────────────────────
+  async findAll({ typeContrat, ville, secteur, search, statut, limit = 20, offset = 0 } = {}) {
+    const { where, params, idx } = this._construireFiltres({ typeContrat, ville, secteur, search, statut });
     params.push(limit, offset);
 
     const result = await query(
       `SELECT * FROM offres_emploi
        ${where}
        ORDER BY created_at DESC
-       LIMIT $${idx++} OFFSET $${idx}`,
+       LIMIT $${idx} OFFSET $${idx + 1}`,
       params,
     );
     return result.rows;
+  },
+
+  // ── Nombre d'offres correspondant aux filtres publics (pagination
+  //    de la page Emplois). Indépendant de LIMIT/OFFSET : sans ça, le
+  //    "total" renvoyé à la page Emplois n'était jamais que le nombre
+  //    d'éléments de LA PAGE courante (offres.length), jamais le vrai
+  //    total — impossible de savoir s'il restait des offres à charger
+  //    au-delà de la limite.
+  //    Distincte de count() ci-dessous, qui compte TOUTES les offres
+  //    sans filtre (utilisée par les statistiques admin) : les deux
+  //    méthodes cohabitent, ne pas les fusionner sous peine de fausser
+  //    soit le total public (filtré), soit le total admin (global).
+  async countAvecFiltres({ typeContrat, ville, secteur, search, statut } = {}) {
+    const { where, params } = this._construireFiltres({ typeContrat, ville, secteur, search, statut });
+    const result = await query(
+      `SELECT COUNT(*)::int AS total FROM offres_emploi ${where}`,
+      params,
+    );
+    return result.rows[0].total;
   },
 
   // ── Trouver une offre par ID ─────────────────────────────────
