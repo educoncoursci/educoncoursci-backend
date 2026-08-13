@@ -13,6 +13,8 @@ const Transaction = require("../models/Transaction");
 const Emploi      = require("../models/Emploi");
 const Journal     = require("../models/Journal");
 const { query }   = require("../config/database");
+const { PLANS }   = require("../config/plans");
+const Wave        = require("../services/wave"); // pour calculerExpiration() — même formule que le paiement réel
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/admin/stats — Statistiques globales du tableau de bord
@@ -198,11 +200,36 @@ if (role) await User.setRole(id, role);
 
 // Mise à jour du Premium
 if (premium !== undefined) {
-  await User.setPremium(id, {
-    premium: premium === true || premium === "true",
-    plan:    premium_plan || null,
-    expire:  premium_expire || null,
-  });
+  const activationDemandee = premium === true || premium === "true";
+
+  if (activationDemandee) {
+    // Contrairement au paiement réel (qui dérive toujours plan+montant+
+    // durée de PLANS côté serveur), cette route permettait jusqu'ici à
+    // un admin d'activer le Premium avec un `premium_plan` en texte
+    // libre ne correspondant à AUCUNE formule réelle (ex: faute de
+    // frappe "1 mois" au lieu de "1 Mois"), et sans jamais calculer de
+    // date d'expiration — le compte restait Premium indéfiniment, à
+    // l'inverse de toute activation issue d'un vrai paiement. On valide
+    // donc ici que le plan est l'une des 3 formules existantes, et on
+    // calcule sa vraie durée — sauf si l'admin fournit explicitement
+    // une date d'expiration personnalisée (cas légitime : prolongation
+    // manuelle, geste commercial avec durée sur-mesure, etc.).
+    if (!premium_plan || !PLANS[premium_plan]) {
+      return res.status(400).json({
+        error: `Formule invalide. Formules disponibles : ${Object.keys(PLANS).join(", ")}`,
+      });
+    }
+
+    const expire = premium_expire || Wave.calculerExpiration(PLANS[premium_plan].dureeJours);
+
+    await User.setPremium(id, {
+      premium: true,
+      plan:    premium_plan,
+      expire,
+    });
+  } else {
+    await User.setPremium(id, { premium: false, plan: null, expire: null });
+  }
 }
 
 const userMisAJour = await User.findById(id);

@@ -12,13 +12,7 @@ const Orange       = require("../services/orange");
 const MTN         = require("../services/mtn");
 const Moov        = require("../services/moov");
 const CinetPay    = require("../services/cinetpay");
-
-// Plans disponibles
-const PLANS = {
-"1 Mois":  { montant: 2000,  dureeJours: 30  },
-"3 Mois":  { montant: 5000,  dureeJours: 90  },
-"12 Mois": { montant: 15000, dureeJours: 365 },
-};
+const { PLANS }   = require("../config/plans");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/payment/plans — Plans & instructions de paiement
@@ -229,17 +223,20 @@ res.status(500).json({ error: "Erreur lors de la récupération de l'historique.
 exports.allTransactions = async (req, res) => {
 try {
 const { statut, limit, offset } = req.query;
-const transactions = await Transaction.findAll({
-statut,
-limit:  parseInt(limit)  || 100,
-offset: parseInt(offset) || 0,
-});
+const [transactions, total] = await Promise.all([
+  Transaction.findAll({
+    statut,
+    limit:  parseInt(limit)  || 100,
+    offset: parseInt(offset) || 0,
+  }),
+  Transaction.countAvecFiltre(statut), // vrai total, indépendant de la pagination
+]);
 
 const revenus      = await Transaction.totalRevenus();
 const revenusQMois = await Transaction.revenusduMois();
 
 res.json({
-  total:        transactions.length,
+  total,
   revenus_total: revenus,
   revenus_mois:  revenusQMois,
   transactions,
@@ -345,12 +342,33 @@ exports.webhookCinetPay = async (req, res) => {
 
     const verification = await CinetPay.verifierPaiement(transactionId);
 
+    // Défense en profondeur : CinetPay confirme lui-même le montant
+    // réellement payé (verification.montant) — on ne l'active QUE s'il
+    // correspond exactement au montant attendu pour le plan choisi à
+    // l'initiation (transaction.montant, lui-même dérivé de PLANS et
+    // jamais modifiable par le client). Sans ce contrôle, n'importe
+    // quelle anomalie côté CinetPay ou incohérence de transaction_id
+    // activerait le Premium sans jamais vérifier que la somme reçue
+    // correspond réellement à la formule attribuée.
+    const montantConfirme = Number(verification.montant);
+    const montantAttendu  = Number(transaction?.montant);
+    const montantCoherent = transaction && montantConfirme === montantAttendu;
+
     if (verification.succes && transaction && transaction.statut !== "validé") {
-      const { dureeJours } = PLANS[transaction.plan] || {};
-      if (dureeJours) {
-        const expiration = Wave.calculerExpiration(dureeJours);
-        await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
-        await Transaction.updateStatut(transaction.id, "validé");
+      if (!montantCoherent) {
+        console.error(
+          `Webhook CinetPay : montant incohérent pour la transaction ${transaction.id} ` +
+          `(plan "${transaction.plan}", attendu ${montantAttendu} FCFA, CinetPay confirme ${montantConfirme} FCFA). ` +
+          `Premium NON activé automatiquement — vérification manuelle requise.`
+        );
+        await Transaction.updateStatut(transaction.id, "à vérifier");
+      } else {
+        const { dureeJours } = PLANS[transaction.plan] || {};
+        if (dureeJours) {
+          const expiration = Wave.calculerExpiration(dureeJours);
+          await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
+          await Transaction.updateStatut(transaction.id, "validé");
+        }
       }
     } else if (!verification.succes && transaction) {
       await Transaction.updateStatut(transaction.id, "échoué");
@@ -457,12 +475,29 @@ exports.webhookWave = async (req, res) => {
     // confiance aveugle dans le corps du webhook, même signé.
     const verification = await Wave.verifierSessionPaiement(sessionId);
 
+    // Même défense en profondeur que webhookCinetPay : Wave confirme
+    // lui-même le montant réellement payé (verification.montant), on
+    // n'active le Premium que s'il correspond exactement au montant
+    // attendu de la transaction (dérivé de PLANS à l'initiation).
+    const montantConfirme = Number(verification.montant);
+    const montantAttendu  = Number(transaction.montant);
+    const montantCoherent = montantConfirme === montantAttendu;
+
     if (verification.succes && transaction.statut !== "validé") {
-      const { dureeJours } = PLANS[transaction.plan] || {};
-      if (dureeJours) {
-        const expiration = Wave.calculerExpiration(dureeJours);
-        await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
-        await Transaction.updateStatut(transaction.id, "validé");
+      if (!montantCoherent) {
+        console.error(
+          `Webhook Wave : montant incohérent pour la transaction ${transaction.id} ` +
+          `(plan "${transaction.plan}", attendu ${montantAttendu} FCFA, Wave confirme ${montantConfirme} FCFA). ` +
+          `Premium NON activé automatiquement — vérification manuelle requise.`
+        );
+        await Transaction.updateStatut(transaction.id, "à vérifier");
+      } else {
+        const { dureeJours } = PLANS[transaction.plan] || {};
+        if (dureeJours) {
+          const expiration = Wave.calculerExpiration(dureeJours);
+          await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
+          await Transaction.updateStatut(transaction.id, "validé");
+        }
       }
     } else if (!verification.succes) {
       await Transaction.updateStatut(transaction.id, "échoué");

@@ -174,7 +174,7 @@ await client.query(`
     plan      VARCHAR(50),
     montant   INTEGER NOT NULL,
     statut    VARCHAR(20) DEFAULT 'validé'
-              CHECK (statut IN ('validé', 'échoué', 'en attente')),
+              CHECK (statut IN ('validé', 'échoué', 'en attente', 'à vérifier')),
     date      TIMESTAMP DEFAULT NOW()
   );
 `);
@@ -1089,6 +1089,39 @@ await client.query(`
     ) THEN
       ALTER TABLE users ADD COLUMN photo_url TEXT;
     END IF;
+  END $$;
+`);
+
+// Élargit la contrainte CHECK sur transactions.statut pour autoriser
+// 'à vérifier' — nouveau statut utilisé quand un webhook de paiement
+// (Wave, CinetPay) confirme un paiement réussi mais dont le MONTANT
+// réellement reçu ne correspond pas à celui attendu pour le plan de
+// la transaction. Sans cette valeur, le webhook plantait avec une
+// violation de contrainte CHECK au lieu de marquer proprement la
+// transaction pour vérification manuelle par un admin.
+// CREATE TABLE IF NOT EXISTS ne modifie jamais une contrainte déjà
+// posée sur une base existante — il faut la recréer explicitement.
+// On retrouve le nom réel de la contrainte via pg_constraint plutôt
+// que de supposer le nom par défaut généré par Postgres (fiable même
+// si la contrainte a été créée ou renommée différemment par le passé).
+await client.query(`
+  DO $$
+  DECLARE
+    nom_contrainte text;
+  BEGIN
+    SELECT con.conname INTO nom_contrainte
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_attribute att ON att.attrelid = rel.oid AND att.attnum = ANY(con.conkey)
+    WHERE rel.relname = 'transactions' AND att.attname = 'statut' AND con.contype = 'c'
+    LIMIT 1;
+
+    IF nom_contrainte IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE transactions DROP CONSTRAINT %I', nom_contrainte);
+    END IF;
+
+    ALTER TABLE transactions ADD CONSTRAINT transactions_statut_check
+      CHECK (statut IN ('validé', 'échoué', 'en attente', 'à vérifier'));
   END $$;
 `);
 
