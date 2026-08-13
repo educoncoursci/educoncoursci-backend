@@ -141,7 +141,7 @@ const INSTITUTIONS = [
   {
     titre: "Concours INSFS — Éducateurs Préscolaires (EP)",
     organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
-    categorie: "Santé & Social",
+    categorie: "Travail Social",
     niveau: "BEPC/BAC/DEUG",
     ageMin: 18, ageMax: 35,
     frais: 33000,
@@ -162,7 +162,7 @@ const INSTITUTIONS = [
   {
     titre: "Concours INSFS — Éducateurs Préscolaires Adjoints (EPA)",
     organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
-    categorie: "Santé & Social",
+    categorie: "Travail Social",
     niveau: "BEPC/BAC/DEUG",
     ageMin: 18, ageMax: 35,
     frais: 33000,
@@ -177,7 +177,7 @@ const INSTITUTIONS = [
   {
     titre: "Concours INSFS — Éducateurs Spécialisés (ES)",
     organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
-    categorie: "Santé & Social",
+    categorie: "Travail Social",
     niveau: "BEPC/BAC/DEUG",
     ageMin: 18, ageMax: 35,
     frais: 33000,
@@ -192,7 +192,7 @@ const INSTITUTIONS = [
   {
     titre: "Concours INSFS — Maîtres d'Éducation Spécialisée (MESP)",
     organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
-    categorie: "Santé & Social",
+    categorie: "Travail Social",
     niveau: "BEPC/BAC/DEUG",
     ageMin: 18, ageMax: 35,
     frais: 33000,
@@ -639,6 +639,19 @@ const INSTITUTIONS = [
 
     console.log(`\n✅ Terminé : ${creees} nouvelle(s) fiche(s) créée(s), ${ignorees} déjà présente(s) sur ${INSTITUTIONS.length}.`);
     console.log("ℹ️  Pense à vérifier/ajuster les dates de chaque fiche via /admin/concours dès que le communiqué officiel de l'année est publié.");
+
+    // ── Logos officiels + correction catégorie INSFS ──────────────
+    // Intégré directement ici pour qu'une seule commande —
+    // `npm run concours:seed` — suffise à la fois à créer/mettre à
+    // jour les fiches concours ET à leur associer le bon logo
+    // d'organisme (table structures) et corriger la catégorie des
+    // concours INSFS (Travail Social, jamais Santé & Social). Voir
+    // scripts/corriger-logos-et-categorie-insfs.js pour le détail —
+    // cette même logique reste aussi disponible seule via
+    // `npm run corriger:insfs` si besoin de la relancer isolément.
+    const { appliquerCorrectionsLogos } = require("./corriger-logos-et-categorie-insfs");
+    console.log("\n──────────────────────────────────────────────\n");
+    await appliquerCorrectionsLogos();
   } catch (err) {
     console.error("❌ Erreur lors du chargement de la bibliothèque :", err.message);
     process.exitCode = 1;
