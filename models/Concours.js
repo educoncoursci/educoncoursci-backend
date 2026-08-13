@@ -152,10 +152,20 @@ const Concours = {
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     params.push(limit, offset);
 
+    // LEFT JOIN structures : sans cette jointure, le logo officiel de
+    // l'organisme (structures.logo_url) n'était disponible que sur la
+    // fiche détail (findByIdEnrichi), jamais sur la liste/les cartes de
+    // concours — qui affichaient donc toujours le badge coloré générique
+    // à la place du vrai logo, même quand celui-ci était renseigné.
+    // Pas de préfixe de table nécessaire dans `where` : aucune des
+    // colonnes filtrées (categorie, statut, premium, structure_id,
+    // titre, organisme) n'existe dans `structures`, donc pas d'ambiguïté.
     const result = await query(
-      `SELECT * FROM concours
+      `SELECT concours.*, s.logo_url AS structure_logo_url, s.sigle AS structure_sigle
+       FROM concours
+       LEFT JOIN structures s ON s.id = concours.structure_id
        ${where}
-       ORDER BY created_at DESC
+       ORDER BY concours.created_at DESC
        LIMIT $${idx++} OFFSET $${idx}`,
       params,
     );

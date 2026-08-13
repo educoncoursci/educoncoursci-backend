@@ -113,6 +113,21 @@ async count() {
 const result = await query("SELECT COUNT(*) FROM transactions");
 return parseInt(result.rows[0].count, 10);
 },
+
+// ── Nombre de transactions correspondant à un filtre de statut,
+//    indépendant de LIMIT/OFFSET (pagination admin). Sans ça, le
+//    total retourné par allTransactions() n'était que la taille de
+//    LA PAGE courante (transactions.length, plafonnée à `limit`),
+//    jamais le vrai total — même limitation que trouvée et corrigée
+//    sur Emploi.findAll(). Distincte de count() ci-dessus, qui
+//    compte TOUJOURS toutes les transactions sans filtre.
+async countAvecFiltre(statut) {
+const sql = statut
+  ? "SELECT COUNT(*)::int AS total FROM transactions WHERE statut = $1"
+  : "SELECT COUNT(*)::int AS total FROM transactions";
+const result = await query(sql, statut ? [statut] : []);
+return result.rows[0].total;
+},
 };
 
 module.exports = Transaction;
