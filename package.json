@@ -9,6 +9,7 @@
     "seed": "node scripts/seed.js",
     "concours:seed": "node scripts/seed-concours-ci.js",
     "concours:corriger": "node scripts/corriger-fiches-obsoletes.js",
+    "corriger:insfs": "node scripts/corriger-logos-et-categorie-insfs.js",
     "concours:nettoyer-doublons": "node scripts/nettoyer-doublons-concours.js",
     "concours:verifier-rss": "node scripts/verifier-sources-rss.js",
     "jwt:secret": "node scripts/generer-jwt-secret.js",
