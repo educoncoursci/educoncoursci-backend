@@ -142,67 +142,118 @@ const INSTITUTIONS = [
     titre: "Concours INSFS — Éducateurs Préscolaires (EP)",
     organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
     categorie: "Travail Social",
-    niveau: "BEPC/BAC/DEUG",
-    ageMin: 18, ageMax: 35,
-    frais: 33000,
+    niveau: "BAC ou BT sciences médico-sociales",
+    ageMin: 18, ageMax: 36,
+    // Le montant TOTAL par filière n'est pas confirmé pour la session
+    // 2026 (seule la fourchette globale 43 500 – 48 500 FCFA l'est,
+    // par plusieurs sources concordantes sur la session 2026 même).
+    // Consigne explicite : ne jamais estimer un montant précis à
+    // partir d'anciennes sessions — `frais` reste donc vide plutôt que
+    // d'inventer un chiffre, et frais_detail donne toute l'information
+    // réellement confirmée pour 2026, en signalant clairement la part
+    // encore à vérifier filière par filière.
+    frais: null,
+    fraisDetail: "Frais de visite médicale : 33 000 FCFA (confirmé pour la session 2026, payé une seule fois même en cas de candidature à plusieurs filières)\nFrais d'inscription : variable selon la filière (entre 10 500 et 15 500 FCFA, montant exact par filière non confirmé officiellement pour 2026)\nTotal estimé : entre 43 500 et 48 500 FCFA selon la filière — vérifier le montant exact de cette filière sur insfs.ciconcours.com avant paiement.",
     // Session 2026 confirmée par communiqué officiel du Ministère de
     // l'Emploi, de la Protection Sociale et de la Formation
     // Professionnelle (29/04/2026) — source : infs-ci.org et
-    // fratmat.info (11/05/2026). Frais uniques pour tous les concours
-    // INSFS de cette session (visite médicale incluse, payée une
-    // seule fois même en cas de candidature à plusieurs filières).
+    // fratmat.info (11/05/2026).
     dateOuverture: "2026-05-11", dateCloture: "2026-09-14",
-    conditions: "Être de nationalité ivoirienne. Titulaire du BEPC, du BAC ou du DEUG selon la filière. Épreuves écrites le 10 octobre 2026.",
+    conditions: "Être de nationalité ivoirienne ou ressortissant CEDEAO. Être âgé de 18 à 36 ans au 31 décembre 2026. Titulaire du BAC ou d'un BT en sciences médico-sociales. Épreuves écrites le 10 octobre 2026 (sous réserve de confirmation officielle).",
     pieces: ["Extrait de naissance ou jugement supplétif (- d'1 an)", "Certificat de nationalité ivoirienne (- de 5 ans)", "Casier judiciaire (- de 3 mois)", "Certificat de visite médicale (médecin agréé INSFS)", "Diplôme ou titre exigé légalisé (- d'1 an)", "Carte CMU ou récépissé d'enrôlement", "CNI, récépissé CNI ou attestation d'identité valide", "Reçus de paiement des droits"],
     centres: ["Abidjan — INSFS Cocody"],
     couleur: "#F5820D",
     lienOfficiel: "https://insfs.ciconcours.com/",
-    dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026
+    dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026 + nouvelle-afrique.net du 04/06/2026 (fourchette de frais)
   },
   {
     titre: "Concours INSFS — Éducateurs Préscolaires Adjoints (EPA)",
     organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
     categorie: "Travail Social",
-    niveau: "BEPC/BAC/DEUG",
-    ageMin: 18, ageMax: 35,
-    frais: 33000,
+    niveau: "BEPC ou CAP sanitaire et social",
+    ageMin: 18, ageMax: 36,
+    frais: null,
+    fraisDetail: "Frais de visite médicale : 33 000 FCFA (confirmé pour la session 2026, payé une seule fois même en cas de candidature à plusieurs filières)\nFrais d'inscription : variable selon la filière (entre 10 500 et 15 500 FCFA, montant exact par filière non confirmé officiellement pour 2026)\nTotal estimé : entre 43 500 et 48 500 FCFA selon la filière — vérifier le montant exact de cette filière sur insfs.ciconcours.com avant paiement.",
     dateOuverture: "2026-05-11", dateCloture: "2026-09-14",
-    conditions: "Être de nationalité ivoirienne. Titulaire du BEPC, du BAC ou du DEUG selon la filière. Épreuves écrites le 11 octobre 2026.",
+    conditions: "Être de nationalité ivoirienne ou ressortissant CEDEAO. Être âgé de 18 à 36 ans au 31 décembre 2026. Titulaire du BEPC ou d'un CAP sanitaire et social. Épreuves écrites le 11 octobre 2026 (sous réserve de confirmation officielle).",
     pieces: ["Extrait de naissance ou jugement supplétif (- d'1 an)", "Certificat de nationalité ivoirienne (- de 5 ans)", "Casier judiciaire (- de 3 mois)", "Certificat de visite médicale (médecin agréé INSFS)", "Diplôme ou titre exigé légalisé (- d'1 an)", "Carte CMU ou récépissé d'enrôlement", "CNI, récépissé CNI ou attestation d'identité valide", "Reçus de paiement des droits"],
     centres: ["Abidjan — INSFS Cocody"],
     couleur: "#F5820D",
     lienOfficiel: "https://insfs.ciconcours.com/",
-    dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026
+    dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026 + nouvelle-afrique.net du 04/06/2026 (fourchette de frais)
   },
   {
     titre: "Concours INSFS — Éducateurs Spécialisés (ES)",
     organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
     categorie: "Travail Social",
-    niveau: "BEPC/BAC/DEUG",
-    ageMin: 18, ageMax: 35,
-    frais: 33000,
+    niveau: "Bac+2 (BTS, DUT ou Licence 2)",
+    ageMin: 18, ageMax: 36,
+    frais: null,
+    fraisDetail: "Frais de visite médicale : 33 000 FCFA (confirmé pour la session 2026, payé une seule fois même en cas de candidature à plusieurs filières)\nFrais d'inscription : variable selon la filière (entre 10 500 et 15 500 FCFA, montant exact par filière non confirmé officiellement pour 2026)\nTotal estimé : entre 43 500 et 48 500 FCFA selon la filière — vérifier le montant exact de cette filière sur insfs.ciconcours.com avant paiement.",
     dateOuverture: "2026-05-11", dateCloture: "2026-09-14",
-    conditions: "Être de nationalité ivoirienne. Titulaire du BEPC, du BAC ou du DEUG selon la filière. Épreuves écrites le 4 octobre 2026.",
+    conditions: "Être de nationalité ivoirienne ou ressortissant CEDEAO. Être âgé de 18 à 36 ans au 31 décembre 2026. Titulaire d'un diplôme Bac+2 (BTS, DUT ou Licence 2). Épreuves écrites le 4 octobre 2026 (sous réserve de confirmation officielle).",
     pieces: ["Extrait de naissance ou jugement supplétif (- d'1 an)", "Certificat de nationalité ivoirienne (- de 5 ans)", "Casier judiciaire (- de 3 mois)", "Certificat de visite médicale (médecin agréé INSFS)", "Diplôme ou titre exigé légalisé (- d'1 an)", "Carte CMU ou récépissé d'enrôlement", "CNI, récépissé CNI ou attestation d'identité valide", "Reçus de paiement des droits"],
     centres: ["Abidjan — INSFS Cocody"],
     couleur: "#F5820D",
     lienOfficiel: "https://insfs.ciconcours.com/",
-    dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026
+    dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026 + nouvelle-afrique.net du 04/06/2026 (fourchette de frais)
   },
   {
     titre: "Concours INSFS — Maîtres d'Éducation Spécialisée (MESP)",
     organisme: "Institut National Supérieur de Formation Sociale (INSFS)",
     categorie: "Travail Social",
-    niveau: "BEPC/BAC/DEUG",
-    ageMin: 18, ageMax: 35,
-    frais: 33000,
+    niveau: "BAC ou BT sciences médico-sociales",
+    ageMin: 18, ageMax: 36,
+    frais: null,
+    fraisDetail: "Frais de visite médicale : 33 000 FCFA (confirmé pour la session 2026, payé une seule fois même en cas de candidature à plusieurs filières)\nFrais d'inscription : variable selon la filière (entre 10 500 et 15 500 FCFA, montant exact par filière non confirmé officiellement pour 2026)\nTotal estimé : entre 43 500 et 48 500 FCFA selon la filière — vérifier le montant exact de cette filière sur insfs.ciconcours.com avant paiement.",
     dateOuverture: "2026-05-11", dateCloture: "2026-09-14",
-    conditions: "Être de nationalité ivoirienne. Titulaire du BEPC, du BAC ou du DEUG selon la filière. Épreuves écrites le 3 octobre 2026.",
+    conditions: "Être de nationalité ivoirienne ou ressortissant CEDEAO. Être âgé de 18 à 36 ans au 31 décembre 2026. Titulaire du BAC ou d'un BT en sciences médico-sociales. Épreuves écrites le 3 octobre 2026 (sous réserve de confirmation officielle).",
     pieces: ["Extrait de naissance ou jugement supplétif (- d'1 an)", "Certificat de nationalité ivoirienne (- de 5 ans)", "Casier judiciaire (- de 3 mois)", "Certificat de visite médicale (médecin agréé INSFS)", "Diplôme ou titre exigé légalisé (- d'1 an)", "Carte CMU ou récépissé d'enrôlement", "CNI, récépissé CNI ou attestation d'identité valide", "Reçus de paiement des droits"],
     centres: ["Abidjan — INSFS Cocody"],
     couleur: "#F5820D",
     lienOfficiel: "https://insfs.ciconcours.com/",
-    dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026
+    dateVerifiee: true, // Sources : communiqué ministériel du 29/04/2026 + fratmat.info du 11/05/2026 + nouvelle-afrique.net du 04/06/2026 (fourchette de frais)
+  },
+  {
+    // Concours DISTINCT des 4 filières INSFS ci-dessus : celui-ci est un
+    // recrutement de la FONCTION PUBLIQUE (pas une formation INSFS),
+    // ouvert aux titulaires du diplôme d'État délivré par l'INSFS après
+    // leurs études. Inscriptions confirmées closes pour la session
+    // 2026 (16 mars → 30 avril/8 mai 2026, largement passé au
+    // 13/08/2026) — statut "fermé" explicite, jamais déduit comme
+    // "ouvert" simplement parce qu'il a existé les années précédentes.
+    titre: "Concours de recrutement — Assistant Social",
+    organisme: "Ministère de la Fonction Publique et de la Modernisation de l'Administration",
+    categorie: "Fonction publique",
+    niveau: "Diplôme d'État d'Assistant Social (délivré par l'INSFS)",
+    ageMin: 18, ageMax: 42,
+    frais: 31000,
+    fraisDetail: "Frais de préinscription : 23 500 FCFA\nKit numérique : 7 500 FCFA\nTotal obligatoire : 31 000 FCFA",
+    dateOuverture: "2026-03-16", dateCloture: "2026-04-30",
+    conditions: "Être de nationalité ivoirienne. Être titulaire du Diplôme d'État d'Assistant Social délivré par l'Institut National Supérieur de Formation Sociale (INSFS) — ne pas confondre avec les concours directs d'entrée en formation à l'INSFS ci-dessus. Né(e) entre le 31/12/1983 et le 01/01/2008.",
+    pieces: ["Extrait de naissance", "Certificat de nationalité", "Diplôme d'État d'Assistant Social (INSFS)", "Casier judiciaire", "Certificat médical", "CV"],
+    centres: ["Abidjan et villes-centres — Fonction Publique"],
+    couleur: "#7B2FBE",
+    statut: "fermé",
+    lienOfficiel: "https://gucaci.ciconcours.com/concours-2026/liste-concours/MEMFPMA/2/1",
+    dateVerifiee: true, // Source : liste officielle des concours administratifs 2026 (gucaci.ciconcours.com) + ablanian.ci — inscriptions closes le 30/04-08/05/2026
+  },
+  {
+    titre: "Concours de recrutement — Assistant Social Adjoint",
+    organisme: "Ministère de la Fonction Publique et de la Modernisation de l'Administration",
+    categorie: "Fonction publique",
+    niveau: "Diplôme d'État d'Assistant Social Adjoint (délivré par l'INSFS)",
+    ageMin: 18, ageMax: 42,
+    frais: 31000,
+    fraisDetail: "Frais de préinscription : 23 500 FCFA\nKit numérique : 7 500 FCFA\nTotal obligatoire : 31 000 FCFA",
+    dateOuverture: "2026-03-16", dateCloture: "2026-04-30",
+    conditions: "Être de nationalité ivoirienne. Être titulaire du Diplôme d'État d'Assistant Social Adjoint délivré par l'Institut National Supérieur de Formation Sociale (INSFS) — ne pas confondre avec les concours directs d'entrée en formation à l'INSFS ci-dessus. Né(e) entre le 31/12/1983 et le 01/01/2008.",
+    pieces: ["Extrait de naissance", "Certificat de nationalité", "Diplôme d'État d'Assistant Social Adjoint (INSFS)", "Casier judiciaire", "Certificat médical", "CV"],
+    centres: ["Abidjan et villes-centres — Fonction Publique"],
+    couleur: "#7B2FBE",
+    statut: "fermé",
+    lienOfficiel: "https://gucaci.ciconcours.com/concours-2026/liste-concours/MEMFPMA/2/1",
+    dateVerifiee: true, // Source : liste officielle des concours administratifs 2026 (gucaci.ciconcours.com) + ablanian.ci — inscriptions closes le 30/04-08/05/2026
   },
   {
     titre: "Concours INJS — Professeur de Collège d'EPS (PC-EPS)",
@@ -579,19 +630,20 @@ const INSTITUTIONS = [
 
     for (const c of INSTITUTIONS) {
       // Si aucune date n'est fournie du tout (cas rare : source
-      // consultée mais aucune session 2026 confirmée trouvée, ex.
-      // concours Police direct), le calcul automatique de statut
-      // retomberait par défaut sur "ouvert" — c'est trompeur, ça
-      // affiche un concours comme actif alors qu'on n'en a aucune
-      // confirmation. Si la fiche fournit un statut explicite (ex:
-      // "fermé" pour un concours confirmé non lancé cette année,
-      // voir INSFS Assistant Social), on le respecte tel quel plutôt
-      // que d'imposer "à venir" par défaut. Sinon, on force "à venir"
-      // (le plus prudent : n'incite pas à payer des frais tout de
-      // suite) et on désactive le recalcul automatique tant qu'un
-      // admin n'aura pas renseigné de vraies dates.
+      // consultée mais aucune session 2026 confirmée trouvée), le
+      // calcul automatique de statut retomberait par défaut sur
+      // "ouvert" — c'est trompeur, ça affiche un concours comme actif
+      // alors qu'on n'en a aucune confirmation. Si la fiche fournit un
+      // statut explicite (ex: "fermé" pour un concours confirmé non
+      // lancé cette année, voir Assistant Social ci-dessous), on le
+      // respecte tel quel plutôt que d'imposer un statut par défaut.
+      // Sinon, on utilise "information non confirmée" — jamais "à
+      // venir", qui laisserait croire à tort qu'une ouverture est
+      // prévue alors qu'on n'en sait tout simplement rien — et on
+      // désactive le recalcul automatique tant qu'un admin n'aura pas
+      // renseigné de vraies dates.
       const aucuneDateConnue = !c.dateOuverture && !c.dateCloture;
-      const statutParDefaut = c.statut || (aucuneDateConnue ? "à venir" : undefined);
+      const statutParDefaut = c.statut || (aucuneDateConnue ? "information non confirmée" : undefined);
 
       try {
         await Concours.create({
@@ -602,6 +654,7 @@ const INSTITUTIONS = [
           ageMin: c.ageMin,
           ageMax: c.ageMax,
           frais: c.frais,
+          fraisDetail: c.fraisDetail,
           premium: c.premium || false,
           couleur: c.couleur,
           conditions: c.conditions,
