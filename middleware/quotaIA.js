@@ -8,6 +8,7 @@
 // ============================================================
 
 const { query } = require("../config/database");
+const User = require("../models/User");
 
 const LIMITE_GRATUIT_JOUR = parseInt(process.env.QUOTA_IA_GRATUIT_JOUR) || 3;
 
@@ -18,14 +19,7 @@ function quotaIA(type) {
 
       if (req.user.role === "admin") return next();
 
-      const userRes = await query(
-        "SELECT premium, premium_expire FROM users WHERE id = $1",
-        [req.user.id]
-      );
-      const user = userRes.rows[0];
-      const estPremiumActif =
-        user?.premium &&
-        (!user.premium_expire || new Date(user.premium_expire) >= new Date());
+      const estPremiumActif = await User.estPremiumActif(req.user.id);
 
       if (estPremiumActif) return next();
 

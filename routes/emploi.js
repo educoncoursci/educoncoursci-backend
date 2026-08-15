@@ -19,6 +19,13 @@ router.post("/alertes",          auth, ctrl.creerAlerte);
 router.get("/alertes",           auth, ctrl.mesAlertes);
 router.delete("/alertes/:id",    auth, ctrl.supprimerAlerte);
 
+// GET  /api/emploi/sources — Sources déjà agrégées (public, filtre)
+router.get("/sources", ctrl.sources);
+
+// ── Routes admin (AVANT /:id pour la même raison que /mes-candidatures) ─
+router.get("/stats", auth, admin, ctrl.stats); // GET /api/emploi/stats
+router.post("/actualiser", auth, admin, ctrl.actualiser); // POST /api/emploi/actualiser
+
 // ── Routes publiques ──────────────────────────────────────────
 // GET  /api/emploi — Liste des offres avec filtres
 router.get("/", ctrl.liste);
@@ -28,9 +35,6 @@ router.get("/:id", ctrl.detail);
 
 // POST /api/emploi/:id/postuler — Postuler (connecté)
 router.post("/:id/postuler", auth, ctrl.postuler);
-
-// ── Routes admin ──────────────────────────────────────────────
-router.post("/actualiser", auth, admin, ctrl.actualiser); // POST /api/emploi/actualiser
 router.post("/",   auth, admin, ctrl.creer);
 router.put("/:id", auth, admin, ctrl.modifier);
 router.delete("/:id", auth, admin, ctrl.supprimer);

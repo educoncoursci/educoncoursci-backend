@@ -259,6 +259,24 @@ async definirCodesRecuperation(id, codesRecuperationHashes) {
     ]);
     return result.rows.length > 0;
   },
+
+  // ── Statut Premium actif, revérifié en base à chaque appel ─────
+  // Ne fait jamais confiance au flag `premium` du token JWT (req.user),
+  // qui peut être périmé (abonnement expiré depuis, ou changé par un
+  // admin) tant que l'utilisateur ne s'est pas reconnecté. Centralise
+  // ici la logique auparavant dupliquée à l'identique dans
+  // middleware/quotaIA.js et middleware/exigerPremium.js.
+  async estPremiumActif(userId) {
+    const result = await query(
+      "SELECT premium, premium_expire FROM users WHERE id = $1",
+      [userId],
+    );
+    const user = result.rows[0];
+    return !!(
+      user?.premium &&
+      (!user.premium_expire || new Date(user.premium_expire) >= new Date())
+    );
+  },
 };
 
 module.exports = User;

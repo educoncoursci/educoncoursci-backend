@@ -34,6 +34,7 @@ const Concours = {
     ouverture,
     cloture,
     frais,
+    fraisDetail,
     places,
     niveau,
     conditions,
@@ -69,13 +70,13 @@ const Concours = {
 
     const result = await query(
       `INSERT INTO concours
-        (titre, organisme, categorie, ouverture, cloture, frais, places,
+        (titre, organisme, categorie, ouverture, cloture, frais, frais_detail, places,
          niveau, conditions, pieces, centres, premium, statut, couleur,
          structure_id, age_min, age_max, sexe,
          historique, salaire, debouches, adresse, communiques, faq,
          date_ouverture, date_cloture, statut_auto, date_verifiee, lien_officiel)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
-               $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29)
+               $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
        RETURNING *`,
       [
         titre,
@@ -83,14 +84,28 @@ const Concours = {
         categorie,
         ouvertureTexte,
         clotureTexte,
-        frais || 0,
+        // `frais === undefined` (jamais fourni) → 0 par défaut (comportement
+        // historique inchangé). `frais === null` (explicitement "montant
+        // inconnu/variable", ex. INSFS) → NULL en base, PAS 0 : `0`
+        // signifie "gratuit confirmé", NULL signifie "on ne sait pas" —
+        // les deux ne doivent jamais être confondus (`frais || 0`
+        // écrasait auparavant silencieusement null en 0).
+        frais === undefined ? 0 : frais,
+        fraisDetail || null,
         places || null,
         niveau,
         conditions,
         JSON.stringify(pieces || []),
         JSON.stringify(centres || []),
         premium || false,
-        statutCalcule || "à venir",
+        // Avant : `statutCalcule || "à venir"` — un concours sans AUCUNE
+        // date connue ET sans statut explicite se voyait forcé à
+        // "à venir" par défaut, ce qui laisse croire à tort qu'une
+        // ouverture est prévue alors qu'on n'en sait tout simplement
+        // rien. "information non confirmée" reflète honnêtement cette
+        // absence d'information fiable, conformément à la consigne :
+        // ne jamais déduire un statut optimiste par défaut.
+        statutCalcule || "information non confirmée",
         couleur || "#1A6B3C",
         structureId || null,
         ageMin || null,
@@ -188,6 +203,7 @@ const Concours = {
       ouverture,
       cloture,
       frais,
+      fraisDetail,
       places,
       niveau,
       conditions,
@@ -211,6 +227,14 @@ const Concours = {
       statutAuto,
       dateVerifiee,
       lienOfficiel,
+      // Explicite : quand true, force `frais` à NULL même si aucune
+      // nouvelle valeur n'est fournie. Sans ce flag, il n'existait
+      // aucun moyen de repasser un concours d'un montant connu à
+      // "inconnu/variable" via ce formulaire : `COALESCE($6, frais)`
+      // ignore silencieusement un `frais` à `null` et garde l'ancienne
+      // valeur, puisque COALESCE ne peut pas distinguer "pas fourni"
+      // de "explicitement remis à zéro/inconnu".
+      razFrais,
     } = fields;
 
     // Lot 18 — si une nouvelle date est fournie, on régénère le texte
@@ -237,31 +261,32 @@ const Concours = {
         categorie    = COALESCE($3,  categorie),
         ouverture    = COALESCE($4,  ouverture),
         cloture      = COALESCE($5,  cloture),
-        frais        = COALESCE($6,  frais),
-        places       = COALESCE($7,  places),
-        niveau       = COALESCE($8,  niveau),
-        conditions   = COALESCE($9,  conditions),
-        pieces       = COALESCE($10, pieces),
-        centres      = COALESCE($11, centres),
-        premium      = COALESCE($12, premium),
-        statut       = COALESCE($13, statut),
-        couleur      = COALESCE($14, couleur),
-        structure_id = COALESCE($15, structure_id),
-        age_min      = COALESCE($16, age_min),
-        age_max      = COALESCE($17, age_max),
-        sexe         = COALESCE($18, sexe),
-        historique   = COALESCE($19, historique),
-        salaire      = COALESCE($20, salaire),
-        debouches    = COALESCE($21, debouches),
-        adresse      = COALESCE($22, adresse),
-        communiques  = COALESCE($23, communiques),
-        faq          = COALESCE($24, faq),
-        date_ouverture = COALESCE($25, date_ouverture),
-        date_cloture   = COALESCE($26, date_cloture),
-        statut_auto    = COALESCE($27, statut_auto),
-        date_verifiee  = COALESCE($28, date_verifiee),
-        lien_officiel  = COALESCE($29, lien_officiel)
-       WHERE id = $30
+        frais        = CASE WHEN $31 THEN NULL ELSE COALESCE($6, frais) END,
+        frais_detail = COALESCE($7,  frais_detail),
+        places       = COALESCE($8, places),
+        niveau       = COALESCE($9,  niveau),
+        conditions   = COALESCE($10,  conditions),
+        pieces       = COALESCE($11, pieces),
+        centres      = COALESCE($12, centres),
+        premium      = COALESCE($13, premium),
+        statut       = COALESCE($14, statut),
+        couleur      = COALESCE($15, couleur),
+        structure_id = COALESCE($16, structure_id),
+        age_min      = COALESCE($17, age_min),
+        age_max      = COALESCE($18, age_max),
+        sexe         = COALESCE($19, sexe),
+        historique   = COALESCE($20, historique),
+        salaire      = COALESCE($21, salaire),
+        debouches    = COALESCE($22, debouches),
+        adresse      = COALESCE($23, adresse),
+        communiques  = COALESCE($24, communiques),
+        faq          = COALESCE($25, faq),
+        date_ouverture = COALESCE($26, date_ouverture),
+        date_cloture   = COALESCE($27, date_cloture),
+        statut_auto    = COALESCE($28, statut_auto),
+        date_verifiee  = COALESCE($29, date_verifiee),
+        lien_officiel  = COALESCE($30, lien_officiel)
+       WHERE id = $32
        RETURNING *`,
       [
         titre,
@@ -270,6 +295,7 @@ const Concours = {
         ouvertureFinale,
         clotureFinale,
         frais,
+        fraisDetail,
         places,
         niveau,
         conditions,
@@ -293,6 +319,7 @@ const Concours = {
         statutAuto,
         dateVerifieeFinale,
         lienOfficiel,
+        razFrais === true, // $31 — CASE WHEN doit recevoir un booléen strict
         id,
       ],
     );
