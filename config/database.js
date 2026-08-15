@@ -83,6 +83,7 @@ await client.query(`
     ouverture   VARCHAR(100),
     cloture     VARCHAR(100),
     frais       INTEGER DEFAULT 0,
+    frais_detail TEXT,
     places      INTEGER,
     niveau      VARCHAR(50),
     conditions  TEXT,
@@ -90,7 +91,7 @@ await client.query(`
     centres     TEXT DEFAULT '[]',
     premium     BOOLEAN DEFAULT FALSE,
     statut      VARCHAR(50) DEFAULT 'à venir'
-                CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats')),
+                CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée')),
     couleur     VARCHAR(20) DEFAULT '#1A6B3C',
     created_at  TIMESTAMP DEFAULT NOW()
   );
@@ -501,6 +502,97 @@ await client.query(`
       ALTER TABLE offres_emploi ADD COLUMN image_url TEXT;
     END IF;
   END $$;
+`);
+
+// Ajoute les colonnes nécessaires à un véritable agrégateur d'offres
+// d'emploi (LOT Emploi) : distinction emploi/stage/alternance,
+// localisation régionale, niveau d'études requis, identifiant externe
+// (pour retrouver l'offre côté source), date limite exploitable en SQL
+// (date_limite reste le texte affiché tel quel — souvent formaté
+// différemment d'une source à l'autre — date_limite_date est la
+// version parsée quand elle a pu être reconnue, utilisée pour calculer
+// automatiquement si une offre est expirée), et deux colonnes dédiées
+// au dédoublonnage inter-sources (cle_dedup, sources_supplementaires) :
+// quand la même offre est publiée sur plusieurs plateformes, on garde
+// une seule ligne visible et on archive les autres sources dedans au
+// lieu de créer un doublon.
+await client.query(`
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='type_opportunite'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN type_opportunite VARCHAR(20) DEFAULT 'emploi'
+        CHECK (type_opportunite IN ('emploi', 'stage', 'alternance', 'freelance'));
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='region'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN region VARCHAR(60);
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='niveau_etudes'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN niveau_etudes VARCHAR(60);
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='identifiant_externe'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN identifiant_externe VARCHAR(300);
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='date_limite_date'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN date_limite_date DATE;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='cle_dedup'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN cle_dedup VARCHAR(400);
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='sources_supplementaires'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN sources_supplementaires JSONB DEFAULT '[]';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='offres_emploi' AND column_name='derniere_verification_le'
+    ) THEN
+      ALTER TABLE offres_emploi ADD COLUMN derniere_verification_le TIMESTAMP DEFAULT NOW();
+    END IF;
+  END $$;
+`);
+
+// Index utilisé pour retrouver rapidement une offre existante ayant la
+// même clé de dédoublonnage lors d'une synchronisation (voir
+// upsertDepuisFlux dans models/Emploi.js). Un index simple suffit ici :
+// pas de contrainte UNIQUE, une clé vide/nulle ne doit jamais bloquer
+// l'insertion normale d'offres saisies manuellement.
+await client.query(`
+  CREATE INDEX IF NOT EXISTS idx_offres_emploi_cle_dedup ON offres_emploi (cle_dedup);
+`);
+
+// Table : sync_log_emploi — historique des synchronisations, source par
+// source. Sert à l'admin pour voir précisément quelles sources ont
+// fonctionné, lesquelles ont échoué et pourquoi (fiabilité — point 13
+// et 14 du cahier des charges Emploi), sans avoir à lire les logs
+// serveur.
+await client.query(`
+  CREATE TABLE IF NOT EXISTS sync_log_emploi (
+    id             SERIAL PRIMARY KEY,
+    source_nom     VARCHAR(150) NOT NULL,
+    statut         VARCHAR(20) NOT NULL CHECK (statut IN ('succes', 'erreur')),
+    nombre_offres  INTEGER DEFAULT 0,
+    message_erreur TEXT,
+    created_at     TIMESTAMP DEFAULT NOW()
+  );
 `);
 
 // Ajoute les colonnes de réinitialisation de mot de passe à users
@@ -1122,6 +1214,49 @@ await client.query(`
 
     ALTER TABLE transactions ADD CONSTRAINT transactions_statut_check
       CHECK (statut IN ('validé', 'échoué', 'en attente', 'à vérifier'));
+  END $$;
+`);
+
+// Ajoute frais_detail (décomposition des frais : préinscription, visite
+// médicale, inscription... séparément) et élargit la contrainte CHECK
+// de concours.statut pour autoriser 'information non confirmée' — le
+// scheduler de statuts (concoursStatutScheduler.js) et le seed ne
+// doivent JAMAIS afficher "à venir" ou "ouvert" quand aucune date
+// officielle fiable n'est disponible ; avant cette migration, ce 5e
+// statut n'existait pas et la seule option "honnête" par défaut était
+// de forcer "à venir", ce qui laisse croire à tort qu'une ouverture est
+// prévue. CREATE TABLE IF NOT EXISTS ne modifie jamais une table déjà
+// existante — les deux changements doivent donc être appliqués ici
+// explicitement pour les bases de production déjà en place.
+await client.query(`
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='concours' AND column_name='frais_detail'
+    ) THEN
+      ALTER TABLE concours ADD COLUMN frais_detail TEXT;
+    END IF;
+  END $$;
+`);
+
+await client.query(`
+  DO $$
+  DECLARE
+    nom_contrainte text;
+  BEGIN
+    SELECT con.conname INTO nom_contrainte
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_attribute att ON att.attrelid = rel.oid AND att.attnum = ANY(con.conkey)
+    WHERE rel.relname = 'concours' AND att.attname = 'statut' AND con.contype = 'c'
+    LIMIT 1;
+
+    IF nom_contrainte IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE concours DROP CONSTRAINT %I', nom_contrainte);
+    END IF;
+
+    ALTER TABLE concours ADD CONSTRAINT concours_statut_check
+      CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée'));
   END $$;
 `);
 

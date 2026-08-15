@@ -7,6 +7,7 @@ const { genererCV, genererLM, genererConseilRevision, analyserATS, adapterCVOffr
 const { genererPDFTexte, genererCVStructure, supprimerFichier } = require("../services/pdf");
 const { genererCVDocx, genererLMDocx } = require("../services/docx");
 const { listerParCategorie, obtenirModele } = require("../config/modelesCv");
+const User = require("../models/User");
 
 // ════════════════════════════════════════════════════════════
 //  POST /api/cv/generate — Générer un CV via Claude IA
@@ -135,6 +136,24 @@ const nomBase = data?.nom
 
 const nomFichier = `${type === "cv" ? "CV" : "LM"}_${nomBase}_${Date.now()}`;
 
+// Modèle premium (config/modelesCv.js) → réservé aux comptes Premium
+// actifs. Avant ce correctif, le flag `premium` de chaque modèle
+// n'était qu'une donnée d'affichage jamais vérifiée côté serveur :
+// n'importe quel compte gratuit pouvait déjà générer un CV avec un
+// modèle marqué premium, en appelant directement l'API.
+if (type === "cv" && modeleId) {
+  const modeleChoisi = obtenirModele(modeleId);
+  if (modeleChoisi?.premium) {
+    const estPremiumActif = await User.estPremiumActif(req.user.id);
+    if (!estPremiumActif && req.user.role !== "admin") {
+      return res.status(403).json({
+        error: `Le modèle "${modeleChoisi.nom}" est réservé aux comptes Premium.`,
+        premiumRequis: true,
+      });
+    }
+  }
+}
+
 // CV structuré avec colonnes colorées
 if (type === "cv" && style === "structure" && data) {
   const modele = obtenirModele(modeleId);
@@ -217,6 +236,21 @@ if (!contenu) {
 const nomBase = data?.nom
   ? data.nom.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "")
   : "document";
+
+// Même contrôle que exportPDF : un modèle premium reste réservé aux
+// comptes Premium actifs, quel que soit le format d'export choisi.
+if (type === "cv" && modeleId) {
+  const modeleChoisi = obtenirModele(modeleId);
+  if (modeleChoisi?.premium) {
+    const estPremiumActif = await User.estPremiumActif(req.user.id);
+    if (!estPremiumActif && req.user.role !== "admin") {
+      return res.status(403).json({
+        error: `Le modèle "${modeleChoisi.nom}" est réservé aux comptes Premium.`,
+        premiumRequis: true,
+      });
+    }
+  }
+}
 
 if (type === "cv" && data) {
   const modele = obtenirModele(modeleId);

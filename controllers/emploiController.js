@@ -5,15 +5,22 @@
 // ============================================================
 
 const Emploi = require("../models/Emploi");
+const { extraireDateLimite } = require("../utils/dateLimite");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/emploi — Liste des offres avec filtres (public)
 // ════════════════════════════════════════════════════════════
 exports.liste = async (req, res) => {
 try {
-const { typeContrat, ville, secteur, recherche, limit, offset } = req.query;
+const {
+  typeContrat, typeOpportunite, ville, region, secteur, niveauEtudes,
+  experience, source, recherche, tri, inclureExpirees, limit, offset,
+} = req.query;
 
-const filtres = { typeContrat, ville, secteur, search: recherche };
+const filtres = {
+  typeContrat, typeOpportunite, ville, region, secteur, niveauEtudes,
+  experience, source, search: recherche, tri, inclureExpirees,
+};
 const limitApplique  = parseInt(limit)  || 50; // avant : 20 — relevé pour ne pas tronquer des listes plus fournies
 const offsetApplique = parseInt(offset) || 0;
 
@@ -142,9 +149,10 @@ res.status(500).json({ error: "Erreur serveur." });
 exports.creer = async (req, res) => {
 try {
 const {
-  titre, entreprise, typeContrat, ville, secteur, description,
-  profilRecherche, salaire, experience, dateLimite,
-  emailContact, lienExterne, statut, imageUrl,
+  titre, entreprise, typeContrat, typeOpportunite, ville, region, secteur,
+  description, profilRecherche, salaire, experience, niveauEtudes, dateLimite,
+  emailContact, lienExterne, statut, imageUrl, identifiantExterne,
+  sourceNom, sourceUrl,
 } = req.body;
 
 if (!titre || !entreprise || !typeContrat || !description) {
@@ -153,10 +161,19 @@ if (!titre || !entreprise || !typeContrat || !description) {
   });
 }
 
+// La date limite saisie par l'admin est du texte libre ("30/09/2026",
+// "avant fin septembre"...) : on tente de la convertir en vraie DATE
+// SQL pour que le calcul automatique d'expiration fonctionne aussi sur
+// les offres saisies manuellement, sans jamais bloquer la saisie si le
+// texte n'est pas reconnu (date_limite_date reste alors null — l'offre
+// n'est simplement pas auto-expirée, voir models/Emploi.js).
+const dateLimiteDate = dateLimite ? extraireDateLimite(dateLimite) : null;
+
 const offre = await Emploi.create({
-  titre, entreprise, typeContrat, ville, secteur, description,
-  profilRecherche, salaire, experience, dateLimite,
-  emailContact, lienExterne, statut, imageUrl,
+  titre, entreprise, typeContrat, typeOpportunite, ville, region, secteur,
+  description, profilRecherche, salaire, experience, niveauEtudes,
+  dateLimite, dateLimiteDate, emailContact, lienExterne, statut, imageUrl,
+  identifiantExterne, sourceNom, sourceUrl,
 });
 
 res.status(201).json({ message: "Offre créée avec succès.", offre });
@@ -168,7 +185,11 @@ res.status(500).json({ error: "Erreur lors de la création de l'offre." });
 
 exports.modifier = async (req, res) => {
 try {
-const offre = await Emploi.update(req.params.id, req.body);
+const champs = { ...req.body };
+if (champs.dateLimite) {
+  champs.dateLimiteDate = extraireDateLimite(champs.dateLimite);
+}
+const offre = await Emploi.update(req.params.id, champs);
 if (!offre) {
   return res.status(404).json({ error: "Offre introuvable." });
 }
@@ -176,6 +197,33 @@ res.json({ message: "Offre modifiée avec succès.", offre });
 } catch (err) {
 console.error("Erreur modification offre :", err.message);
 res.status(500).json({ error: "Erreur lors de la modification." });
+}
+};
+
+// ════════════════════════════════════════════════════════════
+//  GET /api/emploi/sources — Sources déjà agrégées (public, pour
+//  alimenter le filtre "Source" de la page Emploi)
+// ════════════════════════════════════════════════════════════
+exports.sources = async (req, res) => {
+try {
+const sources = await Emploi.sourcesDisponibles();
+res.json({ sources });
+} catch (err) {
+console.error("Erreur liste sources emploi :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
+}
+};
+
+// ════════════════════════════════════════════════════════════
+//  GET /api/emploi/stats — Tableau de bord de l'agrégation (admin)
+// ════════════════════════════════════════════════════════════
+exports.stats = async (req, res) => {
+try {
+const stats = await Emploi.getStats();
+res.json(stats);
+} catch (err) {
+console.error("Erreur stats emploi :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };
 
