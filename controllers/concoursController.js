@@ -108,6 +108,11 @@ Journal.enregistrer(req.user.id, req.user.nom, "création", "concours", nouveau.
 
 } catch (err) {
 console.error("Erreur créer concours :", err.message);
+if (err.code === "23505") {
+  return res.status(409).json({
+    error: "Un concours avec ce titre et cet organisme existe déjà en base — modifie le titre ou l'organisme, ou édite directement la fiche existante.",
+  });
+}
 res.status(500).json({ error: "Erreur lors de la création du concours." });
 }
 };

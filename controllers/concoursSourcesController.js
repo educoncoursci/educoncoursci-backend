@@ -115,6 +115,19 @@ exports.approuverSuggestion = async (req, res) => {
     res.status(201).json({ message: "Concours publié à partir de la suggestion.", concours });
   } catch (err) {
     console.error("Erreur approbation suggestion concours :", err.message);
+    // Code PostgreSQL 23505 = violation de contrainte unique — ici, la
+    // contrainte concours_titre_organisme_uniq (voir config/database.js).
+    // Message explicite plutôt que la 500 générique : un admin qui tente
+    // d'approuver une suggestion détectée automatiquement pour un concours
+    // déjà présent en base (même titre + même organisme, ex. déjà saisi
+    // manuellement entre-temps) doit comprendre POURQUOI ça échoue, sans
+    // quoi la suggestion resterait bloquée en attente indéfiniment sans
+    // piste pour la débloquer (la rejeter, dans ce cas, est la bonne action).
+    if (err.code === "23505") {
+      return res.status(409).json({
+        error: "Un concours avec ce titre et cet organisme existe déjà en base. Rejette cette suggestion si c'est bien un doublon, ou modifie le titre avant de l'approuver.",
+      });
+    }
     res.status(500).json({ error: "Erreur lors de la publication du concours." });
   }
 };

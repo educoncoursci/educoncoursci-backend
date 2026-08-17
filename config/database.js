@@ -7,7 +7,7 @@
 const { Pool } = require("pg");
 
 // Pool de connexions PostgreSQL
-// En production (Railway), DATABASE_URL est fournie automatiquement
+// En production (Render, ou tout hébergeur géré), DATABASE_URL est fournie automatiquement
 const pool = new Pool({
 connectionString: process.env.DATABASE_URL,
 ssl: process.env.NODE_ENV === "production"
