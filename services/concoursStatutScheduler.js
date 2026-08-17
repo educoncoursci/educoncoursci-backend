@@ -43,11 +43,19 @@ function calculerStatut(dateOuverture, dateCloture, aujourdHui) {
 }
 
 async function recalculerStatuts() {
+  // IS DISTINCT FROM au lieu de != : en SQL, `NULL != 'résultats'` ne
+  // vaut ni vrai ni faux (NULL), donc la ligne est silencieusement
+  // exclue du WHERE — un concours dont le statut est resté vide
+  // (créé sans statut ni dates, ou remis à zéro manuellement) n'était
+  // alors JAMAIS recalculé, même avec statut_auto=TRUE et des dates
+  // renseignées ensuite. IS DISTINCT FROM traite NULL comme une
+  // valeur normale à comparer, pas comme "inconnu" : le concours
+  // rentre enfin dans le calcul automatique.
   const result = await query(
     `SELECT id, titre, statut, date_ouverture, date_cloture
      FROM concours
      WHERE statut_auto = TRUE
-       AND statut != 'résultats'
+       AND statut IS DISTINCT FROM 'résultats'
        AND (date_ouverture IS NOT NULL OR date_cloture IS NOT NULL)`,
   );
 

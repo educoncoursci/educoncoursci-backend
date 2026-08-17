@@ -6,6 +6,12 @@
 //  production. Ne modifie rien, ne se connecte à rien : lecture
 //  seule de process.env.
 //
+//  Doit être exécuté LÀ OÙ vivent les vraies variables (ex: un
+//  shell Render avec les Environment Variables déjà chargées, ou
+//  un .env local rempli manuellement) — lancé sans ça, tout
+//  apparaîtra "manquant" alors que ce serait correctement configuré
+//  en production.
+//
 //  Usage : npm run check
 // ============================================================
 
@@ -19,9 +25,14 @@ const INDISPENSABLE = [
   ["FRONTEND_URL", "Sans elle, le site (CORS) ne peut pas appeler l'API — tout appel sera bloqué."],
 ];
 
-const PAIEMENT = [
-  ["WAVE_NUMERO", "Aucun moyen de paiement Wave configuré."],
+// Chaque entrée active RÉELLEMENT un moyen de paiement — sert au calcul
+// "au moins un moyen configuré" plus bas. Ne pas y mettre les URLs ou
+// secrets qui ne font qu'accompagner un moyen déjà activé par ailleurs
+// (ex: WAVE_WEBHOOK_SECRET n'active rien à lui seul).
+const PAIEMENT_MOYENS = [
+  ["WAVE_NUMERO", "Aucun moyen de paiement Wave (mode manuel) configuré."],
   ["WAVE_LIEN_PAIEMENT", "Pas de lien marchand Wave — repli sur numéro simple si WAVE_NUMERO est présent."],
+  ["WAVE_API_KEY", "Paiement Wave automatique (montant pré-rempli, activation sans saisie) non actif — le mode manuel/lien reste disponible."],
   ["OM_NUMERO", "Aucun moyen de paiement Orange Money configuré."],
   ["MTN_NUMERO", "Aucun moyen de paiement MTN Money configuré."],
   ["MOOV_NUMERO", "Aucun moyen de paiement Moov Money configuré."],
@@ -37,16 +48,18 @@ const OPTIONNEL = [
   ["SMS_API_KEY", "Les rappels par SMS seront indisponibles (les emails suffisent)."],
 ];
 
-function verifierGroupe(titre, variables, bloquant) {
+function present(nom) {
+  return Boolean(process.env[nom] && process.env[nom].trim() !== "");
+}
+
+function verifierGroupe(titre, variables, icone) {
   console.log(`\n${titre}`);
   let manquantes = 0;
   for (const [nom, consequence] of variables) {
-    const present = !!process.env[nom] && process.env[nom].trim() !== "";
-    if (present) {
+    if (present(nom)) {
       console.log(`  ✅ ${nom}`);
     } else {
       manquantes++;
-      const icone = bloquant ? "❌" : "⚠️ ";
       console.log(`  ${icone} ${nom} — manquante. ${consequence}`);
     }
   }
@@ -59,18 +72,59 @@ console.log("=".repeat(60));
 const manquantesIndispensables = verifierGroupe(
   "🔴 INDISPENSABLE — le site ne démarre pas sans ça",
   INDISPENSABLE,
-  true,
+  "❌",
 );
 const manquantesPaiement = verifierGroupe(
   "🟠 PAIEMENT — au moins un moyen doit être présent pour encaisser",
-  PAIEMENT,
-  false,
+  PAIEMENT_MOYENS,
+  "⚠️ ",
 );
 const manquantesOptionnelles = verifierGroupe(
   "🟡 OPTIONNEL — améliore l'expérience, non bloquant",
   OPTIONNEL,
-  false,
+  "⚠️ ",
 );
+
+// ── Réglages associés, vérifiés séparément car ils n'activent rien à
+//    eux seuls, mais peuvent SILENCIEUSEMENT casser un moyen déjà actif
+//    — en particulier après une migration d'hébergeur (Railway → Render
+//    ou autre), où ces URLs peuvent pointer vers un domaine mort sans
+//    qu'aucune erreur ne remonte côté site : le paiement a l'air de
+//    fonctionner pour le client, mais le Premium ne s'active jamais. ──
+console.log("\n🔗 URLS ET SECRETS ASSOCIÉS — sensibles à un changement d'hébergeur");
+let critiquesAssocies = 0;
+
+if (present("WAVE_API_KEY") && !present("WAVE_WEBHOOK_SECRET")) {
+  critiquesAssocies++;
+  console.log("  ❌ WAVE_WEBHOOK_SECRET — manquante alors que WAVE_API_KEY est configurée : les webhooks Wave seront REJETÉS (signature invalide), le Premium ne s'activera JAMAIS automatiquement même si le client paie réellement.");
+} else if (present("WAVE_WEBHOOK_SECRET")) {
+  console.log("  ✅ WAVE_WEBHOOK_SECRET");
+}
+
+if (present("WAVE_API_KEY")) {
+  for (const nom of ["WAVE_SUCCESS_URL", "WAVE_ERROR_URL"]) {
+    if (present(nom)) {
+      console.log(`  ✅ ${nom} → ${process.env[nom]}`);
+    } else {
+      console.log(`  ⚠️  ${nom} — absente, repli automatique sur FRONTEND_URL (${process.env.FRONTEND_URL || "non configurée !"}) + le chemin par défaut. Vérifie que FRONTEND_URL est bien ton domaine ACTUEL.`);
+    }
+  }
+}
+
+if (present("CINETPAY_API_KEY")) {
+  if (present("CINETPAY_NOTIFY_URL")) {
+    console.log(`  ✅ CINETPAY_NOTIFY_URL → ${process.env.CINETPAY_NOTIFY_URL}`);
+    console.log("     ⚠️  Vérifie AUSSI que cette même URL est enregistrée dans le tableau de bord CinetPay lui-même (externe à ce serveur) — sinon CinetPay ne saura jamais où notifier un paiement réussi.");
+  } else {
+    critiquesAssocies++;
+    console.log("  ❌ CINETPAY_NOTIFY_URL — manquante alors que CinetPay est configuré : CinetPay n'aura aucune URL à notifier, le Premium ne s'activera jamais automatiquement sur un paiement par carte/mobile money via CinetPay.");
+  }
+  if (present("CINETPAY_RETURN_URL")) {
+    console.log(`  ✅ CINETPAY_RETURN_URL → ${process.env.CINETPAY_RETURN_URL}`);
+  } else {
+    console.log("  ⚠️  CINETPAY_RETURN_URL — absente : le client sera redirigé après paiement vers une URL de repli définie dans le tableau de bord CinetPay, potentiellement obsolète après une migration d'hébergeur.");
+  }
+}
 
 console.log("\n" + "=".repeat(60));
 
@@ -78,15 +132,20 @@ console.log("\n" + "=".repeat(60));
 // Moov ou CinetPay) — sinon le site ne peut littéralement encaisser
 // aucun paiement, ce qui bloque la génération de revenus même si le
 // serveur démarre sans problème.
-const auMoinsUnPaiement = PAIEMENT.some(
-  ([nom]) => process.env[nom] && process.env[nom].trim() !== "",
-);
+const auMoinsUnPaiement = PAIEMENT_MOYENS.some(([nom]) => present(nom));
 
 if (manquantesIndispensables > 0) {
   console.log(`\n❌ ${manquantesIndispensables} variable(s) indispensable(s) manquante(s) — le déploiement va échouer.`);
   process.exitCode = 1;
 } else if (!auMoinsUnPaiement) {
   console.log("\n⚠️  Le serveur démarrera, mais AUCUN moyen de paiement n'est configuré — impossible d'encaisser quoi que ce soit pour le moment.");
+  process.exitCode = 1;
+} else if (critiquesAssocies > 0) {
+  // Le serveur démarre, un moyen de paiement EST configuré, mais l'un
+  // d'eux est cassé de façon invisible pour un visiteur (webhook non
+  // fonctionnel) — ce cas mérite d'être aussi visible qu'un vrai
+  // blocage, pas noyé sous un "✅ Prêt" qui rassurerait à tort.
+  console.log(`\n❌ ${critiquesAssocies} réglage(s) critique(s) manquant(s) pour qu'un moyen de paiement déjà activé fonctionne réellement (voir 🔗 ci-dessus) — un client pourrait payer sans jamais recevoir son Premium.`);
   process.exitCode = 1;
 } else {
   console.log("\n✅ Prêt pour le déploiement.");

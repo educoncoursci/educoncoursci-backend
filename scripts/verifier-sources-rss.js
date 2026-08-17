@@ -10,7 +10,7 @@
 //  mais renvoyer une erreur 404 en production si le site a changé
 //  de plateforme ou de structure — ça s'est déjà produit sur ce
 //  projet. Ce script permet de le savoir AVANT de configurer quoi
-//  que ce soit, plutôt que de le découvrir dans les logs Railway
+//  que ce soit, plutôt que de le découvrir dans les logs de l'hébergeur
 //  après coup.
 //
 //  Usage :

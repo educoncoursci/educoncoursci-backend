@@ -13,6 +13,6 @@ console.log("🔑 JWT_SECRET généré (128 caractères hexadécimaux) :");
 console.log("");
 console.log(secret);
 console.log("");
-console.log("📋 Copie cette ligne dans ton .env Railway :");
+console.log("📋 Copie cette ligne dans ton .env (ou les Environment Variables de ton hébergeur) :");
 console.log(`JWT_SECRET=${secret}`);
 console.log("");

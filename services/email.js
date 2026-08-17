@@ -5,7 +5,7 @@
 //                 scores QCM, rappels clôture, reset mot de passe.
 //
 //  ⚠️ Pourquoi l'API HTTPS et pas le SMTP (Gmail/Yahoo) ?
-//  Railway bloque les connexions SMTP sortantes sur son plan
+//  Render (comme Railway avant lui) bloque les connexions SMTP sortantes sur son plan
 //  gratuit/Hobby (confirmé en production : "Connection timeout" sur
 //  smtp.mail.yahoo.com, alors que les identifiants étaient corrects).
 //  L'API Brevo passe par une requête HTTPS classique (comme n'importe
@@ -106,7 +106,7 @@ async function envoyer({ to, subject, html, text }) {
 if (!emailConfigure()) {
 console.warn(
   `⚠️  E-mail NON envoyé (BREVO_API_KEY absente) → ${to} | Sujet: ${subject}. ` +
-  `Configure cette variable sur Railway pour activer l'envoi réel.`,
+  `Configure cette variable dans les Environment Variables de ton hébergeur (Render) pour activer l'envoi réel.`,
 );
 return { simule: true, to, subject };
 }

@@ -41,7 +41,7 @@ const destinataire = process.argv[2];
       "      → l'adresse dans EMAIL_FROM doit être exactement celle vérifiée là-bas.",
     );
     console.log(
-      "   4. Configure BREVO_API_KEY sur Railway → Variables puis relance ce script.\n",
+      "   4. Configure BREVO_API_KEY dans les Environment Variables de ton hébergeur (Render) puis relance ce script.\n",
     );
     process.exitCode = 1;
     return;

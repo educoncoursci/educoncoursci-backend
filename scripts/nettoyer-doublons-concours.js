@@ -42,7 +42,7 @@ const { query, initDatabase, pool } = require("../config/database");
     if (doublons.rows.length === 0) {
       console.log("✅ Aucun doublon détecté — rien à nettoyer.");
       console.log("   Si le message \"Contrainte anti-doublon absente\" persiste dans tes logs,");
-      console.log("   redémarre le service Railway pour qu'initDatabase() repose la contrainte.");
+      console.log("   redémarre le service backend (Render) pour qu'initDatabase() repose la contrainte.");
       return;
     }
 
@@ -64,7 +64,7 @@ const { query, initDatabase, pool } = require("../config/database");
     }
 
     console.log(`\n✅ Terminé : ${totalSupprimes} doublon(s) supprimé(s).`);
-    console.log("ℹ️  Redémarre le service Railway pour que la contrainte anti-doublon");
+    console.log("ℹ️  Redémarre le service backend (Render) pour que la contrainte anti-doublon");
     console.log("   soit posée avec succès au prochain démarrage (elle ne peut pas");
     console.log("   être créée tant que des doublons existent en base).");
   } catch (err) {
