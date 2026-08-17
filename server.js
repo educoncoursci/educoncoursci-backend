@@ -15,13 +15,13 @@ const { initDatabase } = require("./config/database");
 
 const app = express();
 
-// Railway (comme la plupart des hébergeurs modernes) place le serveur
+// Render (comme la plupart des hébergeurs modernes) place le serveur
 // derrière un proxy inverse, qui ajoute un en-tête X-Forwarded-For avec
 // la vraie IP du visiteur. Sans cette ligne, Express n'y fait pas
 // confiance par défaut (sécurité), ce qui fait planter
 // express-rate-limit (il en a besoin pour identifier qui fait quoi) —
 // erreur ERR_ERL_UNEXPECTED_X_FORWARDED_FOR. "1" = fait confiance au
-// premier proxy uniquement (celui de Railway), pas à toute la chaîne,
+// premier proxy uniquement (celui de Render), pas à toute la chaîne,
 // ce qui reste sûr contre une IP falsifiée par le visiteur lui-même.
 app.set("trust proxy", 1);
 
@@ -57,12 +57,11 @@ origin: (origin, callback) => {
 if (!origin || originesAutorisees.includes(origin)) {
 callback(null, true);
 } else {
-// Journalisé côté serveur (visible dans les logs Railway) — ça
-// permet de savoir immédiatement si un problème de connexion
-// frontend/backend vient de CORS (ex: FRONTEND_URL mal configurée
-// sur Railway) plutôt que de deviner depuis la console du
-// navigateur seule.
-console.warn(`⚠️  CORS refusé pour l'origine "${origin}" — vérifie FRONTEND_URL sur Railway. Origines autorisées : ${originesAutorisees.join(", ")}`);
+// Journalisé côté serveur (visible dans les logs de ton hébergeur) —
+// ça permet de savoir immédiatement si un problème de connexion
+// frontend/backend vient de CORS (ex: FRONTEND_URL mal configurée)
+// plutôt que de deviner depuis la console du navigateur seule.
+console.warn(`⚠️  CORS refusé pour l'origine "${origin}" — vérifie FRONTEND_URL sur ton hébergeur. Origines autorisées : ${originesAutorisees.join(", ")}`);
 callback(new Error("CORS non autorisé pour cette origine"));
 }
 },

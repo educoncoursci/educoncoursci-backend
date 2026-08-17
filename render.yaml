@@ -1,0 +1,18 @@
+# ============================================================
+#  render.yaml — Configuration Render (Infrastructure as Code)
+#  Facultatif : tu peux aussi tout configurer à la main dans le
+#  tableau de bord Render (New → Web Service), ce fichier sert
+#  juste à ne pas avoir à ressaisir buildCommand/startCommand.
+#  Les variables d'environnement (DATABASE_URL, JWT_SECRET, etc.)
+#  ne sont volontairement PAS ici : elles se renseignent dans le
+#  tableau de bord Render (Environment), jamais dans un fichier
+#  commité sur GitHub. Voir .env.example pour la liste complète.
+# ============================================================
+services:
+  - type: web
+    name: educoncoursci-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health

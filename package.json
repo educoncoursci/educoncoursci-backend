@@ -59,7 +59,8 @@
     "node.js",
     "express",
     "postgresql",
-    "railway"
+    "railway",
+    "render"
   ],
   "author": "EduConcoursCI — Abidjan, Côte d'Ivoire",
   "license": "ISC"
