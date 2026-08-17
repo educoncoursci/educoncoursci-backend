@@ -55,7 +55,7 @@ const upload = creerUploadeur({
 
 // ── Upload Vidéo ─────────────────────────────────────────────
 // ⚠️ Important : le disque de la plupart des hébergeurs (dont
-// Railway) est éphémère — un fichier stocké ici est perdu au
+// Render) est éphémère — un fichier stocké ici est perdu au
 // prochain redéploiement, sauf volume persistant configuré.
 // C'est pourquoi le lien YouTube reste la méthode recommandée
 // dans l'admin ; l'upload direct est une option secondaire pour
@@ -69,7 +69,7 @@ const uploadVideo = creerUploadeur({
 
 // ── Upload Photo de profil ──────────────────────────────────
 // ⚠️ Même avertissement que pour les vidéos : le disque est éphémère
-// sur la plupart des hébergeurs (dont Railway sans volume persistant
+// sur la plupart des hébergeurs (dont Render sans volume persistant
 // configuré) — une photo uploadée ainsi peut disparaître au prochain
 // déploiement. C'est pourquoi l'utilisateur peut aussi coller un lien
 // d'image externe à la place (voir dashboard/profil.html).

@@ -25,6 +25,42 @@ function calculerStatutDepuisDates(dateOuverture, dateCloture) {
   return "ouvert";
 }
 
+// ── Trouve la structure la plus spécifique correspondant à un
+//    organisme donné, parmi celles déjà en base (utilisée par create()
+//    et update() pour le rattachement automatique au logo — voir leurs
+//    commentaires). Reproduit le même principe que
+//    scripts/corriger-logos-et-categorie-insfs.js : plusieurs
+//    structures peuvent matcher le même organisme composé (ex.
+//    "Ministère de la Fonction Publique... — Direction Générale des
+//    Douanes" contient à la fois le nom du ministère ET celui de la
+//    direction) — on ne peut pas se fier à la longueur du nom pour
+//    départager (le nom officiel complet d'un ministère est souvent
+//    PLUS LONG que celui d'une direction pourtant plus spécifique).
+//    Le signal fiable est plutôt : combien de concours EN BASE
+//    correspondent déjà à ce motif — la structure la plus spécifique
+//    est celle qui en concerne le moins.
+async function trouverStructureCorrespondante(organisme) {
+  const candidats = await query(
+    `SELECT id, nom, sigle FROM structures
+     WHERE $1 ILIKE '%' || nom || '%'
+        OR (sigle IS NOT NULL AND sigle <> '' AND $1 ILIKE '%' || sigle || '%')`,
+    [organisme],
+  );
+  if (candidats.rows.length === 0) return null;
+  if (candidats.rows.length === 1) return candidats.rows[0].id;
+
+  let meilleur = null;
+  for (const c of candidats.rows) {
+    const { rows } = await query(
+      `SELECT COUNT(*)::int AS n FROM concours WHERE organisme ILIKE '%' || $1 || '%'`,
+      [c.nom],
+    );
+    const n = rows[0].n;
+    if (!meilleur || n < meilleur.n) meilleur = { id: c.id, n };
+  }
+  return meilleur.id;
+}
+
 const Concours = {
   // ── Créer un concours ───────────────────────────────────────
   async create({
@@ -68,6 +104,31 @@ const Concours = {
       ? calculerStatutDepuisDates(dateOuverture, dateCloture)
       : statut;
 
+    // Rattachement automatique au logo de l'organisme (structures.id) :
+    // sans ça, seuls les concours passés par scripts/seed-concours-ci.js
+    // (qui appelle explicitement corriger-logos-et-categorie-insfs.js à
+    // la fin) recevaient un logo. Un concours créé par n'importe quelle
+    // AUTRE voie — approbation d'une suggestion détectée automatiquement
+    // par services/concoursFeed.js (concoursSourcesController.
+    // approuverSuggestion), ou simple création manuelle depuis
+    // /admin/concours — n'avait, lui, JAMAIS de structure_id et donc
+    // jamais de logo, même quand une structure correspondante existait
+    // déjà en base avec son logo renseigné. Ce correctif s'applique une
+    // seule fois ici, dans create(), plutôt que d'être dupliqué dans
+    // chacun de ces contrôleurs — la même logique s'applique alors
+    // automatiquement partout où un concours peut naître.
+    // ORDER BY LENGTH(nom) DESC : en cas de plusieurs structures dont le
+    // nom apparaît dans l'organisme (ex. la structure générique
+    // "Ministère de la Fonction Publique..." ET une structure plus
+    // spécifique "...Direction Générale des Douanes" contenant elle
+    // aussi ce préfixe), le nom le plus long — donc le plus spécifique —
+    // gagne, pour ne jamais attribuer par erreur le logo générique du
+    // ministère à un concours qui a en réalité sa propre structure dédiée.
+    let structureIdFinal = structureId || null;
+    if (!structureIdFinal && organisme) {
+      structureIdFinal = await trouverStructureCorrespondante(organisme);
+    }
+
     const result = await query(
       `INSERT INTO concours
         (titre, organisme, categorie, ouverture, cloture, frais, frais_detail, places,
@@ -107,7 +168,7 @@ const Concours = {
         // ne jamais déduire un statut optimiste par défaut.
         statutCalcule || "information non confirmée",
         couleur || "#1A6B3C",
-        structureId || null,
+        structureIdFinal,
         ageMin || null,
         ageMax || null,
         sexe || "tous",
@@ -188,8 +249,18 @@ const Concours = {
   },
 
   // ── Trouver un concours par ID ──────────────────────────────
+  // Même jointure que findAll() (voir commentaire plus haut) — sans
+  // elle, structure_logo_url était toujours absent des résultats de
+  // findById(), y compris pour findByIdEnrichi() qui s'appuie dessus
+  // avant de fusionner l'objet `structure` complet par-dessus.
   async findById(id) {
-    const result = await query(`SELECT * FROM concours WHERE id = $1`, [id]);
+    const result = await query(
+      `SELECT concours.*, s.logo_url AS structure_logo_url, s.sigle AS structure_sigle
+       FROM concours
+       LEFT JOIN structures s ON s.id = concours.structure_id
+       WHERE concours.id = $1`,
+      [id],
+    );
     if (!result.rows[0]) return null;
     return formatConcours(result.rows[0]);
   },
@@ -254,6 +325,20 @@ const Concours = {
       ? dateVerifiee
       : (dateOuverture || dateCloture) ? true : undefined;
 
+    // Même rattachement automatique au logo que dans create() (voir son
+    // commentaire pour le détail) — utile ici quand un admin corrige
+    // l'organisme d'un concours qui n'avait encore aucun logo (ex. une
+    // suggestion approuvée avant ce correctif, ou une faute de frappe
+    // dans l'organisme qui empêchait la correspondance). Ne s'active que
+    // si `organisme` fait partie de cette mise à jour ET qu'aucun
+    // structureId n'est fourni explicitement — un admin qui choisit
+    // volontairement une structure via /admin/referentiels reste
+    // toujours prioritaire sur cette déduction automatique.
+    let structureIdFinal = structureId;
+    if (!structureIdFinal && organisme) {
+      structureIdFinal = await trouverStructureCorrespondante(organisme);
+    }
+
     const result = await query(
       `UPDATE concours SET
         titre        = COALESCE($1,  titre),
@@ -304,7 +389,7 @@ const Concours = {
         premium,
         statutFinal,
         couleur,
-        structureId,
+        structureIdFinal,
         ageMin,
         ageMax,
         sexe,
