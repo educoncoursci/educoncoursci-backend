@@ -1260,6 +1260,34 @@ await client.query(`
   END $$;
 `);
 
+// LOT21 — 6ᵉ valeur de statut : 'suspendu' (🔴 Suspendu/Annulé).
+// Même mécanisme d'élargissement que ci-dessus (recherche dynamique
+// du nom de la contrainte CHECK existante avant de la remplacer,
+// jamais de nom deviné en dur) — voir models/Concours.js pour la
+// règle de priorité : un concours 'suspendu' ne doit JAMAIS être
+// recalculé automatiquement par la date (concoursStatutScheduler.js
+// l'exclut, au même titre que 'résultats').
+await client.query(`
+  DO $$
+  DECLARE
+    nom_contrainte text;
+  BEGIN
+    SELECT con.conname INTO nom_contrainte
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_attribute att ON att.attrelid = rel.oid AND att.attnum = ANY(con.conkey)
+    WHERE rel.relname = 'concours' AND att.attname = 'statut' AND con.contype = 'c'
+    LIMIT 1;
+
+    IF nom_contrainte IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE concours DROP CONSTRAINT %I', nom_contrainte);
+    END IF;
+
+    ALTER TABLE concours ADD CONSTRAINT concours_statut_check
+      CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée', 'suspendu'));
+  END $$;
+`);
+
 await client.query("COMMIT");
 console.log("✅ Tables PostgreSQL initialisées");
 

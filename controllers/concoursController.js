@@ -183,3 +183,45 @@ console.error("Erreur concours ouverts :", err.message);
 res.status(500).json({ error: "Erreur serveur." });
 }
 };
+
+// ════════════════════════════════════════════════════════════
+//  GET /api/concours/stats — Compteurs dynamiques (public)
+//  Utilisé par les compteurs de la page Concours (Tous/En cours/
+//  À venir/Terminé/Date non définie/Suspendu) et la répartition
+//  par section — jamais codés en dur côté frontend.
+// ════════════════════════════════════════════════════════════
+exports.stats = async (req, res) => {
+try {
+const stats = await Concours.getStatsParStatut();
+res.json(stats);
+} catch (err) {
+console.error("Erreur stats concours :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
+}
+};
+
+// ════════════════════════════════════════════════════════════
+//  POST /api/concours/reseeder — Lance la bibliothèque de concours
+//  vérifiés (admin). Alternative à `npm run concours:seed` en ligne
+//  de commande, pour les hébergeurs sans accès Shell (ex: plan
+//  gratuit Render). require() différé (pas en haut du fichier) :
+//  scripts/seed-concours-ci.js exécute du code au chargement du
+//  module (construction du tableau INSTITUTIONS) — le charger
+//  seulement quand cette route est réellement appelée évite ce coût
+//  à chaque démarrage du serveur pour une action admin rarement
+//  utilisée.
+// ════════════════════════════════════════════════════════════
+exports.reseeder = async (req, res) => {
+try {
+const { ensemencerConcours } = require("../scripts/seed-concours-ci");
+const resume = await ensemencerConcours();
+Journal.enregistrer(req.user.id, req.user.nom, "ensemencement", "concours", null, `${resume.creees} fiche(s) créée(s)`);
+res.json({
+  message: `${resume.creees} nouvelle(s) fiche(s) créée(s), ${resume.ignorees} déjà présente(s) sur ${resume.total}.`,
+  ...resume,
+});
+} catch (err) {
+console.error("Erreur reseeder concours :", err.message);
+res.status(500).json({ error: "Erreur lors de l'ensemencement : " + err.message });
+}
+};
