@@ -81,6 +81,26 @@ const INSTITUTIONS = [
     dateVerifiee: true,
   },
   {
+    titre: "Concours ENA — Cycle Moyen Supérieur (Licence/BTS/DUT)",
+    organisme: "École Nationale d'Administration (ENA)",
+    categorie: "Administration",
+    niveau: "Licence, BTS ou DUT (toutes spécialités)",
+    ageMin: 18, ageMax: 40,
+    frais: 27500,
+    // 3ᵉ cycle direct de l'ENA, manquant entre les deux fiches Cycle
+    // Moyen / Cycle Supérieur déjà présentes — même session "entrée en
+    // 2027" (16/03-30/04/2026), confirmé sur blog.ivoire-juriste.com
+    // (22/03/2026) et ablanian.ci. Tranche d'âge distincte des deux
+    // autres cycles : né(e) entre le 01/01/1986 et le 31/12/2007.
+    dateOuverture: "2026-03-16", dateCloture: "2026-04-30",
+    conditions: "Nationalité ivoirienne. Né(e) entre le 01/01/1986 et le 31/12/2007 (18 à 40 ans au 31 décembre 2025). Titulaire d'une Licence, d'un BTS ou d'un DUT (toutes spécialités), ou titre admis en équivalence.",
+    pieces: ["Extrait de naissance", "Certificat de nationalité", "Diplôme légalisé (+ attestation d'équivalence si obtenu à l'étranger)", "Casier judiciaire", "Certificat médical"],
+    centres: ["Abidjan — ENA Cocody"],
+    couleur: "#7B2FBE",
+    lienOfficiel: "https://www.fonctionpublique.gouv.ci/",
+    dateVerifiee: true,
+  },
+  {
     titre: "Concours CAFOP-IA (Instituteurs Adjoints)",
     organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA)",
     categorie: "Enseignement",
@@ -100,6 +120,146 @@ const INSTITUTIONS = [
     centres: ["Abidjan", "Bouaké", "Daloa", "Korhogo", "Man", "Yamoussoukro"],
     couleur: "#1A6B3C",
     lienOfficiel: "https://cafop.ciconcours.com/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "ACE — Adjoint au Chef d'Établissement",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux enseignants en fonction (voir arrêté d'ouverture)",
+    frais: null,
+    // Examen professionnel de promotion interne, PAS un concours ouvert
+    // au grand public — réservé aux enseignants déjà en poste.
+    // Résultats du 2e tour publiés le 16/05/2026 (men-deco.org/
+    // actualite/actu-deco/resultats-second-tour-ace-adc). Dates
+    // précises d'ouverture/clôture des inscriptions non retrouvées
+    // avec certitude ⇒ statut fixé manuellement plutôt que deviné à
+    // partir de dates incertaines (statutAuto: false).
+    statut: "fermé", statutAuto: false,
+    conditions: "Réservé aux personnels enseignants du Ministère de l'Éducation Nationale déjà en fonction. Voir l'arrêté d'ouverture du concours pour les conditions précises (ancienneté, corps d'origine...).",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://www.men-deco.org/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "ADC — Adjoint au Directeur de CAFOP",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux enseignants en fonction (voir arrêté d'ouverture)",
+    frais: null,
+    statut: "fermé", statutAuto: false,
+    conditions: "Réservé aux personnels enseignants du Ministère de l'Éducation Nationale déjà en fonction. Voir l'arrêté d'ouverture du concours pour les conditions précises.",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://www.men-deco.org/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "CAP — Épreuves Écrites (Certificat d'Aptitude Pédagogique)",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux enseignants en fonction (voir arrêté d'ouverture)",
+    frais: null,
+    // Résultats confirmés disponibles le 07/05/2026 (communiqué DECO
+    // "Résultats CAP et CEAP session 2026 disponibles").
+    statut: "fermé", statutAuto: false,
+    conditions: "Réservé aux personnels enseignants du Ministère de l'Éducation Nationale. Voir l'arrêté d'ouverture pour les conditions précises.",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://epedago.men-deco.org/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "CAP — Intégration Fonction Publique (CAP/FP)",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux titulaires du CAP",
+    frais: null,
+    // "Inscription fermée" confirmé sur epedago.men-deco.org (portail
+    // officiel des examens et concours pédagogiques).
+    statut: "fermé", statutAuto: false,
+    conditions: "Réservé aux titulaires du CAP souhaitant une intégration dans la Fonction publique. Voir l'arrêté d'ouverture pour les conditions précises.",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://epedago.men-deco.org/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "CAP — Titularisation (Public) / Intégration (Privé)",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux titulaires du CAP",
+    frais: null,
+    // "Ouverture des préinscriptions" au moment de la vérification
+    // (epedago.men-deco.org) — seul concours de ce bloc encore
+    // potentiellement accessible ; date de clôture non retrouvée avec
+    // certitude, donc statut fixé manuellement plutôt qu'un calcul
+    // par date incertain. À reconfirmer périodiquement.
+    statut: "information non confirmée", statutAuto: false,
+    conditions: "Réservé aux titulaires du CAP (secteur public : titularisation ; secteur privé : intégration). Voir l'arrêté d'ouverture pour les conditions précises.",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://epedago.men-deco.org/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "CEAP — Épreuves Écrites (Certificat Élémentaire d'Aptitude Pédagogique)",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux enseignants en fonction (voir arrêté d'ouverture)",
+    frais: null,
+    // Résultats confirmés disponibles le 07/05/2026 (même communiqué
+    // que le CAP ci-dessus).
+    statut: "fermé", statutAuto: false,
+    conditions: "Réservé aux personnels enseignants du Ministère de l'Éducation Nationale. Voir l'arrêté d'ouverture pour les conditions précises.",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://epedago.men-deco.org/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "CEAP — Titularisation (Public) / Intégration (Privé)",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux titulaires du CEAP",
+    frais: null,
+    // "Ouverture des préinscriptions" au moment de la vérification —
+    // même remarque que CAP Titularisation ci-dessus.
+    statut: "information non confirmée", statutAuto: false,
+    conditions: "Réservé aux titulaires du CEAP (secteur public : titularisation ; secteur privé : intégration). Voir l'arrêté d'ouverture pour les conditions précises.",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://epedago.men-deco.org/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "CEAP — Titulaire du DIAS",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux titulaires du DIAS",
+    frais: null,
+    // "Inscription fermée" confirmé sur epedago.men-deco.org.
+    statut: "fermé", statutAuto: false,
+    conditions: "Réservé aux titulaires du Diplôme d'Instituteur Adjoint Stagiaire (DIAS). Voir l'arrêté d'ouverture pour les conditions précises.",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://epedago.men-deco.org/",
+    dateVerifiee: true,
+  },
+  {
+    titre: "DIAS — Diplôme d'Instituteur Adjoint Stagiaire",
+    organisme: "Ministère de l'Éducation Nationale et de l'Alphabétisation (MENA) — DECO",
+    categorie: "Enseignement",
+    niveau: "Réservé aux Instituteurs Adjoints Stagiaires",
+    frais: null,
+    // Résultats confirmés publiés le 24/07/2026 (communiqué DECO
+    // "RÉSULTATS DU DIAS 2026").
+    statut: "fermé", statutAuto: false,
+    conditions: "Réservé aux Instituteurs Adjoints Stagiaires ayant achevé leur formation en CAFOP. Voir l'arrêté d'ouverture pour les conditions précises.",
+    centres: ["Abidjan"],
+    couleur: "#1A6B3C",
+    lienOfficiel: "https://www.men-deco.org/",
     dateVerifiee: true,
   },
   {
@@ -124,18 +284,148 @@ const INSTITUTIONS = [
     dateVerifiee: true, // Sources multiples concordantes (mai-août 2026), voir commentaire ci-dessus
   },
   {
-    titre: "Concours INFAS — IDE, Sage-Femme, Technicien Supérieur (niveau BAC)",
+    titre: "Concours INFAS — Infirmiers et Infirmières",
     organisme: "Institut National de Formation des Agents de Santé (INFAS)",
     categorie: "Santé & Social",
-    niveau: "BAC ou BT autorisé (2013-2025)",
+    niveau: "BAC (toutes séries) ou BT Sciences Médico-Sociales",
+    ageMin: 18, ageMax: 32,
+    frais: 40000, // 28 000 FCFA visite médicale + 12 000 FCFA concours
+    // Vérifié directement sur infas.ciconcours.com/details/1 (fiche
+    // officielle) le 18/08/2026 — remplace une ancienne entrée
+    // générique "IDE, Sage-Femme, Technicien Supérieur" qui fusionnait
+    // à tort 9 filières distinctes en une seule fiche, et dont la date
+    // de clôture (22/06) ne correspondait plus à celle publiée par
+    // l'INFAS pour cette session (29/06). Aujourd'hui (18/08/2026), la
+    // période d'inscription est déjà passée — le concours est donc
+    // "Terminé" (statut calculé automatiquement par les dates), pas
+    // "en cours", même si convocations/compositions restent en cours
+    // de traitement côté INFAS.
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du Bac (toutes séries : A, C, D, E, F, G1, G2, B) ou d'un BT Sciences Médico-Sociales, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC ou BT Sciences Médico-Sociales", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
+    couleur: "#D9000D",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
+    dateVerifiee: true,
+  },
+  {
+    titre: "Concours INFAS — Sages-Femmes et Maïeuticiens",
+    organisme: "Institut National de Formation des Agents de Santé (INFAS)",
+    categorie: "Santé & Social",
+    niveau: "BAC (toutes séries) ou BT Sciences Médico-Sociales",
     ageMin: 18, ageMax: 32,
     frais: 40000,
-    dateOuverture: "2026-05-22", dateCloture: "2026-06-22",
-    conditions: "Titulaire du BAC (2013-2025) ou d'un BT autorisé. Filières : Infirmier Diplômé d'État (IDE), Sage-Femme (SFM), Technicien Supérieur de Santé (TSS). Aucun autre BT ni équivalence non listée n'est autorisé.",
-    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC ou BT autorisé", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
-    centres: ["Abidjan — INFAS Adjamé", "Bouaké — INFAS Bouaké"],
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du Bac (toutes séries : A, C, D, E, F, G1, G2, B) ou d'un BT Sciences Médico-Sociales, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC ou BT Sciences Médico-Sociales", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
     couleur: "#D9000D",
-    lienOfficiel: "https://infas.ciconcours.com/",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
+    dateVerifiee: true,
+  },
+  {
+    titre: "Concours INFAS — Secrétaires Médicaux",
+    organisme: "Institut National de Formation des Agents de Santé (INFAS)",
+    categorie: "Santé & Social",
+    niveau: "BAC G1 ou BT Secrétariat Bureautique",
+    ageMin: 18, ageMax: 32,
+    frais: 40000,
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du BAC G1 ou d'un BT Secrétariat Bureautique, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC G1 ou BT Secrétariat Bureautique", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
+    couleur: "#D9000D",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
+    dateVerifiee: true,
+  },
+  {
+    titre: "Concours INFAS — Technicien Supérieur de Santé (Biologie Médicale)",
+    organisme: "Institut National de Formation des Agents de Santé (INFAS)",
+    categorie: "Santé & Social",
+    niveau: "BAC C, D, E, F ou B",
+    ageMin: 18, ageMax: 32,
+    frais: 40000,
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du BAC C, D, E, F ou B, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
+    couleur: "#D9000D",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
+    dateVerifiee: true,
+  },
+  {
+    titre: "Concours INFAS — Technicien Supérieur de Santé (Biomédical)",
+    organisme: "Institut National de Formation des Agents de Santé (INFAS)",
+    categorie: "Santé & Social",
+    niveau: "BAC C, D, E, F, B ou BT Électronique",
+    ageMin: 18, ageMax: 32,
+    frais: 40000,
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du BAC C, D, E, F, B ou d'un BT Électronique, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC ou BT Électronique", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
+    couleur: "#D9000D",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
+    dateVerifiee: true,
+  },
+  {
+    titre: "Concours INFAS — Technicien Supérieur de Santé (Hygiène et Assainissement)",
+    organisme: "Institut National de Formation des Agents de Santé (INFAS)",
+    categorie: "Santé & Social",
+    niveau: "BAC C, D, E, F ou B",
+    ageMin: 18, ageMax: 32,
+    frais: 40000,
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du BAC C, D, E, F ou B, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
+    couleur: "#D9000D",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
+    dateVerifiee: true,
+  },
+  {
+    titre: "Concours INFAS — Technicien Supérieur de Santé (Imagerie Médicale)",
+    organisme: "Institut National de Formation des Agents de Santé (INFAS)",
+    categorie: "Santé & Social",
+    niveau: "BAC C, D, E, F ou B",
+    ageMin: 18, ageMax: 32,
+    frais: 40000,
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du BAC C, D, E, F ou B, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
+    couleur: "#D9000D",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
+    dateVerifiee: true,
+  },
+  {
+    titre: "Concours INFAS — Technicien Supérieur de Santé (Masso-Kinésithérapie)",
+    organisme: "Institut National de Formation des Agents de Santé (INFAS)",
+    categorie: "Santé & Social",
+    niveau: "BAC C, D, E, F ou B",
+    ageMin: 18, ageMax: 32,
+    frais: 40000,
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du BAC C, D, E, F ou B, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
+    couleur: "#D9000D",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
+    dateVerifiee: true,
+  },
+  {
+    titre: "Concours INFAS — Technicien Supérieur de Santé (Préparateurs et Gestionnaires en Pharmacie)",
+    organisme: "Institut National de Formation des Agents de Santé (INFAS)",
+    categorie: "Santé & Social",
+    niveau: "BAC C, D, E, F ou B",
+    ageMin: 18, ageMax: 32,
+    frais: 40000,
+    dateOuverture: "2026-05-22", dateCloture: "2026-06-29",
+    conditions: "Né(e) entre le 01/01/1994 et le 31/12/2008 (18 à 32 ans), nationalité ivoirienne. Titulaire du BAC C, D, E, F ou B, obtenu entre 2013 et 2025.",
+    pieces: ["Acte de naissance", "Attestation de nationalité", "Copie du BAC", "Casier judiciaire", "Certificat de visite médicale", "Reçu de paiement (40 000 FCFA)"],
+    centres: ["Abidjan", "Bouaké", "Korhogo", "Daloa", "Abengourou", "Agboville", "Aboisso", "Man"],
+    couleur: "#D9000D",
+    lienOfficiel: "https://infas.ciconcours.com/details/1",
     dateVerifiee: true,
   },
   {
@@ -320,13 +610,22 @@ const INSTITUTIONS = [
     niveau: "BEPC",
     ageMin: 18, ageMax: 30,
     frais: 10000,
-    // Je n'ai pas trouvé de date confirmée pour une session "concours
-    // direct" grand public en 2026 — le site officiel
-    // (police.ciconcours.com, consulté le 08/08/2026) n'affiche
-    // actuellement que des concours et examens PROFESSIONNELS
-    // (réservés aux policiers déjà en poste), pas de concours direct
-    // ouvert au public. Dates de cette fiche non confirmées —
-    // à vérifier manuellement sur le site officiel avant publication.
+    // Ré-vérifié le 19/08/2026 : Ablanian.ci (la référence que tu
+    // utilises) confirme elle-même sur sa page d'accueil que "le
+    // dernier lancement du concours de police [direct, Officier]
+    // date de 2024" — aucune session directe grand public n'a donc
+    // été relancée en 2026 au moment de cette vérification. Un
+    // article (affairage.ci, 03/05/2026) annonçait la Police Nationale
+    // "sur le point de lancer" un concours direct de sous-officiers
+    // 2026 (18-26 ans, né entre 2000-2006, extensible à 30 ans) mais
+    // sans dates d'inscription confirmées à ce jour. Le site officiel
+    // (police.ciconcours.com) n'affiche que des examens PROFESSIONNELS
+    // (réservés aux policiers en poste, inscriptions déjà closes). Le
+    // concours PROFESSIONNEL des Commissaires de Police, lui, est
+    // confirmé ouvert au titre de 2026 (KOACI, 19/07/2026) — voir la
+    // fiche séparée ci-dessous. Dates de CETTE fiche (concours direct
+    // grand public) toujours non confirmées — à vérifier manuellement
+    // sur police.ciconcours.com avant publication.
     dateOuverture: null, dateCloture: null,
     conditions: "Nationalité ivoirienne. Titulaire du BEPC, du BAC, d'une Licence ou d'une Maîtrise selon le corps visé. Carte CMU (ou récépissé d'enrôlement) désormais obligatoire. Engagement décennal à servir dans la Police Nationale (10 ans).",
     pieces: ["Certificat de nationalité ivoirienne (- de 6 mois)", "Extrait d'acte de naissance ou jugement supplétif original", "Diplôme requis légalisé + original", "CNI en cours de validité (recto-verso) ou récépissé d'enrôlement", "Fiche de candidature imprimée après inscription en ligne", "Carte CMU ou récépissé d'enrôlement"],
@@ -336,18 +635,45 @@ const INSTITUTIONS = [
     dateVerifiee: false,
   },
   {
+    titre: "Concours Professionnel — Commissaires de Police",
+    organisme: "École Nationale de Police (ENP) — Ministère de l'Intérieur et de la Sécurité",
+    categorie: "Sécurité & Défense",
+    niveau: "Baccalauréat",
+    frais: null,
+    // Concours PROFESSIONNEL réservé aux Officiers de Police déjà en
+    // fonction, pas au grand public — confirmé ouvert au titre de
+    // l'année 2026 par KOACI (19/07/2026) : candidats titulaires du
+    // BAC, âgés de 49 ans au plus au 01/01/2026, en activité et
+    // justifiant d'au moins 5 années de service dans le corps des
+    // Officiers de Police. Dates précises d'ouverture/clôture des
+    // inscriptions non précisées dans la source — statut fixé
+    // manuellement (statutAuto: false) plutôt que deviné.
+    statut: "fermé", statutAuto: false,
+    conditions: "Réservé aux Officiers de Police en activité, titulaires du Baccalauréat, âgés de 49 ans au plus au 1er janvier 2026, justifiant d'au moins 5 années de service effectif dans le corps des Officiers de Police.",
+    centres: ["Abidjan — École de Police"],
+    couleur: "#0A6EBD",
+    lienOfficiel: "https://police.ciconcours.com/",
+    dateVerifiee: true,
+  },
+  {
     titre: "Concours Sous-Officiers de la Gendarmerie Nationale",
     organisme: "Ministère de la Défense — Gendarmerie Nationale de Côte d'Ivoire",
     categorie: "Sécurité & Défense",
     niveau: "BEPC",
     ageMin: 18, ageMax: 25,
-    frais: 10000,
-    // Session 2026 confirmée par sources multiples concordantes
-    // (KOACI, AIP, fratmat.info, 26-28/03/2026) — ouverture officielle
-    // le 26 mars par le Ministre de la Défense. Inscriptions en ligne
-    // closes le 19 avril 2026 ; dépôt des dossiers et prise de vue
-    // jusqu'au 14 juillet 2026 — concours en phase avancée
-    // (post-dépôt de dossiers) au 08/08/2026.
+    frais: 30000,
+    // Session 2026 confirmée par une douzaine de sources concordantes
+    // (AIP, KOACI, AllAfrica, FratMat, Afriquinfos, defense.ciconcours.net…)
+    // — communiqué d'ouverture publié le 26 mars 2026 par le Ministre de
+    // la Défense, inscriptions en ligne effectivement ouvertes du 30
+    // mars au 19 avril 2026 (dateOuverture ci-dessous = vraie date de
+    // début des inscriptions, pas celle du communiqué d'annonce).
+    // 2 800 places disponibles pour cette session. Frais corrigés à
+    // 30 000 FCFA (non remboursables) — la valeur précédente de cette
+    // fiche (10 000 FCFA) était erronée. Visite médicale 26 mai-16
+    // juin 2026, dépôt des dossiers 6-14 juillet 2026, épreuves
+    // sportives/pratiques 7-16 juillet 2026 — concours en phase
+    // avancée (post-dépôt de dossiers) au 08/08/2026.
     dateOuverture: "2026-03-30", dateCloture: "2026-04-19",
     conditions: "Nationalité ivoirienne. Âgé de 18 à 25 ans au 31 décembre 2026. Titulaire du BEPC ou diplôme équivalent. Taille minimale 1,68 m. Aptitude physique. Inscription exclusivement en ligne, procédure 100% dématérialisée — aucun intermédiaire ne peut garantir l'admission.",
     pieces: ["Acte de naissance", "Copie du BEPC ou diplôme équivalent", "Casier judiciaire vierge", "Certificat médical (visite du 26 mai au 16 juin 2026)"],
@@ -429,8 +755,14 @@ const INSTITUTIONS = [
     // guidedufonctionnaire.com — inscriptions en ligne 16/03-30/04/2026
     // sur concours.gouv.ci, plus de 400 concours administratifs
     // ouverts. Épreuves écrites du 27 juin au 9 août 2026 (samedis et
-    // dimanches) — concours EN COURS DE COMPOSITION au 08/08/2026,
-    // résultats publiés progressivement à partir du 21 juillet.
+    // dimanches). Ré-vérifié le 18/08/2026 : 423 concours 2026 au
+    // total (199 recrutement direct + 224 promotion professionnelle,
+    // source simoon-cv.com/gouv.ci) ; résultats publiés en 4 vagues
+    // (21/07, 04/08, mi-août, 01/09/2026 sur gucaci.ciconcours.com) —
+    // les deux premières vagues sont déjà publiées à cette date, les
+    // deux dernières restent à venir. Le concours reste donc "fermé"
+    // (inscriptions closes depuis le 30/04) même si le traitement des
+    // résultats se poursuit encore par vagues successives.
     dateOuverture: "2026-03-16", dateCloture: "2026-04-30",
     conditions: "Nationalité ivoirienne. Diplôme de l'enseignement supérieur BAC+3 minimum. N'avoir jamais été révoqué de la Fonction Publique. Catégorie A regroupe les grades A3 à A7 (cadres supérieurs).",
     pieces: ["Extrait de naissance", "Certificat de nationalité", "Diplôme requis légalisé", "Casier judiciaire bulletin n°3", "Certificat médical", "CV détaillé"],
@@ -575,6 +907,31 @@ const INSTITUTIONS = [
     dateVerifiee: true,
   },
   {
+    titre: "Concours INFJ — Attaché des Greffes et Parquets (Cycle Moyen Supérieur)",
+    organisme: "Institut National de Formation Judiciaire (INFJ)",
+    categorie: "Administration",
+    niveau: "BAC+2 ou Licence",
+    ageMin: 18, ageMax: 35,
+    frais: 55000,
+    // Corps distinct du "Secrétaire des Greffes et Parquets" (cycle
+    // moyen, niveau BAC) ci-dessus — l'INFJ publie deux communiqués
+    // PDF séparés (ATTACHES vs SECRETAIRES DES GREFFES ET PARQUETS)
+    // avec le même calendrier "Concours Directs" mais des niveaux de
+    // diplôme différents. Vérifié le 18/08/2026 sur
+    // infj.ciconcours.com/uploads/communiques/1/ATTACHES%20DES%20
+    // GREFFES%20ET%20PARQUETS%20-%20GREFFES.pdf : inscription en ligne
+    // 12/02-31/03/2026 (12/02-17/04/2026 pour la visite médicale selon
+    // youthmedia.net). Concours terminé pour cette session au
+    // 18/08/2026.
+    dateOuverture: "2026-02-12", dateCloture: "2026-03-31",
+    conditions: "Nationalité ivoirienne. Titulaire d'un diplôme BAC+2 ou Licence. Voir arrêté d'ouverture pour les conditions complètes.",
+    pieces: ["Demande manuscrite adressée au Ministre de la Justice", "Extrait d'acte de naissance (- de 6 mois)", "Certificat de nationalité ivoirienne", "Casier judiciaire (- de 3 mois)", "CV", "Copie légalisée du diplôme BAC+2/Licence", "Déclaration sur l'honneur", "Certificat de visite et contre-visite médicale INFJ"],
+    centres: ["Abidjan — INFJ"],
+    couleur: "#7B2FBE",
+    lienOfficiel: "https://infj.ciconcours.com/",
+    dateVerifiee: true,
+  },
+  {
     titre: "Concours de la Magistrature",
     organisme: "Institut National de Formation Judiciaire (INFJ)",
     categorie: "Administration",
@@ -620,15 +977,24 @@ const INSTITUTIONS = [
   },
 ];
 
-(async () => {
-  try {
-    await initDatabase();
-    console.log(`🎓 Chargement de la bibliothèque de concours de Côte d'Ivoire (${INSTITUTIONS.length} fiches)...\n`);
+// ── Fonction exportable : NE ferme JAMAIS le pool elle-même ────
+// Contrairement à l'ancienne version qui appelait pool.end() en fin
+// de script, cette fonction est aussi appelée depuis
+// controllers/concoursController.js (route admin /api/concours/
+// reseeder) PENDANT que le serveur tourne — fermer le pool partagé
+// depuis là planterait toutes les requêtes suivantes du serveur
+// entier, pas juste ce script. Le pool.end() n'a lieu que plus bas,
+// dans le bloc `if (require.main === module)`, réservé à l'exécution
+// en ligne de commande (`npm run concours:seed`).
+async function ensemencerConcours() {
+  await initDatabase();
+  console.log(`🎓 Chargement de la bibliothèque de concours de Côte d'Ivoire (${INSTITUTIONS.length} fiches)...\n`);
 
-    let creees = 0;
-    let ignorees = 0;
+  let creees = 0;
+  let ignorees = 0;
+  const erreurs = [];
 
-    for (const c of INSTITUTIONS) {
+  for (const c of INSTITUTIONS) {
       // Si aucune date n'est fournie du tout (cas rare : source
       // consultée mais aucune session 2026 confirmée trouvée), le
       // calcul automatique de statut retomberait par défaut sur
@@ -644,6 +1010,14 @@ const INSTITUTIONS = [
       // renseigné de vraies dates.
       const aucuneDateConnue = !c.dateOuverture && !c.dateCloture;
       const statutParDefaut = c.statut || (aucuneDateConnue ? "information non confirmée" : undefined);
+      // c.statutAuto est respecté quand une fiche le précise
+      // explicitement (ex: les entrées CAFOP/ACE/CEAP ci-dessus, qui
+      // veulent un statut manuel même si elles n'ont pas de dates
+      // connues aujourd'hui mais pourraient en recevoir plus tard) —
+      // sinon, retombe sur la règle historique : pas de dates connues
+      // ⇒ pas de recalcul automatique tant qu'aucune vraie date n'est
+      // renseignée.
+      const statutAutoFinal = c.statutAuto !== undefined ? c.statutAuto : !aucuneDateConnue;
 
       try {
         await Concours.create({
@@ -663,7 +1037,7 @@ const INSTITUTIONS = [
           dateOuverture: c.dateOuverture,
           dateCloture: c.dateCloture,
           statut: statutParDefaut,
-          statutAuto: !aucuneDateConnue,
+          statutAuto: statutAutoFinal,
           lienOfficiel: c.lienOfficiel || null,
           // Les fiches qui portent un commentaire de source vérifiée dans
           // le tableau ci-dessus (ex: INSFS, avec date et référence de
@@ -679,36 +1053,58 @@ const INSTITUTIONS = [
         console.log(`  ✅ ${c.titre}`);
       } catch (err) {
         // Conflit sur (titre, organisme) = déjà présent, on ignore
-        // silencieusement ; toute autre erreur est affichée pour
-        // pouvoir être corrigée.
+        // silencieusement ; toute autre erreur est collectée pour être
+        // remontée à l'appelant (CLI ou réponse HTTP admin) plutôt que
+        // simplement affichée dans une console que l'admin ne voit pas
+        // quand ce code tourne côté route HTTP.
         if (err.message && err.message.includes("concours_titre_organisme_uniq")) {
           ignorees++;
           console.log(`  ↷ ${c.titre} (déjà présent, ignoré)`);
         } else {
           console.error(`  ❌ ${c.titre} — ${err.message}`);
+          erreurs.push({ titre: c.titre, message: err.message });
         }
       }
-    }
-
-    console.log(`\n✅ Terminé : ${creees} nouvelle(s) fiche(s) créée(s), ${ignorees} déjà présente(s) sur ${INSTITUTIONS.length}.`);
-    console.log("ℹ️  Pense à vérifier/ajuster les dates de chaque fiche via /admin/concours dès que le communiqué officiel de l'année est publié.");
-
-    // ── Logos officiels + correction catégorie INSFS ──────────────
-    // Intégré directement ici pour qu'une seule commande —
-    // `npm run concours:seed` — suffise à la fois à créer/mettre à
-    // jour les fiches concours ET à leur associer le bon logo
-    // d'organisme (table structures) et corriger la catégorie des
-    // concours INSFS (Travail Social, jamais Santé & Social). Voir
-    // scripts/corriger-logos-et-categorie-insfs.js pour le détail —
-    // cette même logique reste aussi disponible seule via
-    // `npm run corriger:insfs` si besoin de la relancer isolément.
-    const { appliquerCorrectionsLogos } = require("./corriger-logos-et-categorie-insfs");
-    console.log("\n──────────────────────────────────────────────\n");
-    await appliquerCorrectionsLogos();
-  } catch (err) {
-    console.error("❌ Erreur lors du chargement de la bibliothèque :", err.message);
-    process.exitCode = 1;
-  } finally {
-    await pool.end();
   }
-})();
+
+  console.log(`\n✅ Terminé : ${creees} nouvelle(s) fiche(s) créée(s), ${ignorees} déjà présente(s) sur ${INSTITUTIONS.length}.`);
+  console.log("ℹ️  Pense à vérifier/ajuster les dates de chaque fiche via /admin/concours dès que le communiqué officiel de l'année est publié.");
+
+  // ── Logos officiels + correction catégorie INSFS ──────────────
+  // Intégré directement ici pour qu'une seule commande —
+  // `npm run concours:seed` — suffise à la fois à créer/mettre à
+  // jour les fiches concours ET à leur associer le bon logo
+  // d'organisme (table structures) et corriger la catégorie des
+  // concours INSFS (Travail Social, jamais Santé & Social). Voir
+  // scripts/corriger-logos-et-categorie-insfs.js pour le détail —
+  // cette même logique reste aussi disponible seule via
+  // `npm run corriger:insfs` si besoin de la relancer isolément.
+  const { appliquerCorrectionsLogos } = require("./corriger-logos-et-categorie-insfs");
+  console.log("\n──────────────────────────────────────────────\n");
+  await appliquerCorrectionsLogos();
+
+  return { total: INSTITUTIONS.length, creees, ignorees, erreurs };
+}
+
+module.exports = { ensemencerConcours };
+
+// ── Exécution en ligne de commande (`npm run concours:seed`) ────
+// Le pool ne se ferme QUE dans ce cas précis — jamais quand la
+// fonction est importée et appelée depuis le serveur en marche (voir
+// commentaire au-dessus de ensemencerConcours).
+if (require.main === module) {
+  (async () => {
+    try {
+      const resume = await ensemencerConcours();
+      if (resume.erreurs.length) {
+        console.log(`\n⚠️  ${resume.erreurs.length} erreur(s) rencontrée(s) :`);
+        resume.erreurs.forEach((e) => console.log(`   - ${e.titre} : ${e.message}`));
+      }
+    } catch (err) {
+      console.error("❌ Erreur lors du chargement de la bibliothèque :", err.message);
+      process.exitCode = 1;
+    } finally {
+      await pool.end();
+    }
+  })();
+}

@@ -51,11 +51,22 @@ async function recalculerStatuts() {
   // renseignées ensuite. IS DISTINCT FROM traite NULL comme une
   // valeur normale à comparer, pas comme "inconnu" : le concours
   // rentre enfin dans le calcul automatique.
+  // Exclusions du recalcul automatique : 'résultats' (statut manuel,
+  // publié par un admin quand les résultats sortent) et 'suspendu'
+  // (🔴 Suspendu/Annulé — priorité absolue sur toute date, tant qu'un
+  // admin ne le change pas lui-même : voir la règle 7 du cahier des
+  // charges Concours, "si une source officielle indique que le
+  // concours est suspendu, ce statut doit avoir priorité"). Exclu ici
+  // même si statut_auto valait encore TRUE par erreur — double
+  // protection, le recalcul ne doit JAMAIS ramener un concours
+  // suspendu vers "ouvert"/"fermé" seulement parce que sa date est
+  // passée ou en cours.
   const result = await query(
     `SELECT id, titre, statut, date_ouverture, date_cloture
      FROM concours
      WHERE statut_auto = TRUE
        AND statut IS DISTINCT FROM 'résultats'
+       AND statut IS DISTINCT FROM 'suspendu'
        AND (date_ouverture IS NOT NULL OR date_cloture IS NOT NULL)`,
   );
 
