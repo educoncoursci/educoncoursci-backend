@@ -100,6 +100,14 @@ const Concours = {
     // de faire confiance à un texte libre potentiellement incohérent.
     const ouvertureTexte = dateOuverture ? formaterDateFr(dateOuverture) : ouverture;
     const clotureTexte   = dateCloture   ? formaterDateFr(dateCloture)   : cloture;
+    // Le calcul automatique par date ne doit s'appliquer QUE si
+    // statutAuto n'est pas explicitement désactivé — jamais en se basant
+    // sur la présence ou non de `statut` dans la requête. Le formulaire
+    // admin envoie TOUJOURS un statut (champ obligatoire, sert de valeur
+    // de repli/affichage), donc tester `!statut` ici aurait purement et
+    // simplement désactivé le calcul automatique pour toute création
+    // passée par l'admin — statutAuto (une case à cocher dédiée côté
+    // admin) est le seul signal fiable de l'intention réelle.
     const statutCalcule  = (dateOuverture || dateCloture) && statutAuto !== false
       ? calculerStatutDepuisDates(dateOuverture, dateCloture)
       : statut;
@@ -207,8 +215,19 @@ const Concours = {
       params.push(categorie);
     }
     if (statut) {
-      conditions.push(`statut = $${idx++}`);
-      params.push(statut);
+      // "fermé" et "résultats" sont fusionnés sous le même libellé public
+      // "Terminé" (voir STATUT_LABEL_CONCOURS côté frontend — un concours
+      // dont les résultats sont publiés reste, pour l'utilisateur, un
+      // concours terminé). Sans ce cas particulier, filtrer sur "Terminé"
+      // n'aurait renvoyé QUE les statut='fermé', laissant les concours en
+      // statut='résultats' injoignables depuis ce filtre alors qu'ils
+      // s'affichent avec exactement le même badge visuel.
+      if (statut === "fermé") {
+        conditions.push(`statut IN ('fermé', 'résultats')`);
+      } else {
+        conditions.push(`statut = $${idx++}`);
+        params.push(statut);
+      }
     }
     if (premium !== undefined) {
       conditions.push(`premium = $${idx++}`);
@@ -313,7 +332,9 @@ const Concours = {
     // d'elle, plutôt que de laisser un texte libre désynchronisé.
     const ouvertureFinale = dateOuverture ? formaterDateFr(dateOuverture) : ouverture;
     const clotureFinale   = dateCloture   ? formaterDateFr(dateCloture)   : cloture;
-    const statutFinal = (dateOuverture || dateCloture) && statutAuto !== false && !statut
+    // Même principe que create() — voir son commentaire : seul statutAuto
+    // fait foi, jamais la présence de `statut` dans la requête.
+    const statutFinal = (dateOuverture || dateCloture) && statutAuto !== false
       ? calculerStatutDepuisDates(dateOuverture, dateCloture)
       : statut;
     // Si l'admin fournit explicitement dateVerifiee, on le respecte tel
@@ -476,6 +497,38 @@ const Concours = {
       `SELECT COUNT(*) FROM concours WHERE statut = 'ouvert'`,
     );
     return parseInt(result.rows[0].count, 10);
+  },
+
+  // ── Compteurs dynamiques par statut (jamais codés en dur — recalculés
+  //    à chaque appel directement depuis la base). Sert à la fois aux
+  //    compteurs publics de la page Concours (point 6 du cahier des
+  //    charges Concours) et au rapport de vérification admin (nombre
+  //    par statut / par section demandé au point 4). GROUP BY statut
+  //    ne renvoie que les valeurs RÉELLEMENT présentes en base — un
+  //    statut à 0 concours n'apparaît pas dans parStatut, donc le
+  //    frontend doit prévoir une valeur par défaut de 0 pour chaque
+  //    statut de la liste fixe, pas supposer que les 6 seront toujours
+  //    renvoyées. ──────────────────────────────────────────────────
+  async getStatsParStatut() {
+    const [total, parStatut, parCategorie] = await Promise.all([
+      query(`SELECT COUNT(*)::int AS n FROM concours`),
+      query(`SELECT statut, COUNT(*)::int AS n FROM concours GROUP BY statut ORDER BY n DESC`),
+      query(`
+        SELECT categorie, COUNT(*)::int AS n FROM concours
+        WHERE categorie IS NOT NULL AND categorie <> ''
+        GROUP BY categorie ORDER BY n DESC
+      `),
+    ]);
+    return {
+      total: total.rows[0].n,
+      // statut peut être NULL en base (concours créé sans statut ni
+      // dates) — regroupé explicitement sous une clé "null" plutôt que
+      // d'être silencieusement compté nulle part, pour que la somme des
+      // catégories corresponde toujours exactement au total (exigence
+      // explicite du point 6 du cahier des charges Concours).
+      parStatut: parStatut.rows.map((r) => ({ statut: r.statut ?? "non_défini", total: r.n })),
+      parCategorie: parCategorie.rows.map((r) => ({ categorie: r.categorie, total: r.n })),
+    };
   },
 };
 
