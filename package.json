@@ -43,8 +43,7 @@
     "web-push": "^3.6.7",
     "speakeasy": "^2.0.0",
     "qrcode": "^1.5.3",
-    "cloudinary": "^2.5.1",
-    "multer-storage-cloudinary-v2": "^1.0.3"
+    "cloudinary": "^2.5.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
