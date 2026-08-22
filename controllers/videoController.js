@@ -97,9 +97,13 @@ const data = { ...req.body };
 
 // Si un fichier vidéo est uploadé via Multer
 if (req.file) {
-  // Cloudinary renvoie une URL complète dans .path ; le stockage
-  // disque local ne fournit que .filename.
-  data.url = req.file.path || `/uploads/videos/${req.file.filename}`;
+  const { cloudinaryConfigure, envoyerVersCloudinary } = require("../middleware/upload");
+  if (cloudinaryConfigure()) {
+    const resultat = await envoyerVersCloudinary(req.file, { dossier: "videos", resourceType: "video" });
+    data.url = resultat.secure_url;
+  } else {
+    data.url = `/uploads/videos/${req.file.filename}`;
+  }
   data.origine = "upload";
 } else {
   data.origine = "lien";

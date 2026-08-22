@@ -6,6 +6,12 @@
 //  Deux modes, choisis automatiquement :
 //  - Cloudinary configuré (CLOUDINARY_*) → stockage PERMANENT,
 //    les fichiers survivent aux redéploiements. Recommandé.
+//    Implémenté directement avec le SDK officiel Cloudinary
+//    (upload_stream), sans passer par un paquet tiers de storage
+//    Multer — ces paquets (multer-storage-cloudinary et ses forks)
+//    ont des dépendances figées sur d'anciennes versions de
+//    Cloudinary/Multer qui provoquent des conflits npm ERESOLVE.
+//    L'appel direct au SDK est plus simple et plus robuste.
 //  - Sinon → disque local (ancien comportement). ⚠️ Le disque de
 //    la plupart des hébergeurs (dont Render) est éphémère — un
 //    fichier stocké ainsi est perdu au prochain redéploiement,
@@ -18,28 +24,6 @@ const multer = require("multer");
 const path   = require("path");
 const fs     = require("fs");
 const { cloudinary, cloudinaryConfigure } = require("../config/cloudinary");
-
-// ── Stockage Cloudinary (générique, un dossier par type) ──────
-function creerStorageCloudinary({ dossier, resourceType }) {
-  // multer-storage-cloudinary-v2 : même API que multer-storage-cloudinary,
-  // mais compatible avec cloudinary v2.x (l'original ne fonctionne
-  // qu'avec cloudinary v1.x — voir config/cloudinary.js).
-  const { CloudinaryStorage } = require("multer-storage-cloudinary-v2");
-  return new CloudinaryStorage({
-    cloudinary,
-    params: {
-      folder: `educoncoursci/${dossier}`,
-      resource_type: resourceType, // "raw" pour PDF, "video" pour vidéos, "image" pour photos
-      public_id: (req, file) => {
-        const ext = path.extname(file.originalname);
-        const baseName = path.basename(file.originalname, ext)
-          .replace(/[^a-zA-Z0-9-_]/g, "_")
-          .substring(0, 60);
-        return `${Date.now()}_${baseName}`;
-      },
-    },
-  });
-}
 
 // ── Stockage disque local (fallback si Cloudinary absent) ─────
 function creerStorageDisque({ dossier }) {
@@ -55,7 +39,7 @@ function creerStorageDisque({ dossier }) {
     filename: (req, file, cb) => {
       const ext      = path.extname(file.originalname);
       const baseName = path.basename(file.originalname, ext)
-        .replace(/[^a-zA-Z0-9-*]/g, "*")
+        .replace(/[^a-zA-Z0-9-_]/g, "_")
         .substring(0, 60);
       const fileName = `${Date.now()}_${baseName}${ext}`;
       cb(null, fileName);
@@ -63,10 +47,14 @@ function creerStorageDisque({ dossier }) {
   });
 }
 
-// ── Fabrique générique : choisit Cloudinary ou disque selon la config ──
-function creerUploadeur({ dossier, resourceType, mimetypesAutorises, messageErreur, maxSizeMb }) {
+// ── Fabrique générique : mémoire (→ Cloudinary) ou disque selon la config ──
+function creerUploadeur({ dossier, mimetypesAutorises, messageErreur, maxSizeMb }) {
+  // Si Cloudinary est configuré, Multer garde le fichier en mémoire
+  // (buffer) le temps de la requête ; on l'enverra ensuite nous-même
+  // à Cloudinary via envoyerVersCloudinary() dans le contrôleur.
+  // Sinon, on écrit directement sur le disque comme avant.
   const storage = cloudinaryConfigure()
-    ? creerStorageCloudinary({ dossier, resourceType })
+    ? multer.memoryStorage()
     : creerStorageDisque({ dossier });
 
   const fileFilter = (req, file, cb) => {
@@ -85,7 +73,6 @@ function creerUploadeur({ dossier, resourceType, mimetypesAutorises, messageErre
 // ── Upload PDF (documents) ─────────────────────────────────────
 const upload = creerUploadeur({
   dossier: "pdf",
-  resourceType: "raw",
   mimetypesAutorises: ["application/pdf"],
   messageErreur: "Seuls les fichiers PDF sont acceptés.",
   maxSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB) || 20,
@@ -97,7 +84,6 @@ const upload = creerUploadeur({
 // YouTube ne convient pas (voir admin/videos.html).
 const uploadVideo = creerUploadeur({
   dossier: "videos",
-  resourceType: "video",
   mimetypesAutorises: ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"],
   messageErreur: "Formats acceptés : MP4, WebM, MOV.",
   maxSizeMb: parseInt(process.env.MAX_VIDEO_SIZE_MB) || 200,
@@ -106,11 +92,34 @@ const uploadVideo = creerUploadeur({
 // ── Upload Photo de profil ──────────────────────────────────
 const uploadPhoto = creerUploadeur({
   dossier: "photos",
-  resourceType: "image",
   mimetypesAutorises: ["image/jpeg", "image/png", "image/webp"],
   messageErreur: "Formats acceptés : JPG, PNG, WebP.",
   maxSizeMb: parseInt(process.env.MAX_PHOTO_SIZE_MB) || 5,
 });
+
+// ── Envoi effectif vers Cloudinary (appelé depuis le contrôleur) ──
+// À utiliser uniquement quand cloudinaryConfigure() est vrai (donc
+// que req.file vient de multer.memoryStorage() et a un .buffer).
+// resourceType : "raw" (PDF), "video" ou "image".
+function envoyerVersCloudinary(fichier, { dossier, resourceType }) {
+  return new Promise((resolve, reject) => {
+    const flux = cloudinary.uploader.upload_stream(
+      {
+        folder: `educoncoursci/${dossier}`,
+        resource_type: resourceType,
+        public_id: `${Date.now()}_${path
+          .basename(fichier.originalname, path.extname(fichier.originalname))
+          .replace(/[^a-zA-Z0-9-_]/g, "_")
+          .substring(0, 60)}`,
+      },
+      (err, resultat) => {
+        if (err) return reject(err);
+        resolve(resultat);
+      },
+    );
+    flux.end(fichier.buffer);
+  });
+}
 
 // ── Gestion des erreurs Multer (partagée) ──────────────────────
 const handleUploadError = (err, req, res, next) => {
@@ -128,4 +137,11 @@ const handleUploadError = (err, req, res, next) => {
   next();
 };
 
-module.exports = { upload, uploadVideo, uploadPhoto, handleUploadError };
+module.exports = {
+  upload,
+  uploadVideo,
+  uploadPhoto,
+  handleUploadError,
+  envoyerVersCloudinary,
+  cloudinaryConfigure,
+};

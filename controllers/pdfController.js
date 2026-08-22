@@ -126,9 +126,15 @@ const data = { ...req.body };
 
 // Si un fichier est uploadé via Multer
 if (req.file) {
-  // Cloudinary renvoie une URL complète dans .path (ou .secure_url selon
-  // la version) ; le stockage disque local ne fournit que .filename.
-  data.url    = req.file.path || `/uploads/pdf/${req.file.filename}`;
+  const { cloudinaryConfigure, envoyerVersCloudinary } = require("../middleware/upload");
+  if (cloudinaryConfigure()) {
+    // Cloudinary configuré : req.file vient de multer.memoryStorage()
+    // (un buffer, pas encore stocké nulle part) — on l'envoie ici.
+    const resultat = await envoyerVersCloudinary(req.file, { dossier: "pdf", resourceType: "raw" });
+    data.url = resultat.secure_url;
+  } else {
+    data.url = `/uploads/pdf/${req.file.filename}`;
+  }
   data.taille = `${(req.file.size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
