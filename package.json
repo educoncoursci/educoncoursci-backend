@@ -42,7 +42,9 @@
     "node-cron": "^3.0.3",
     "web-push": "^3.6.7",
     "speakeasy": "^2.0.0",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "cloudinary": "^2.5.1",
+    "multer-storage-cloudinary": "^4.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

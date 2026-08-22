@@ -113,6 +113,7 @@ app.use("/api/assistance-sociale", require("./routes/assistanceSociale"));
 app.use("/api/notifs",   require("./routes/notifs"));
 app.use("/api/actualites", require("./routes/actualites"));
 app.use("/api/admin",    require("./routes/admin"));
+app.use("/api/diagnostic", require("./routes/diagnostic"));
 
 // ── Route de santé (vérifier que le serveur tourne) ───────────
 app.get("/api/health", (req, res) => {
