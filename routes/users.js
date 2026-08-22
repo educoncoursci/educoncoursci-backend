@@ -9,7 +9,7 @@ const router  = express.Router();
 const auth    = require("../middleware/auth");
 const User    = require("../models/User");
 const Score   = require("../models/Score");
-const { uploadPhoto, handleUploadError } = require("../middleware/upload");
+const { uploadPhoto, handleUploadError, cloudinaryConfigure, envoyerVersCloudinary } = require("../middleware/upload");
 
 // PATCH /api/users/:id/photo — Définir la photo via un lien externe
 // (méthode recommandée — pas de risque de perte au redéploiement)
@@ -45,7 +45,9 @@ router.post(
       if (!req.file) {
         return res.status(400).json({ error: "Aucune image reçue." });
       }
-      const photoUrl = req.file.path || `/uploads/photos/${req.file.filename}`;
+      const photoUrl = cloudinaryConfigure()
+        ? (await envoyerVersCloudinary(req.file, { dossier: "photos", resourceType: "image" })).secure_url
+        : `/uploads/photos/${req.file.filename}`;
       const user = await User.setPhoto(req.params.id, photoUrl);
       res.json({ message: "Photo de profil mise à jour.", user });
     } catch (err) {
