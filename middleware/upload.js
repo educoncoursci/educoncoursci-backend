@@ -21,7 +21,10 @@ const { cloudinary, cloudinaryConfigure } = require("../config/cloudinary");
 
 // ── Stockage Cloudinary (générique, un dossier par type) ──────
 function creerStorageCloudinary({ dossier, resourceType }) {
-  const { CloudinaryStorage } = require("multer-storage-cloudinary");
+  // multer-storage-cloudinary-v2 : même API que multer-storage-cloudinary,
+  // mais compatible avec cloudinary v2.x (l'original ne fonctionne
+  // qu'avec cloudinary v1.x — voir config/cloudinary.js).
+  const { CloudinaryStorage } = require("multer-storage-cloudinary-v2");
   return new CloudinaryStorage({
     cloudinary,
     params: {
