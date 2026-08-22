@@ -30,7 +30,8 @@ res.status(500).json({ error: err.message });
 });
 
 // POST /api/users/:id/photo/upload — Uploader directement un fichier
-// ⚠️ Stockage sur disque local — voir avertissement dans middleware/upload.js
+// Stockage permanent via Cloudinary si configuré, sinon disque local
+// (voir middleware/upload.js).
 router.post(
   "/:id/photo/upload",
   auth,
@@ -44,7 +45,7 @@ router.post(
       if (!req.file) {
         return res.status(400).json({ error: "Aucune image reçue." });
       }
-      const photoUrl = `/uploads/photos/${req.file.filename}`;
+      const photoUrl = req.file.path || `/uploads/photos/${req.file.filename}`;
       const user = await User.setPhoto(req.params.id, photoUrl);
       res.json({ message: "Photo de profil mise à jour.", user });
     } catch (err) {

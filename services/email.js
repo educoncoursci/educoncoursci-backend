@@ -137,8 +137,18 @@ const data = await response.json();
 if (!response.ok) {
 // Cause la plus fréquente à ce stade : l'adresse dans EMAIL_FROM
 // n'est pas un expéditeur vérifié dans Brevo (obligatoire — voir
-// .env.example). Le message d'erreur de Brevo l'indique clairement.
-throw new Error(data.message || `Erreur Brevo (${response.status})`);
+// .env.example). On construit un message d'erreur détaillé (code +
+// message Brevo + expéditeur utilisé) pour qu'il soit immédiatement
+// exploitable dans les logs Render, sans avoir à reproduire l'appel
+// manuellement pour comprendre la cause.
+const detail = data.message || JSON.stringify(data);
+const erreur = new Error(
+  `Erreur Brevo (HTTP ${response.status}, code: ${data.code || "inconnu"}) : ${detail} ` +
+  `| Expéditeur utilisé : ${senderEmail} — vérifie qu'il est EXACTEMENT celui validé dans Brevo (Paramètres → Expéditeurs).`,
+);
+erreur.brevoStatus = response.status;
+erreur.brevoCode = data.code;
+throw erreur;
 }
 
 console.log(`✅ E-mail envoyé → ${to} | Sujet: ${subject} | id: ${data.messageId}`);
@@ -277,6 +287,32 @@ html,
 });
 }
 
+// ── E-mail de confirmation d'inscription à la newsletter ─────────
+// Manquait entièrement jusqu'ici : le contrôleur (vitrineController.
+// inscrireNewsletter) enregistrait bien l'adresse en base, mais
+// n'envoyait jamais aucun e-mail — l'utilisateur n'avait donc aucune
+// confirmation dans sa boîte mail, seulement le message affiché sur
+// le site lui-même.
+async function envoyerConfirmationNewsletter(email) {
+const html = templateBase("Inscription confirmée — EduConcoursCI", `
+  <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Inscription confirmée ! 📬</h2>
+  <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
+    Merci de t'être inscrit(e) à la newsletter d'EduConcoursCI. Tu recevras désormais un résumé
+    des nouveaux concours et des actualités importantes directement dans cette boîte mail.
+  </p>
+  <p style="color:#888;font-size:13px;line-height:1.7;margin:20px 0 0;">
+    Tu n'es pas à l'origine de cette inscription ? Ignore simplement cet e-mail, ou contacte-nous
+    pour être retiré(e) de la liste.
+  </p>
+`);
+
+return envoyer({
+to:      email,
+subject: "📬 Inscription à la newsletter EduConcoursCI confirmée",
+html,
+});
+}
+
 module.exports = {
 envoyer,
 envoyerBienvenue,
@@ -286,6 +322,7 @@ envoyerResultatQCM,
 envoyerRappelCloture,
 envoyerNotificationAdmin,
 envoyerResetMotDePasse,
+envoyerConfirmationNewsletter,
 emailConfigure,
 getTransporter,
 };
