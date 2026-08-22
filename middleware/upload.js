@@ -1,28 +1,55 @@
 // ============================================================
 //  middleware/upload.js
-//  Configuration Multer pour l'upload de fichiers (PDF et vidéos).
-//  - PDF   : 20 MB par défaut, uniquement application/pdf.
-//  - Vidéo : 200 MB par défaut, formats vidéo courants (mp4/webm/mov).
+//  Configuration Multer pour l'upload de fichiers (PDF, vidéos,
+//  photos).
+//
+//  Deux modes, choisis automatiquement :
+//  - Cloudinary configuré (CLOUDINARY_*) → stockage PERMANENT,
+//    les fichiers survivent aux redéploiements. Recommandé.
+//  - Sinon → disque local (ancien comportement). ⚠️ Le disque de
+//    la plupart des hébergeurs (dont Render) est éphémère — un
+//    fichier stocké ainsi est perdu au prochain redéploiement,
+//    sauf volume persistant configuré. C'est pourquoi le lien
+//    YouTube reste la méthode recommandée pour les vidéos, et
+//    pourquoi Cloudinary est recommandé pour PDF/photos.
 // ============================================================
 
 const multer = require("multer");
 const path   = require("path");
 const fs     = require("fs");
+const { cloudinary, cloudinaryConfigure } = require("../config/cloudinary");
 
-// ── Fabrique générique : crée un middleware Multer pour un
-//    sous-dossier /uploads/<dossier> donné ────────────────────
-function creerUploadeur({ dossier, mimetypesAutorises, messageErreur, maxSizeMb }) {
+// ── Stockage Cloudinary (générique, un dossier par type) ──────
+function creerStorageCloudinary({ dossier, resourceType }) {
+  const { CloudinaryStorage } = require("multer-storage-cloudinary");
+  return new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: `educoncoursci/${dossier}`,
+      resource_type: resourceType, // "raw" pour PDF, "video" pour vidéos, "image" pour photos
+      public_id: (req, file) => {
+        const ext = path.extname(file.originalname);
+        const baseName = path.basename(file.originalname, ext)
+          .replace(/[^a-zA-Z0-9-_]/g, "_")
+          .substring(0, 60);
+        return `${Date.now()}_${baseName}`;
+      },
+    },
+  });
+}
+
+// ── Stockage disque local (fallback si Cloudinary absent) ─────
+function creerStorageDisque({ dossier }) {
   const uploadDir = path.join(__dirname, `../uploads/${dossier}`);
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
 
-  const storage = multer.diskStorage({
+  return multer.diskStorage({
     destination: (req, file, cb) => {
       cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-      // Nom unique : timestamp + nom nettoyé
       const ext      = path.extname(file.originalname);
       const baseName = path.basename(file.originalname, ext)
         .replace(/[^a-zA-Z0-9-*]/g, "*")
@@ -31,6 +58,13 @@ function creerUploadeur({ dossier, mimetypesAutorises, messageErreur, maxSizeMb 
       cb(null, fileName);
     },
   });
+}
+
+// ── Fabrique générique : choisit Cloudinary ou disque selon la config ──
+function creerUploadeur({ dossier, resourceType, mimetypesAutorises, messageErreur, maxSizeMb }) {
+  const storage = cloudinaryConfigure()
+    ? creerStorageCloudinary({ dossier, resourceType })
+    : creerStorageDisque({ dossier });
 
   const fileFilter = (req, file, cb) => {
     if (mimetypesAutorises.includes(file.mimetype)) {
@@ -48,33 +82,28 @@ function creerUploadeur({ dossier, mimetypesAutorises, messageErreur, maxSizeMb 
 // ── Upload PDF (documents) ─────────────────────────────────────
 const upload = creerUploadeur({
   dossier: "pdf",
+  resourceType: "raw",
   mimetypesAutorises: ["application/pdf"],
   messageErreur: "Seuls les fichiers PDF sont acceptés.",
   maxSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB) || 20,
 });
 
 // ── Upload Vidéo ─────────────────────────────────────────────
-// ⚠️ Important : le disque de la plupart des hébergeurs (dont
-// Render) est éphémère — un fichier stocké ici est perdu au
-// prochain redéploiement, sauf volume persistant configuré.
-// C'est pourquoi le lien YouTube reste la méthode recommandée
-// dans l'admin ; l'upload direct est une option secondaire pour
-// les cas où YouTube ne convient pas (voir admin/videos.html).
+// Le lien YouTube reste la méthode recommandée dans l'admin ;
+// l'upload direct est une option secondaire pour les cas où
+// YouTube ne convient pas (voir admin/videos.html).
 const uploadVideo = creerUploadeur({
   dossier: "videos",
+  resourceType: "video",
   mimetypesAutorises: ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"],
   messageErreur: "Formats acceptés : MP4, WebM, MOV.",
   maxSizeMb: parseInt(process.env.MAX_VIDEO_SIZE_MB) || 200,
 });
 
 // ── Upload Photo de profil ──────────────────────────────────
-// ⚠️ Même avertissement que pour les vidéos : le disque est éphémère
-// sur la plupart des hébergeurs (dont Render sans volume persistant
-// configuré) — une photo uploadée ainsi peut disparaître au prochain
-// déploiement. C'est pourquoi l'utilisateur peut aussi coller un lien
-// d'image externe à la place (voir dashboard/profil.html).
 const uploadPhoto = creerUploadeur({
   dossier: "photos",
+  resourceType: "image",
   mimetypesAutorises: ["image/jpeg", "image/png", "image/webp"],
   messageErreur: "Formats acceptés : JPG, PNG, WebP.",
   maxSizeMb: parseInt(process.env.MAX_PHOTO_SIZE_MB) || 5,
