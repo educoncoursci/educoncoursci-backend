@@ -126,7 +126,9 @@ const data = { ...req.body };
 
 // Si un fichier est uploadé via Multer
 if (req.file) {
-  data.url    = `/uploads/pdf/${req.file.filename}`;
+  // Cloudinary renvoie une URL complète dans .path (ou .secure_url selon
+  // la version) ; le stockage disque local ne fournit que .filename.
+  data.url    = req.file.path || `/uploads/pdf/${req.file.filename}`;
   data.taille = `${(req.file.size / (1024 * 1024)).toFixed(1)} MB`;
 }
 

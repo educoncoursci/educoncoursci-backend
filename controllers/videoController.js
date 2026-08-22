@@ -97,7 +97,9 @@ const data = { ...req.body };
 
 // Si un fichier vidéo est uploadé via Multer
 if (req.file) {
-  data.url = `/uploads/videos/${req.file.filename}`;
+  // Cloudinary renvoie une URL complète dans .path ; le stockage
+  // disque local ne fournit que .filename.
+  data.url = req.file.path || `/uploads/videos/${req.file.filename}`;
   data.origine = "upload";
 } else {
   data.origine = "lien";

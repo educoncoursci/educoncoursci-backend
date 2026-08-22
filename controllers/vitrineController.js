@@ -11,6 +11,7 @@ const QCM       = require("../models/QCM");
 const PDF       = require("../models/PDF");
 const Newsletter = require("../models/Newsletter");
 const Temoignage = require("../models/Temoignage");
+const emailService = require("../services/email");
 
 // ── GET /api/vitrine/stats — Statistiques publiques (page d'accueil) ──
 exports.statsPubliques = async (req, res) => {
@@ -50,6 +51,13 @@ const inscription = await Newsletter.inscrire(email.toLowerCase().trim());
 if (!inscription) {
   return res.json({ message: "Tu es déjà inscrit à la newsletter !", dejaInscrit: true });
 }
+
+// Non bloquant : une éventuelle erreur d'envoi (Brevo non configurée,
+// panne temporaire...) ne doit jamais faire échouer l'inscription
+// elle-même — l'adresse est déjà bien enregistrée en base à ce stade.
+// Même principe que forgotPassword dans authController.js.
+emailService.envoyerConfirmationNewsletter(email.toLowerCase().trim())
+  .catch((err) => console.error("Erreur envoi confirmation newsletter :", err.message));
 
 res.status(201).json({ message: "Inscription à la newsletter réussie !" });
 

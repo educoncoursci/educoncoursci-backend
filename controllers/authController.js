@@ -286,8 +286,12 @@ try {
   await require("../services/email").envoyerResetMotDePasse(user, lienReset);
 } catch (errEmail) {
   // L'échec d'envoi d'e-mail ne doit jamais faire planter la requête
-  // ni révéler d'information — on log seulement côté serveur.
-  console.error("Erreur envoi e-mail réinitialisation :", errEmail.message);
+  // ni révéler d'information au client — mais côté serveur ce log doit
+  // être impossible à rater dans les logs Render, car c'est la SEULE
+  // trace disponible d'un e-mail de reset qui n'est jamais parti.
+  console.error(
+    `❌❌❌ ÉCHEC ENVOI E-MAIL RÉINITIALISATION (utilisateur ne recevra rien) — destinataire : ${user.email} — ${errEmail.message}`,
+  );
 }
 
 res.json(reponseGenerique);
