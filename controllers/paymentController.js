@@ -13,6 +13,49 @@ const MTN         = require("../services/mtn");
 const Moov        = require("../services/moov");
 const CinetPay    = require("../services/cinetpay");
 const { PLANS }   = require("../config/plans");
+const Email       = require("../services/email");
+
+// ── Notifications e-mail du parcours de paiement ────────────
+// Envoyées en "fire and forget" : un échec d'e-mail (Brevo non
+// configuré, expéditeur non vérifié...) ne doit JAMAIS bloquer
+// l'enregistrement ou la validation d'un paiement. Les erreurs
+// sont seulement journalisées.
+function echapperHtml(valeur) {
+  return String(valeur ?? "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+function notifierEnSilence(promesse, contexte) {
+  Promise.resolve(promesse).catch((err) => {
+    console.error(`E-mail non envoyé (${contexte}) :`, err.message);
+  });
+}
+
+// Prévient l'administrateur qu'un paiement attend sa validation.
+function alerterAdminNouveauPaiement(transaction) {
+  const destinataire = process.env.ADMIN_EMAIL;
+  if (!destinataire) {
+    console.warn("ADMIN_EMAIL absent : aucune alerte envoyée pour le nouveau paiement en attente.");
+    return;
+  }
+  const lien = `${process.env.FRONTEND_URL || ""}/admin/paiements.html`;
+  notifierEnSilence(
+    Email.envoyer({
+      to: destinataire,
+      subject: `💰 Nouveau paiement à valider — ${transaction.plan} (${transaction.montant} FCFA)`,
+      text:
+        `Un paiement attend ta validation.<br><br>` +
+        `<strong>Client :</strong> ${echapperHtml(transaction.email)}<br>` +
+        `<strong>Plan :</strong> ${echapperHtml(transaction.plan)}<br>` +
+        `<strong>Montant :</strong> ${echapperHtml(transaction.montant)} FCFA<br>` +
+        `<strong>Moyen :</strong> ${echapperHtml(transaction.moyen)}<br>` +
+        `<strong>Identifiant :</strong> ${echapperHtml(transaction.txId || transaction.tx_id)}<br><br>` +
+        `Vérifie la réception des fonds, puis valide ici : <a href="${lien}">${lien}</a>`,
+    }),
+    "alerte admin nouveau paiement",
+  );
+}
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/payment/plans — Plans & instructions de paiement
@@ -115,6 +158,20 @@ const transaction = await Transaction.create({
   statut:  "en attente",
 });
 
+alerterAdminNouveauPaiement(transaction);
+notifierEnSilence(
+  Email.envoyer({
+    to: req.user.email,
+    subject: "Paiement reçu — vérification en cours",
+    text:
+      `Bonjour ${echapperHtml(req.user.nom || "")},<br><br>` +
+      `Nous avons bien reçu l'identifiant de ton paiement pour le plan <strong>Premium ${echapperHtml(plan)}</strong>. ` +
+      `Notre équipe vérifie la réception des fonds et active ton abonnement dans les meilleurs délais (24 h maximum). ` +
+      `Tu recevras un e-mail dès que ce sera fait.`,
+  }),
+  "accusé de réception client",
+);
+
 res.json({
   message: `Identifiant reçu ! Ton paiement ${LABELS_MOYEN[moyen]} est en cours de vérification par notre équipe. Ton Premium ${plan} sera activé sous peu (généralement quelques heures) une fois le paiement confirmé.`,
   enAttente: true,
@@ -158,6 +215,18 @@ const userMisAJour = await User.setPremium(transaction.user_id, {
 
 const transactionMiseAJour = await Transaction.updateStatut(id, "validé");
 
+notifierEnSilence(
+  Email.envoyerConfirmationPaiement(
+    userMisAJour,
+    {
+      ...transaction,
+      txId: transaction.txId || transaction.tx_id,
+      expiration: new Date(expiration).toLocaleDateString("fr-FR"),
+    },
+  ),
+  "confirmation de paiement client",
+);
+
 Journal.enregistrer(req.user.id, req.user.nom, "validation", "transaction", id, `${transaction.email} — ${transaction.plan} (${transaction.montant} FCFA)`);
 
 res.json({
@@ -189,6 +258,20 @@ if (transaction.statut === "validé") {
 }
 
 const transactionMiseAJour = await Transaction.updateStatut(id, "échoué");
+
+if (transaction.email) {
+  notifierEnSilence(
+    Email.envoyer({
+      to: transaction.email,
+      subject: "Ton paiement n'a pas pu être confirmé",
+      text:
+        `Bonjour,<br><br>Nous n'avons pas pu confirmer ton paiement pour le plan ` +
+        `<strong>Premium ${echapperHtml(transaction.plan)}</strong> (l'identifiant de transaction est introuvable ou incorrect). ` +
+        `Vérifie l'identifiant reçu par SMS et soumets-le à nouveau depuis la page Boutique, ou contacte-nous si tu penses qu'il s'agit d'une erreur.`,
+    }),
+    "rejet de paiement client",
+  );
+}
 
 Journal.enregistrer(req.user.id, req.user.nom, "rejet", "transaction", id, `${transaction.email} — ${transaction.plan}`);
 

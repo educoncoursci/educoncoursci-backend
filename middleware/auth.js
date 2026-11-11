@@ -21,6 +21,12 @@ if (!entete || !entete.startsWith("Bearer ")) {
 const token = entete.split(" ")[1];
 
 const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+// Le jeton temporaire délivré entre le mot de passe et le code 2FA n'est
+// valable que pour /2fa/verify-login : il ne doit jamais ouvrir une session.
+if (decoded.purpose) {
+  return res.status(401).json({ error: "Token invalide." });
+}
 req.user = decoded;
 
 next();

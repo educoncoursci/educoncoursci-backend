@@ -37,8 +37,10 @@ function creerStorageDisque({ dossier }) {
       cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-      const ext      = path.extname(file.originalname);
-      const baseName = path.basename(file.originalname, ext)
+      // L'extension vient du type de fichier ACCEPTÉ, jamais du nom envoyé :
+      // un fichier « image » nommé photo.html serait sinon servi comme page web.
+      const ext      = EXTENSIONS_PAR_TYPE[file.mimetype] || "";
+      const baseName = path.basename(file.originalname, path.extname(file.originalname))
         .replace(/[^a-zA-Z0-9-_]/g, "_")
         .substring(0, 60);
       const fileName = `${Date.now()}_${baseName}${ext}`;
@@ -48,6 +50,18 @@ function creerStorageDisque({ dossier }) {
 }
 
 // ── Fabrique générique : mémoire (→ Cloudinary) ou disque selon la config ──
+// Extensions sûres associées aux types de fichiers autorisés
+const EXTENSIONS_PAR_TYPE = {
+  "application/pdf": ".pdf",
+  "video/mp4": ".mp4",
+  "video/webm": ".webm",
+  "video/quicktime": ".mov",
+  "video/x-m4v": ".m4v",
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+};
+
 function creerUploadeur({ dossier, mimetypesAutorises, messageErreur, maxSizeMb }) {
   // Si Cloudinary est configuré, Multer garde le fichier en mémoire
   // (buffer) le temps de la requête ; on l'enverra ensuite nous-même

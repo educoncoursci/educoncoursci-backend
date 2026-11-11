@@ -154,13 +154,16 @@ if (type === "cv" && modeleId) {
   }
 }
 
-// CV structuré avec colonnes colorées
+// CV aux couleurs du modèle choisi (une colonne, lisible par les ATS)
 if (type === "cv" && style === "structure" && data) {
   const modele = obtenirModele(modeleId);
   filePath = await genererCVStructure(data, contenu, modele);
 } else {
-  // PDF simple avec le texte brut mis en forme
-  filePath = await genererPDFTexte(contenu, nomFichier, type);
+  // Sans modèle structuré : même rendu sobre, texte rédigé par l'IA
+  filePath = await genererPDFTexte(contenu, nomFichier, type, null, {
+    data,
+    modele: modeleId ? obtenirModele(modeleId) : null,
+  });
 }
 
 const labelFichier = type === "cv"

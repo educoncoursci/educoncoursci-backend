@@ -4,6 +4,7 @@
 // ============================================================
 
 const bcrypt = require("bcryptjs");
+const { nomValide, emailValide } = require("../middleware/neutraliser");
 const jwt    = require("jsonwebtoken");
 const crypto = require("crypto");
 const User   = require("../models/User");
@@ -19,7 +20,8 @@ role:    user.role,
 premium: user.premium,
 },
 process.env.JWT_SECRET,
-{ expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+// Session administrateur plus courte : un jeton volé reste utilisable moins longtemps
+  { expiresIn: user.role === "admin" ? "12h" : (process.env.JWT_EXPIRES_IN || "7d") }
 );
 }
 
@@ -56,14 +58,18 @@ if (!nom || !email || !password) {
     error: "Nom, e-mail et mot de passe sont requis."
   });
 }
-if (password.length < 6) {
+if (typeof nom !== "string" || !nomValide(nom)) {
   return res.status(400).json({
-    error: "Le mot de passe doit contenir au moins 6 caractères."
+    error: "Nom invalide : lettres, chiffres, espaces, tirets et apostrophes uniquement (2 à 80 caractères)."
+  });
+}
+if (typeof password !== "string" || password.length < 8 || password.length > 200) {
+  return res.status(400).json({
+    error: "Le mot de passe doit contenir au moins 8 caractères."
   });
 }
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-if (!emailRegex.test(email)) {
+if (!emailValide(email)) {
   return res.status(400).json({ error: "Adresse e-mail invalide." });
 }
 
@@ -225,9 +231,9 @@ if (!ancienPassword || !nouveauPassword) {
     error: "Ancien et nouveau mot de passe requis."
   });
 }
-if (nouveauPassword.length < 6) {
+if (nouveauPassword.length < 8) {
   return res.status(400).json({
-    error: "Le nouveau mot de passe doit contenir au moins 6 caractères."
+    error: "Le nouveau mot de passe doit contenir au moins 8 caractères."
   });
 }
 
@@ -311,8 +317,8 @@ const { token, password } = req.body;
 if (!token || !password) {
   return res.status(400).json({ error: "Token et nouveau mot de passe requis." });
 }
-if (password.length < 6) {
-  return res.status(400).json({ error: "Le mot de passe doit contenir au moins 6 caractères." });
+if (password.length < 8) {
+  return res.status(400).json({ error: "Le mot de passe doit contenir au moins 8 caractères." });
 }
 
 const user = await User.findByResetToken(token);

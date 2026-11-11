@@ -48,6 +48,11 @@ if (!qcm) {
 return res.status(404).json({ error: "QCM introuvable." });
 }
 
+// Un brouillon (ex. généré par IA, pas encore relu) n'est visible que par l'admin
+if (qcm.statut !== "publié" && req.user?.role !== "admin") {
+return res.status(404).json({ error: "QCM introuvable." });
+}
+
 // Vérifie les droits Premium
 if (qcm.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true)) {
   return res.status(403).json({
@@ -92,7 +97,7 @@ if (!reponses || typeof reponses !== "object") {
 }
 
 const qcm = await QCM.findById(req.params.id);
-if (!qcm) {
+if (!qcm || (qcm.statut !== "publié" && req.user?.role !== "admin")) {
   return res.status(404).json({ error: "QCM introuvable." });
 }
 
