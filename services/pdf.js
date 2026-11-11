@@ -7,6 +7,9 @@
 const PDFDocument = require("pdfkit");
 const path        = require("path");
 const fs          = require("fs");
+const {
+  preparerCorpsCV, estSeparateur, estTitreSection, estPuce, texteSansPuce,
+} = require("./cvTexte");
 
 // Crée le dossier de stockage si nécessaire
 const storageDir = path.join(__dirname, "../storage/generated");
@@ -28,7 +31,12 @@ blanc:       "#FFFFFF",
 // ════════════════════════════════════════════════════════════
 //  Génère un PDF à partir d'un texte brut (CV ou LM)
 // ════════════════════════════════════════════════════════════
-async function genererPDFTexte(contenu, nomFichier, type = "cv", titrePersonnalise = null) {
+async function genererPDFTexte(contenu, nomFichier, type = "cv", titrePersonnalise = null, options = {}) {
+// CV et lettres de motivation : document destiné à un recruteur → rendu sobre,
+// sans bandeau ni mention de la plateforme (voir genererPDFProfessionnel).
+if (type === "cv" || type === "lm") {
+  return genererPDFProfessionnel(contenu, nomFichier, type, options);
+}
 return new Promise((resolve, reject) => {
 const filePath = path.join(storageDir, `${nomFichier}.pdf`);
 const doc      = new PDFDocument({
@@ -132,172 +140,124 @@ stream.on("error",  reject);
 }
 
 // ════════════════════════════════════════════════════════════
-//  Génère un CV en PDF avec mise en page structurée
+//  CV et lettres de motivation — rendu professionnel et lisible par les ATS
+//
+//  Principes :
+//   - une seule colonne, vrai texte sélectionnable, polices standard ;
+//   - titres de section clairs (Profil, Expériences, Formations, Compétences…) ;
+//   - coordonnées en clair (« E-mail : », « Téléphone : »), sans pictogramme ;
+//   - aucun bandeau, aucun pied de page, aucune mention de la plateforme ;
+//   - le texte rédigé par l'IA est toujours celui du document final.
+//  Le modèle choisi ne change que les couleurs et l'alignement de l'en-tête.
 // ════════════════════════════════════════════════════════════
-async function genererCVStructure(data, contenuIA, modele) {
-return new Promise((resolve, reject) => {
-const nomFichier = `CV_${data.nom.replace(/\s+/g, "_")}_${Date.now()}`;
-const filePath   = path.join(storageDir, `${nomFichier}.pdf`);
-const doc        = new PDFDocument({
-size:    "A4",
-margins: { top: 0, bottom: 50, left: 0, right: 0 },
-});
 
-// Couleurs du modèle choisi, avec repli sur les couleurs par défaut
-const couleursModele = {
-  primaire:   modele?.couleurs?.primaire   || COULEURS.primaire,
-  secondaire: modele?.couleurs?.secondaire || COULEURS.secondaire,
-  accent:     modele?.couleurs?.accent     || COULEURS.accent,
-};
-
-const stream = fs.createWriteStream(filePath);
-doc.pipe(stream);
-
-const largeur  = doc.page.width;
-const largeCol = largeur * 0.35; // Colonne gauche 35%
-
-// ── Colonne gauche (fond coloré) ──────────────────────────
-doc.rect(0, 0, largeCol, doc.page.height).fill(couleursModele.primaire);
-
-// Photo placeholder
-doc.circle(largeCol / 2, 90, 45)
-   .fill(COULEURS.blanc);
-doc.fillColor(couleursModele.primaire)
-   .fontSize(28)
-   .text(data.nom[0].toUpperCase(), largeCol / 2 - 10, 73);
-
-// Nom dans la colonne gauche
-doc.fillColor(COULEURS.blanc)
-   .fontSize(13)
-   .font("Helvetica-Bold")
-   .text(data.nom.toUpperCase(), 15, 150, {
-     width: largeCol - 30,
-     align: "center",
-   });
-
-doc.fontSize(10)
-   .font("Helvetica")
-   .text(data.poste || "", 15, 175, {
-     width: largeCol - 30,
-     align: "center",
-   });
-
-// Coordonnées
-let yGauche = 210;
-doc.fontSize(9).font("Helvetica-Bold").text("CONTACT", 20, yGauche);
-yGauche += 16;
-
-const contacts = [
-  data.email    ? `✉ ${data.email}`    : null,
-  data.telephone? `☎ ${data.telephone}`: null,
-  data.ville    ? `📍 ${data.ville}`   : null,
-].filter(Boolean);
-
-for (const c of contacts) {
-  doc.font("Helvetica").fontSize(8).text(c, 20, yGauche, { width: largeCol - 35 });
-  yGauche += 14;
+// Polices standard PDF (WinAnsi) : on retire ce qu'elles ne savent pas afficher
+// (emoji, pictogrammes…), qui apparaîtraient en caractères parasites.
+function pourPolice(texte) {
+  return String(texte || "")
+    .replace(/[\u00A0\u2009\u202F]/g, " ")
+    .replace(/[^\u0020-\u007E\u00A1-\u00FF\u0152\u0153\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/g, "")
+    .trim();
 }
 
-// Compétences
-if (data.competences) {
-  yGauche += 10;
-  doc.fontSize(9).font("Helvetica-Bold").text("COMPÉTENCES", 20, yGauche);
-  yGauche += 14;
-  const comps = data.competences.split(",").map(c => c.trim()).filter(Boolean);
-  for (const comp of comps.slice(0, 8)) {
-    doc.rect(20, yGauche, largeCol - 40, 14).fill("rgba(255,255,255,0.15)");
-    doc.fillColor(COULEURS.blanc).fontSize(8).font("Helvetica")
-       .text(comp, 25, yGauche + 3, { width: largeCol - 50 });
-    yGauche += 18;
-  }
+function traitHorizontal(doc, couleur, epaisseur) {
+  const y = doc.y;
+  doc.moveTo(doc.page.margins.left, y)
+     .lineTo(doc.page.width - doc.page.margins.right, y)
+     .strokeColor(couleur)
+     .lineWidth(epaisseur)
+     .stroke();
 }
 
-// Langues
-if (data.langues) {
-  yGauche += 10;
-  doc.fillColor(COULEURS.blanc).fontSize(9).font("Helvetica-Bold")
-     .text("LANGUES", 20, yGauche);
-  yGauche += 14;
-  doc.fontSize(8).font("Helvetica")
-     .text(data.langues, 20, yGauche, { width: largeCol - 35 });
-}
+function genererPDFProfessionnel(contenu, nomFichier, type, options = {}) {
+  return new Promise((resolve, reject) => {
+    const { data, modele } = options;
+    const filePath = path.join(storageDir, `${nomFichier}.pdf`);
+    const estCV = type === "cv";
 
-// ── Colonne droite (contenu principal) ───────────────────
-const xDroite = largeCol + 25;
-const largeurDroite = largeur - largeCol - 50;
-let yDroite = 30;
+    const doc = new PDFDocument({
+      size: "A4",
+      margins: { top: 50, bottom: 50, left: 55, right: 55 },
+      info: {
+        Title: estCV ? `CV ${data?.nom || ""}`.trim() : "Lettre de motivation",
+        Author: data?.nom || "",
+      },
+    });
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
 
-// Profil
-if (data.profil) {
-  doc.fillColor(couleursModele.primaire).fontSize(12).font("Helvetica-Bold")
-     .text("PROFIL PROFESSIONNEL", xDroite, yDroite, { width: largeurDroite });
-  yDroite += 18;
-  doc.fillColor(COULEURS.texte).fontSize(9).font("Helvetica")
-     .text(data.profil, xDroite, yDroite, {
-       width: largeurDroite,
-       align: "justify",
-     });
-  yDroite = doc.y + 15;
-}
+    const couleurs = {
+      titre:  modele?.couleurs?.primaire || COULEURS.texte,
+      trait:  modele?.couleurs?.accent   || modele?.couleurs?.primaire || COULEURS.texte,
+      texte:  COULEURS.texte,
+    };
+    const align = modele?.layout === "structure" ? "left" : "center";
 
-// Expériences
-if (data.experiences?.length) {
-  doc.fillColor(couleursModele.primaire).fontSize(12).font("Helvetica-Bold")
-     .text("EXPÉRIENCES PROFESSIONNELLES", xDroite, yDroite, { width: largeurDroite });
-  yDroite += 18;
+    const { entete, lignes } = estCV
+      ? preparerCorpsCV(contenu, data)
+      : { entete: null, lignes: String(contenu || "").split("\n") };
 
-  for (const exp of data.experiences) {
-    doc.fillColor(COULEURS.texte).fontSize(10).font("Helvetica-Bold")
-       .text(exp.poste, xDroite, yDroite, { width: largeurDroite });
-    yDroite = doc.y;
-    doc.fillColor(couleursModele.secondaire).fontSize(9).font("Helvetica")
-       .text(`${exp.entreprise} | ${exp.debut} – ${exp.fin || "Présent"}`,
-             xDroite, yDroite, { width: largeurDroite });
-    yDroite = doc.y + 3;
-    if (exp.description) {
-      doc.fillColor(COULEURS.gris).fontSize(8)
-         .text(exp.description, xDroite, yDroite, {
-           width: largeurDroite,
-           align: "justify",
-         });
-      yDroite = doc.y + 10;
+    // ── En-tête du CV (nom, poste, coordonnées en clair) ─────
+    if (entete) {
+      doc.font("Helvetica-Bold").fontSize(20).fillColor(couleurs.titre)
+         .text(pourPolice(entete.nom).toUpperCase(), { align });
+      if (entete.poste) {
+        doc.font("Helvetica").fontSize(12).fillColor("#444444")
+           .text(pourPolice(entete.poste), { align });
+      }
+      if (entete.contact) {
+        doc.font("Helvetica").fontSize(9.5).fillColor("#444444")
+           .text(pourPolice(entete.contact), { align });
+      }
+      doc.moveDown(0.4);
+      traitHorizontal(doc, couleurs.trait, 1.2);
+      doc.moveDown(0.2);
     }
-  }
-  yDroite += 5;
+
+    // ── Corps ────────────────────────────────────────────────
+    let derniereVide = true;
+    for (const brute of lignes) {
+      const ligne = pourPolice(brute);
+
+      if (!ligne) {
+        if (!derniereVide) doc.moveDown(estCV ? 0.3 : 0.8);
+        derniereVide = true;
+        continue;
+      }
+      if (estSeparateur(ligne)) continue;
+      derniereVide = false;
+
+      if (estCV && estTitreSection(ligne)) {
+        doc.moveDown(0.6);
+        doc.font("Helvetica-Bold").fontSize(11.5).fillColor(couleurs.titre).text(ligne);
+        traitHorizontal(doc, couleurs.trait, 0.6);
+        doc.moveDown(0.3);
+        continue;
+      }
+
+      if (estCV && estPuce(ligne)) {
+        doc.font("Helvetica").fontSize(10.5).fillColor(couleurs.texte)
+           .text(`\u2022  ${texteSansPuce(ligne)}`, { align: "left", lineGap: 2 });
+        continue;
+      }
+
+      const gras = !estCV && /^objet\s*:/i.test(ligne);
+      doc.font(gras ? "Helvetica-Bold" : "Helvetica")
+         .fontSize(estCV ? 10.5 : 11)
+         .fillColor(couleurs.texte)
+         .text(ligne, { align: "left", lineGap: estCV ? 2 : 3 });
+    }
+
+    doc.end();
+    stream.on("finish", () => resolve(filePath));
+    stream.on("error", reject);
+  });
 }
 
-// Formations
-if (data.formations?.length) {
-  doc.fillColor(couleursModele.primaire).fontSize(12).font("Helvetica-Bold")
-     .text("FORMATIONS", xDroite, yDroite, { width: largeurDroite });
-  yDroite += 18;
-
-  for (const f of data.formations) {
-    doc.fillColor(COULEURS.texte).fontSize(10).font("Helvetica-Bold")
-       .text(f.diplome, xDroite, yDroite, { width: largeurDroite });
-    yDroite = doc.y;
-    doc.fillColor(COULEURS.gris).fontSize(9).font("Helvetica")
-       .text(`${f.etablissement} — ${f.annee}${f.mention ? ` — ${f.mention}` : ""}`,
-             xDroite, yDroite, { width: largeurDroite });
-    yDroite = doc.y + 10;
-  }
-}
-
-// Pied de page
-doc.rect(largeCol, doc.page.height - 30, largeur - largeCol, 30)
-   .fill(COULEURS.grisClair);
-doc.fillColor(COULEURS.gris).fontSize(7)
-   .text(
-     `CV généré par EduConcoursCI — ${new Date().toLocaleDateString("fr-FR")}`,
-     xDroite, doc.page.height - 20,
-     { width: largeurDroite, align: "right" }
-   );
-
-doc.end();
-stream.on("finish", () => resolve(filePath));
-stream.on("error",  reject);
-
-});
+// Conservée pour compatibilité avec cvController : même rendu, couleurs du modèle.
+async function genererCVStructure(data, contenuIA, modele) {
+  const nomSain = String(data?.nom || "cv").replace(/\s+/g, "_").replace(/[^\p{L}\p{N}_-]/gu, "");
+  return genererPDFProfessionnel(contenuIA, `CV_${nomSain}_${Date.now()}`, "cv", { data, modele });
 }
 
 // ── Supprime un fichier généré après téléchargement ──────────

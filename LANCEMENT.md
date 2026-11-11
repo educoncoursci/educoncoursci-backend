@@ -1,161 +1,137 @@
 # Guide de lancement — EduConcoursCI
 
-Toi : déploiement déjà en place (Railway pour le backend, Netlify pour
-le frontend, connectés à GitHub). Ce guide couvre donc uniquement la
-mise à jour de ce déploiement existant avec le code le plus récent,
-pas une création depuis zéro.
-
-CinetPay est volontairement laissé de côté pour l'instant, le temps
-d'obtenir le registre de commerce — voir la section dédiée plus bas.
-Le site reste pleinement fonctionnel sans, grâce au mode de paiement
-manuel (Wave/Orange/MTN/Moov) déjà intégré.
+Déploiement actuel : **backend sur Render** (service gratuit, sans accès Shell),
+**frontend sur Netlify**, base **PostgreSQL**. Tout se fait depuis GitHub et les
+tableaux de bord Render / Netlify : aucune console n'est nécessaire.
 
 ---
 
-## Étape 1 — Mettre à jour le code sur GitHub
+## 1. Mettre à jour le code
 
-1. Remplace le contenu de ton dépôt backend par les fichiers du zip
-   `educoncoursci-backend-LOT18.zip`, remplace le contenu de ton dépôt
-   frontend par ceux de `educoncoursci-frontend-LOT18.zip`.
-2. `git add . && git commit -m "..." && git push` sur chacun des deux
-   dépôts. Railway et Netlify redéploient automatiquement à chaque
-   push — rien à faire de plus de ce côté.
+1. Sur GitHub, dépose les fichiers modifiés dans le bon dépôt
+   (`educoncoursci-backend` ou `educoncoursci-frontend`), en gardant les chemins.
+2. Render et Netlify redéploient automatiquement à chaque commit.
+3. Vérifie le déploiement : Render → onglet **Logs** (aucune erreur rouge au
+   démarrage) et ouvre `https://<ton-backend>.onrender.com/api/health`.
 
----
+## 2. Variables d'environnement (Render → Environment)
 
-## Étape 2 — Vérifier les variables sur Railway
+**Obligatoires** (le serveur ne démarre pas ou personne ne peut se connecter sans elles) :
+`DATABASE_URL`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`
+(`FRONTEND_URL` doit être exactement l'URL Netlify, sinon le site ne peut pas appeler l'API).
 
-Rien à recréer, juste à vérifier que ce qui existe est complet.
-Va sur ton service backend Railway → onglet "Variables" et compare
-avec `.env.example` (fourni dans le zip backend) :
+**Importantes** :
+- `ANTHROPIC_API_KEY` — CV, lettres, assistant et générateur de QCM par IA.
+- `BREVO_API_KEY` et `EMAIL_FROM` — e-mails (alertes de paiement, confirmations).
+  `ADMIN_EMAIL` reçoit l'alerte à chaque nouveau paiement à valider.
+- `WAVE_NUMERO`, `OM_NUMERO` (et `MTN_NUMERO`, `MOOV_NUMERO` si utilisés) — numéros affichés pour le paiement manuel.
+- `WAVE_API_KEY` et `WAVE_WEBHOOK_SECRET` — uniquement si tu actives le paiement Wave automatique.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — envoi de PDF, photos et vidéos.
 
-- `DATABASE_URL` — normalement déjà présente si tu as une base
-  PostgreSQL reliée au projet.
-- `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` — doivent déjà exister
-  si le site tournait avant. Ne les change pas sans raison : changer
-  `JWT_SECRET` déconnecte tous les utilisateurs déjà connectés.
-- `FRONTEND_URL` — doit correspondre exactement à ton URL Netlify
-  réelle (sans slash final), sinon les appels API depuis le site
-  seront bloqués par CORS.
-- Numéros de paiement manuel — voir étape 4 ci-dessous.
+**Optionnelles** : `QCM_IA_MAX_PAR_JOUR` (30 par défaut), `ACADEMIE_IA_MAX_PAR_JOUR` (40 par défaut), `QUOTA_IA_GRATUIT_JOUR`,
+`CLAUDE_MODEL_QCM`, `GOOGLE_SEARCH_API_KEY` + `GOOGLE_SEARCH_CX` + `EMPLOI_FLUX_URLS`
+(détection automatique d'offres d'emploi), `CINETPAY_*` (inactif tant que le compte n'est pas ouvert).
 
-Si une variable manque, ajoute-la puis redéploie (Railway le fait
-souvent automatiquement dès qu'une variable change).
+Après toute modification de variable, Render redémarre le service.
 
----
+## 3. À savoir sur l'hébergement gratuit Render
 
-## Étape 3 — Vérifier que le backend redémarre proprement
+- Le service **se met en veille** après une période sans visite : le premier chargement est lent.
+- Les tâches planifiées (rappels de clôture, mise à jour des statuts de concours,
+  détection de nouveaux concours/offres, actualités) **ne tournent que lorsque le service est réveillé**.
+  Pour une plateforme avec de vrais utilisateurs, un plan payant ou un service de
+  « ping » régulier évite ce problème.
 
-Après le push, va dans Railway → onglet "Deployments" → vérifie que
-le déploiement passe au vert. Les nouvelles colonnes de base de
-données (comme `date_verifiee`, ajoutée dans cette mise à jour) se
-créent **automatiquement** au démarrage — rien à migrer à la main,
-`initDatabase()` s'en charge à chaque lancement du serveur.
+## 4. Paiements (validation manuelle)
 
-En cas d'échec, regarde les logs du déploiement : la cause la plus
-fréquente est une variable d'environnement manquante.
+1. Le client paie par Wave ou Orange Money et saisit l'identifiant de transaction sur la page Boutique.
+2. Tu reçois un e-mail d'alerte (via `ADMIN_EMAIL`).
+3. Vérifie la réception des fonds, puis valide ou rejette dans **/admin/paiements.html**.
+   Le client est prévenu par e-mail dans les deux cas.
 
----
+## 5. Alimenter le contenu (sans console)
 
-## Étape 4 — Renseigner tes numéros de paiement manuel
+- **Concours** : **/admin/concours** (ajout, modification, dates ; onglet *Sources & Suggestions*
+  pour valider les concours détectés). Les statuts (ouvert, à venir, fermé) se calculent
+  automatiquement à partir des dates d'ouverture et de clôture.
+  Vérifie toujours les dates sur la source officielle (ex. fonctionpublique.gouv.ci) avant de publier.
+- **QCM** : **/admin/qcm-ia.html** — génère des brouillons avec l'IA, relis chaque
+  question, puis publie. Rien n'est visible du public avant ta validation.
+- **Académie** : **/admin/academie.html** — génère le plan d'un cours avec l'IA, rédige
+  chaque leçon (texte, points clés, exercices) avec l'IA, relis, puis publie.
+  Les premières leçons de chaque cours sont gratuites (réglable), la suite est Premium.
+  Les tables sont créées automatiquement au démarrage. Public : `/academie.html`.
+  Le lien « Académie » n'est volontairement pas dans le menu du site : ajoute-le
+  (`js/layout.js`) une fois quelques cours publiés.
+- **Offres soumises par les entreprises** : **/admin/offres-soumises.html**.
+  Une entreprise inscrite remplit `/publier-offre.html` ; tu reçois un e-mail d'alerte (`ADMIN_EMAIL`).
+  Tu étudies la demande, tu peux corriger le texte, tu convens du tarif avec l'entreprise (hors site :
+  Wave / Orange Money), puis tu cliques **Publier** : l'offre apparaît sur la page Emploi et l'entreprise
+  est prévenue par e-mail. Tu enregistres le tarif et l'encaissement pour suivre tes revenus
+  (cartes « Encaissé » et « À encaisser »). Les candidats postulent directement chez l'entreprise
+  (lien, ou bouton « Postuler par e-mail »). Les tables sont créées automatiquement au démarrage.
+- **Actualités, offres d'emploi, PDF, vidéos** : pages correspondantes du menu admin.
 
-C'est le point qui te permet d'encaisser dès maintenant, sans
-attendre CinetPay. Dans les Variables Railway, renseigne ce que tu as
-déjà (inutile d'attendre d'avoir les quatre) :
+## 6. Réseaux sociaux et statistiques de visite (frontend)
 
-```
-WAVE_NUMERO=
-WAVE_LIEN_PAIEMENT=     (optionnel — un lien Wave Business si tu en as un)
-OM_NUMERO=
-MTN_NUMERO=
-MOOV_NUMERO=
-```
+Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en haut de
+`js/layout.js` (dépôt frontend).
 
-Ce sont tes numéros marchands personnels/professionnels sur chaque
-service. Dès qu'un numéro est renseigné, l'option correspondante
-apparaît automatiquement sur `/paiement.html` — pas besoin de
-toucher au code.
+- **Réseaux sociaux** : colle l'adresse complète (qui commence par `https://`) de ta
+  chaîne WhatsApp, de ta page Facebook, de ton compte TikTok, etc. Seuls les liens
+  renseignés apparaissent dans le pied de page ; l'accueil affiche en plus un bandeau
+  « Rejoindre la chaîne WhatsApp » si `whatsappChaine` est rempli.
+- **Statistiques** : renseigne `analytics`.
+  - Cloudflare Web Analytics (sans cookies, recommandé) : `fournisseur: "cloudflare"`
+    et `id` = le jeton fourni par Cloudflare pour ton site.
+  - Google Analytics : `fournisseur: "ga4"` et `id` = l'identifiant `G-XXXXXXXXXX`.
+  Tant que ces champs sont vides, aucun suivi n'est actif.
+- Après modification, commit sur GitHub : Netlify redéploie seul.
 
-Le parcours pour l'utilisateur : il choisit son plan et son opérateur,
-paie au numéro affiché, saisit l'identifiant de transaction reçu par
-SMS, puis toi (admin) valides depuis `/admin/paiements` — l'abonnement
-Premium s'active à ce moment-là.
+## 7. Sécurité : ce qui est en place et ce que tu dois faire
 
----
+**Déjà en place dans le code**
+- Seuls les inscrits accèdent à leur compte, leurs CV, paiements et scores ; l'administration est
+  réservée au rôle admin, **revérifié en base à chaque appel** (un admin supprimé ou rétrogradé
+  perd l'accès immédiatement).
+- Session administrateur limitée à 12 h ; le jeton temporaire de la double authentification
+  (2FA) ne peut plus servir de session.
+- Protection contre la devinette de mot de passe **compte par compte** (8 échecs = blocage 15 min),
+  sans pénaliser les abonnés qui partagent une même adresse IP mobile.
+- Noms et e-mails vérifiés à l'inscription (les caractères servant à injecter du code sont refusés) ;
+  les textes sont échappés dans l'espace admin et le classement ; mot de passe de 8 caractères minimum.
+- Les détails techniques des erreurs serveur ne sont visibles que par l'admin.
+- Le contenu importé depuis l'extérieur (flux RSS d'actualités, d'emplois et de concours) est nettoyé
+  à l'arrivée : balises HTML retirées, seuls les liens `http(s)://` sont acceptés. À l'affichage,
+  les textes de toutes les pages sont échappés et les liens/images passent par un contrôle d'adresse.
+- Fichiers envoyés : l'extension est déduite du type accepté (plus de « photo.html »).
+- Les pages publiques (concours, premières leçons) restent publiques : sinon ni Google ni tes
+  futurs visiteurs ne les verraient. Seules les actions et données personnelles exigent un compte.
 
-## Étape 5 — CinetPay, à faire plus tard
+**À faire de ton côté (c'est là que se jouent la plupart des piratages)**
+1. **Active la double authentification (2FA) sur ton compte admin du site** (page de profil), puis
+   sur GitHub, Render, Netlify, Cloudflare, Brevo, Cloudinary et ton compte Anthropic.
+2. Utilise un mot de passe long et unique pour chacun de ces comptes (un gestionnaire de mots
+   de passe aide).
+3. Dans GitHub, Render et Netlify : ne garde comme membres que les personnes qui en ont besoin ;
+   dépôts en **privé**.
+4. Si une personne a eu accès à tes dépôts ou tableaux de bord et ne doit plus l'avoir :
+   retire son accès, puis change `JWT_SECRET` (cela déconnecte tout le monde), le mot de passe de la
+   base de données et les clés API (Anthropic, Brevo, Cloudinary, Wave).
+5. `JWT_SECRET` doit être une longue chaîne aléatoire (32 caractères ou plus).
+6. Supprime la variable `DIAGNOSTIC_SECRET` de Render dès que tu n'en as plus besoin.
+7. Dans la console Anthropic, **fixe un plafond de dépense mensuel** pour limiter les dégâts en cas d'abus.
+8. N'écris jamais de clé ou de mot de passe dans le code ou dans un message : le code du site
+   (frontend) est lisible par n'importe qui dans son navigateur.
 
-Quand ton registre de commerce sera prêt : crée un compte sur
-https://cinetpay.com (section "Devenir marchand"), puis renseigne
-dans Railway :
+## 8. Test avant de communiquer publiquement
 
-```
-CINETPAY_API_KEY=
-CINETPAY_SITE_ID=
-CINETPAY_NOTIFY_URL=https://<ton-backend>.up.railway.app/api/payment/cinetpay/webhook
-CINETPAY_RETURN_URL=https://<ton-frontend>.netlify.app/dashboard/paiements.html
-```
+1. Crée un compte test, génère un CV et une lettre, télécharge le PDF et le Word.
+2. Fais un paiement test : alerte reçue, validation, e-mail de confirmation client.
+3. Passe un QCM publié de bout en bout (correction, score).
+4. Ouvre le site sur un téléphone : pages concours, boutique, CV.
 
-Dès que ces deux clés sont présentes, le bouton "Payer en ligne par
-carte bancaire" apparaît tout seul sur la page de paiement, en plus
-du mode manuel qui continue de fonctionner. Aucune autre action de
-ta part, aucun redéploiement de code nécessaire — uniquement ces
-variables à ajouter.
+## 9. Ce qui n'est pas bloquant
 
----
-
-## Étape 6 — Peupler la bibliothèque de concours (si pas déjà fait)
-
-Si ta base ne contient pas encore les concours de départ, lance une
-fois, via le Shell Railway de ton service backend (ou en local avec
-ton `.env` pointant vers la base de production) :
-
-```
-npm run concours:seed
-```
-
-Ça ajoute 23 concours (ENA, CAFOP, INFAS, Police, etc.) avec des
-dates estimées. Ensuite, sur `/admin/concours`, le bouton
-"⚠️ Dates à vérifier" te montre lesquelles corriger au fil des vrais
-communiqués officiels.
-
----
-
-## Étape 7 — Test avant de communiquer publiquement
-
-1. Ouvre le site depuis ton URL Netlify, vérifie que les pages
-   concours s'affichent bien (signe que le lien avec Railway
-   fonctionne).
-2. Fais toi-même un paiement test avec le circuit manuel : choisis
-   un plan, un opérateur, entre un faux ID de transaction, vérifie
-   que ça apparaît bien dans `/admin/paiements` pour validation.
-3. Valide ce paiement test depuis l'admin, vérifie que le compte
-   passe bien en Premium.
-
----
-
-## Ce qui n'est pas bloquant
-
-- CinetPay (voir étape 5) — le mode manuel suffit pour démarrer.
-- Clé Anthropic (assistant IA) — le reste du site fonctionne sans.
-- Clés Google Search, SMS, WhatsApp, notifications push — tout ça
-  peut être ajouté progressivement après le lancement.
-- Nom de domaine personnalisé — l'URL Netlify actuelle fonctionne
-  très bien pour démarrer et valider le marché.
-
-## Activer la détection automatique d'offres d'emploi (optionnel)
-
-Le site peut agréger automatiquement des offres depuis Educarriere,
-RMO, Novojob, JobMe, Trabajo, Indeed et l'Agence Emploi Jeunes — mais
-ça nécessite une clé Google gratuite (100 requêtes/jour) :
-
-1. https://programmablesearchengine.google.com/ → créer un moteur de
-   recherche → récupérer l'identifiant "cx".
-2. https://console.cloud.google.com/apis/library/customsearch.googleapis.com
-   → activer l'API, créer une clé API.
-3. Sur Railway, renseigner `GOOGLE_SEARCH_API_KEY` et
-   `GOOGLE_SEARCH_CX` — les requêtes ciblées sur ces plateformes sont
-   déjà incluses par défaut dans le code, rien d'autre à configurer.
-
-Sans ces clés, le site fonctionne normalement — seule cette détection
-automatique reste inactive.
+- CinetPay (en attente d'un compte entreprise), SMS, WhatsApp API, notifications push.
+- Nom de domaine personnalisé : l'URL Netlify fonctionne très bien pour démarrer.

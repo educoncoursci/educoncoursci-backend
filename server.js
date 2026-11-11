@@ -28,20 +28,28 @@ app.set("trust proxy", 1);
 // ── Sécurité ──────────────────────────────────────────────────
 app.use(helmet());
 
-// Limite les requêtes : max 100 par 15 minutes par IP
+// Limite générale : 600 requêtes / 15 min par adresse IP.
+// (Une page du site fait plusieurs appels, et de nombreux abonnés mobiles
+// partagent la même IP : 100 était trop bas et bloquait des utilisateurs honnêtes.)
 const limiter = rateLimit({
 windowMs: 15 * 60 * 1000,
-max: 100,
+max: 600,
 message: { error: "Trop de requêtes, réessaie dans 15 minutes." },
 });
 app.use("/api/", limiter);
 
-// Limite plus stricte sur l'authentification : 10 tentatives / 15 min
-const authLimiter = rateLimit({
-windowMs: 15 * 60 * 1000,
-max: 10,
-message: { error: "Trop de tentatives de connexion, réessaie plus tard." },
-});
+// ── Limites ciblées sur l'authentification ────────────────────
+// Seuls les ÉCHECS comptent pour la connexion (skipSuccessfulRequests), et la
+// protection fine se fait COMPTE PAR COMPTE (middleware/limiteConnexion.js),
+// pour ne pas pénaliser les utilisateurs qui partagent une IP mobile.
+const msgTentatives = { error: "Trop de tentatives, réessaie plus tard." };
+const limiteLogin = rateLimit({ windowMs: 15 * 60 * 1000, max: 60, skipSuccessfulRequests: true, message: msgTentatives });
+const limite2FA = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, skipSuccessfulRequests: true, message: msgTentatives });
+const limiteInscription = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, message: msgTentatives });
+const limiteMotDePasseOublie = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: msgTentatives });
+// Formulaires publics sans compte (newsletter, contact partenaire) : anti-spam
+const limiteFormulairePublic = rateLimit({ windowMs: 60 * 60 * 1000, max: 20, message: msgTentatives });
+const { limiteConnexionParEmail } = require("./middleware/limiteConnexion");
 
 // ── CORS ──────────────────────────────────────────────────────
 // Autorise les appels depuis ton frontend Netlify
@@ -77,16 +85,44 @@ credentials: true,
 // N'affecte aucune autre route : req.body reste disponible partout
 // comme avant, req.rawBody est juste une info supplémentaire.
 app.use(express.json({
-  limit: "10mb",
+  limit: "2mb",
   verify: (req, res, buf) => { req.rawBody = buf; },
 }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
+
+// ── Messages d'erreur 500 : jamais de détails techniques pour le public ──
+// Beaucoup de routes renvoient err.message tel quel (noms de tables, requêtes SQL…).
+// Pour tout visiteur autre que l'administrateur, le détail est remplacé par un message
+// générique ; le détail réel reste dans les journaux du serveur.
+app.use((req, res, next) => {
+  const jsonOriginal = res.json.bind(res);
+  res.json = (corps) => {
+    if (
+      res.statusCode === 500 &&
+      process.env.NODE_ENV !== "development" &&
+      corps && typeof corps === "object" && typeof corps.error === "string" &&
+      req.user?.role !== "admin"
+    ) {
+      console.error(`Erreur 500 (${req.method} ${req.originalUrl}) : ${corps.error}`);
+      corps = { ...corps, error: "Une erreur est survenue. Réessaie dans un instant." };
+    }
+    return jsonOriginal(corps);
+  };
+  next();
+});
 
 // ── Fichiers statiques (PDFs uploadés) ───────────────────────
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ── Routes API ────────────────────────────────────────────────
-app.use("/api/auth",     authLimiter, require("./routes/auth"));
+app.use("/api/auth/login",            limiteLogin, limiteConnexionParEmail);
+app.use("/api/auth/register",         limiteInscription);
+app.use("/api/auth/forgot-password",  limiteMotDePasseOublie);
+app.use("/api/auth/reset-password",   limiteMotDePasseOublie);
+app.use("/api/auth/2fa/verify-login", limite2FA);
+app.use("/api/auth",     require("./routes/auth"));
+app.use("/api/vitrine/newsletter", limiteFormulairePublic);
+app.post("/api/marketplace/offres/:id/contact", limiteFormulairePublic);
 app.use("/api/users",    require("./routes/users"));
 app.use("/api/concours", require("./routes/concours"));
 app.use("/api/referentiels", require("./routes/referentiels"));
@@ -103,6 +139,9 @@ app.use("/api/vitrine", require("./routes/vitrine"));
 app.use("/api/pdfs",     require("./routes/pdfs"));
 app.use("/api/videos",   require("./routes/videos"));
 app.use("/api/qcm",      require("./routes/qcm"));
+app.use("/api/qcm-ia",   require("./routes/qcmIA")); // Générateur de QCM par IA (admin)
+app.use("/api/academie", require("./routes/academie")); // Académie : cours, leçons, progression
+app.use("/api/recruteurs", require("./routes/recruteurs")); // Espace recruteurs : offres soumises
 app.use("/api/payment",  require("./routes/payment"));
 app.use("/api/cv",       require("./routes/cv"));
 app.use("/api/documents", require("./routes/documents"));
@@ -146,6 +185,18 @@ const PORT = process.env.PORT || 3000;
 async function start() {
 try {
 await initDatabase(); // Crée les tables si nécessaire
+// Tables des modules Académie et recruteurs : chacune est indépendante, et une
+// erreur ici ne doit jamais empêcher le reste du site de démarrer.
+for (const [nom, creer] of [
+  ["Académie", () => require("./config/academieSchema").initAcademieTables()],
+  ["recruteurs", () => require("./config/recruteursSchema").initRecruteursTables()],
+]) {
+  try {
+    await creer();
+  } catch (err) {
+    console.error(`⚠️ Tables ${nom} non créées :`, err.message);
+  }
+}
 
 // Garantit qu'akone97@hotmail.com (ou ADMIN_EMAIL) est l'unique admin.
 // Best-effort : si le compte n'existe pas encore, on log un avertissement

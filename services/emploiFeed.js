@@ -56,6 +56,7 @@
 //  plus proche de "chercher via Google" pour un agrégateur tiers.
 // ============================================================
 
+const { texteSur, urlSure } = require("./nettoyageFlux");
 const Parser = require("rss-parser");
 const cron   = require("node-cron");
 const crypto = require("crypto");
@@ -184,12 +185,13 @@ async function lireFlux(source) {
       .filter((item) => item.title && estUneOffreValide(item.title))
       .slice(0, 30)
       .map((item) => {
-        const titre = item.title.trim().slice(0, 200);
-        const lien = item.link || null;
-        const image =
+        const titre = texteSur(item.title, 200);
+        const lien = urlSure(item.link);
+        const image = urlSure(
           item.enclosure?.url ||
           item["media:content"]?.$?.url ||
-          null;
+          null
+        );
         const typeContrat = devinerTypeContrat(titre);
         const ville = devinerVille(titre);
         const texteComplet = `${titre} ${item.contentSnippet || item.content || ""}`;
@@ -201,7 +203,7 @@ async function lireFlux(source) {
           ville,
           region: devinerRegion(ville),
           niveauEtudes: devinerNiveauEtudes(texteComplet),
-          description: (item.contentSnippet || item.content || titre).slice(0, 2000),
+          description: texteSur(item.contentSnippet || item.content || titre, 2000),
           dateLimite: extraireDateLimite(texteComplet) ? extraireDateLimite(texteComplet) : null,
           dateLimiteDate: extraireDateLimite(texteComplet),
           lienExterne: lien,
@@ -296,7 +298,7 @@ async function rechercherViaGoogle(requete) {
       .filter((item) => item.title && estUneOffreValide(item.title))
       .map((item) => {
         const domaine = new URL(item.link).hostname.replace("www.", "");
-        const titre = item.title.trim().slice(0, 200);
+        const titre = texteSur(item.title, 200);
         const typeContrat = devinerTypeContrat(titre + " " + (item.snippet || ""));
         const ville = devinerVille(titre + " " + (item.snippet || ""));
         const texteComplet = `${titre} ${item.snippet || ""}`;
@@ -308,13 +310,13 @@ async function rechercherViaGoogle(requete) {
           ville,
           region: devinerRegion(ville),
           niveauEtudes: devinerNiveauEtudes(texteComplet),
-          description: (item.snippet || titre).slice(0, 2000),
+          description: texteSur(item.snippet || titre, 2000),
           dateLimite: extraireDateLimite(texteComplet),
           dateLimiteDate: extraireDateLimite(texteComplet),
-          lienExterne: item.link,
+          lienExterne: urlSure(item.link),
           sourceNom: domaine,
-          sourceUrl: item.link,
-          imageUrl: item.pagemap?.cse_image?.[0]?.src || item.pagemap?.cse_thumbnail?.[0]?.src || null,
+          sourceUrl: urlSure(item.link),
+          imageUrl: urlSure(item.pagemap?.cse_image?.[0]?.src || item.pagemap?.cse_thumbnail?.[0]?.src || null),
           identifiantExterne: item.link,
           hash: hacher(titre, item.link),
         };

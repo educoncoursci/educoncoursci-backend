@@ -31,6 +31,7 @@
 //  fausse information.
 // ============================================================
 
+const { texteSur, urlSure } = require("./nettoyageFlux");
 const Parser = require("rss-parser");
 const cron   = require("node-cron");
 const crypto = require("crypto");
@@ -84,11 +85,11 @@ async function lireFlux(source) {
       .filter((item) => item.title && correspondAuxThemes(item.title))
       .slice(0, 10)
       .map((item) => ({
-        titre: item.title.trim().slice(0, 300),
+        titre: texteSur(item.title, 300),
         tag: devinerTag(item.title),
         source_nom: source.nom,
         source_url: source.url,
-        lien: item.link || null,
+        lien: urlSure(item.link),
         hash: hacher(item.title.trim(), item.link || ""),
         publie_le: item.isoDate ? new Date(item.isoDate) : new Date(),
       }));

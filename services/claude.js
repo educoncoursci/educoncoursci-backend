@@ -87,6 +87,19 @@ INSTRUCTIONS DE RÉDACTION
 - Utilise des verbes d'action forts et des formulations percutantes
 - Adapte le ton aux recruteurs ivoiriens (entreprises, ONG, administrations)
 - Présente le texte avec des séparateurs clairs (═══, ───, etc.)
+
+RÈGLES D'INTÉGRITÉ (obligatoires) :
+- N'invente AUCUNE information : ni employeur, ni date, ni diplôme, ni chiffre, ni résultat, ni compétence absents des données ci-dessus
+- Reformule et structure uniquement ce qui est fourni. Si une rubrique est vide (« À préciser », « Non renseigné »), OMETS-la entièrement : pas de texte de remplissage, pas de crochets à compléter
+- Si une expérience n'a pas de missions détaillées, n'écris que l'intitulé, l'employeur et les dates
+
+RÈGLES DE QUALITÉ :
+- Profil professionnel de 3 à 4 lignes, tourné vers le poste recherché, sans pronom « je »
+- Expériences et formations par ordre antichronologique (la plus récente d'abord)
+- Missions en puces courtes, chacune commençant par un verbe d'action (passé pour les postes terminés, présent pour le poste actuel)
+- Reprends naturellement les mots-clés du poste recherché dans le profil et les compétences, sans ajouter de compétences non fournies (lisibilité par les logiciels de tri ATS)
+- Regroupe les compétences par catégories si elles dépassent six
+- Dates dans un format unique et cohérent ; une page si le candidat a moins de 5 ans d'expérience, deux pages maximum sinon
 - Ne génère QUE le CV, sans commentaire ni introduction avant ou après`;
   
   return appelClaude(prompt, 1800);
@@ -114,6 +127,7 @@ Nom complet  : ${nom}
 E-mail       : ${email || "Non renseigné"}
 Téléphone    : ${telephone || "Non renseigné"}
 Ville        : ${ville || "Abidjan, Côte d'Ivoire"}
+Date du jour : ${new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Abidjan" })}
 
 ═══════════════════════════════════════
 INFORMATIONS SUR LE POSTE
@@ -141,6 +155,18 @@ INSTRUCTIONS DE RÉDACTION
 - Style : élégant, formel, confiant sans arrogance
 - Met en valeur les atouts du candidat de façon naturelle et convaincante
 - Utilise les formules de politesse ivoiriennes / francophones appropriées
+
+RÈGLES D'INTÉGRITÉ (obligatoires) :
+- N'invente AUCUN diplôme, expérience, employeur, chiffre ou réalisation absents des informations ci-dessus
+- Si un champ est « À préciser » ou vide, n'en parle pas : pas de texte de remplissage ni de crochets à compléter
+
+RÈGLES DE QUALITÉ :
+- Place le lieu et la date du jour (ci-dessus) en en-tête, puis un objet précis (ex. « Objet : Candidature au poste de … »)
+- Personnalise : mentionne l'organisation et le poste visés dès l'introduction, avec une accroche spécifique plutôt qu'une phrase générique
+- Ne recopie pas le CV : relie 2 ou 3 atouts du candidat à ce que le poste demande réellement
+- Pour une candidature spontanée, explique l'intérêt pour l'organisation sans prétendre répondre à une offre précise
+- Évite les formules creuses (« depuis mon plus jeune âge », « je suis très motivé ») ; préfère des faits tirés des informations fournies
+- Termine par une disponibilité pour un entretien, puis la formule de politesse
 - Ne génère QUE la lettre, sans commentaire ni explication autour`;
   
   return appelClaude(prompt, 1400);

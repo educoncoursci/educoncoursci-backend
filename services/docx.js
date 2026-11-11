@@ -11,6 +11,9 @@ const {
 } = require("docx");
 const path = require("path");
 const fs   = require("fs");
+const {
+  preparerCorpsCV, estSeparateur, estTitreSection, estPuce, texteSansPuce,
+} = require("./cvTexte");
 
 const storageDir = path.join(__dirname, "../storage/generated");
 if (!fs.existsSync(storageDir)) {
@@ -24,98 +27,104 @@ function hexSansDiese(hex) {
 
 // ════════════════════════════════════════════════════════════
 //  Génère un CV en .docx, en respectant les couleurs du modèle
+//
+//  Compatibilité ATS : une colonne, vrai texte, police standard (Arial),
+//  titres de section en vrais titres Word, vraies puces, coordonnées en
+//  clair, et un seul en-tête (celui du formulaire : l'en-tête écrit par
+//  l'IA est retiré pour éviter le doublon).
 // ════════════════════════════════════════════════════════════
 async function genererCVDocx(data, contenuIA, modele) {
   const couleurPrimaire = hexSansDiese(modele?.couleurs?.primaire);
   const couleurAccent   = hexSansDiese(modele?.couleurs?.accent);
 
+  const { entete, lignes } = preparerCorpsCV(contenuIA, data);
   const enfants = [];
 
-  // ── En-tête : nom + poste ──────────────────────────────────
-  enfants.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 100 },
-      children: [
-        new TextRun({
-          text: (data.nom || "").toUpperCase(),
-          bold: true,
-          size: 36,
-          color: couleurPrimaire,
-        }),
-      ],
-    })
-  );
-
-  if (data.poste) {
+  // ── En-tête : nom, poste, coordonnées ──────────────────────
+  if (entete) {
     enfants.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { after: 150 },
+        spacing: { after: 100 },
         children: [
-          new TextRun({ text: data.poste, size: 24, color: couleurAccent, italics: true }),
+          new TextRun({ text: entete.nom.toUpperCase(), bold: true, size: 36, color: couleurPrimaire }),
         ],
       })
     );
+    if (entete.poste) {
+      enfants.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 120 },
+          children: [new TextRun({ text: entete.poste, size: 24, color: couleurAccent })],
+        })
+      );
+    }
+    if (entete.contact) {
+      enfants.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 240 },
+          children: [new TextRun({ text: entete.contact, size: 20, color: "444444" })],
+        })
+      );
+    }
   }
 
-  // ── Coordonnées ────────────────────────────────────────────
-  const contacts = [data.email, data.telephone, data.ville].filter(Boolean).join("  •  ");
-  if (contacts) {
-    enfants.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 300 },
-        children: [new TextRun({ text: contacts, size: 20, color: "555555" })],
-      })
-    );
-  }
-
-  // ── Corps du CV : parsing simple du texte généré par l'IA ──
-  const lignes = (contenuIA || "").split("\n");
+  // ── Corps : texte rédigé par l'IA ──────────────────────────
+  let derniereVide = true;
   for (const ligneBrute of lignes) {
     const ligne = ligneBrute.trim();
 
     if (!ligne) {
-      enfants.push(new Paragraph({ text: "" }));
+      if (!derniereVide) enfants.push(new Paragraph({ text: "" }));
+      derniereVide = true;
       continue;
     }
+    if (estSeparateur(ligne)) continue; // le Word a sa propre mise en forme
+    derniereVide = false;
 
-    // Ligne de séparation (═══, ───) → ignorée (le docx a déjà sa propre mise en forme)
-    if (/^[═─=\-]{3,}/.test(ligne)) {
-      continue;
-    }
-
-    // Titre de section en majuscules
-    if (ligne === ligne.toUpperCase() && ligne.length > 3 && ligne.length < 60 && !/^[0-9]/.test(ligne)) {
+    // Titre de section → vrai titre Word (navigation et lecture ATS)
+    if (estTitreSection(ligne)) {
       enfants.push(
         new Paragraph({
-          spacing: { before: 200, after: 100 },
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 220, after: 100 },
           border: {
             bottom: { color: couleurPrimaire, space: 2, style: BorderStyle.SINGLE, size: 6 },
           },
-          children: [
-            new TextRun({ text: ligne, bold: true, size: 24, color: couleurPrimaire }),
-          ],
+          children: [new TextRun({ text: ligne, bold: true, size: 24, color: couleurPrimaire })],
         })
       );
       continue;
     }
 
-    // Ligne normale
+    // Puce → vraie puce Word
+    if (estPuce(ligne)) {
+      enfants.push(
+        new Paragraph({
+          bullet: { level: 0 },
+          spacing: { after: 60 },
+          children: [new TextRun({ text: texteSansPuce(ligne), size: 21, color: "1A1A2E" })],
+        })
+      );
+      continue;
+    }
+
     enfants.push(
       new Paragraph({
         spacing: { after: 80 },
-        children: [new TextRun({ text: ligne, size: 20, color: "1A1A2E" })],
+        children: [new TextRun({ text: ligne, size: 21, color: "1A1A2E" })],
       })
     );
   }
 
   const doc = new Document({
+    styles: { default: { document: { run: { font: "Arial", size: 21 } } } },
     sections: [{ properties: {}, children: enfants }],
   });
 
-  const nomBase = (data.nom || "document").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+  const nomBase = (data?.nom || "document").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
   const filePath = path.join(storageDir, `CV_${nomBase}_${Date.now()}.docx`);
   const buffer = await Packer.toBuffer(doc);
   fs.writeFileSync(filePath, buffer);
@@ -146,6 +155,7 @@ async function genererLMDocx(contenuIA, nomBase) {
   }
 
   const doc = new Document({
+    styles: { default: { document: { run: { font: "Arial", size: 22 } } } },
     sections: [{ properties: {}, children: enfants }],
   });
 

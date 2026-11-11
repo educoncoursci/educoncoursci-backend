@@ -34,6 +34,7 @@
 //  avant de l'ajouter.
 // ============================================================
 
+const { texteSur, urlSure } = require("./nettoyageFlux");
 const Parser = require("rss-parser");
 const cron   = require("node-cron");
 const crypto = require("crypto");
@@ -80,11 +81,11 @@ async function lireFlux(source) {
       .filter((item) => item.title && correspond(item.title))
       .slice(0, 15)
       .map((item) => ({
-        titre: item.title.trim().slice(0, 300),
-        extrait: (item.contentSnippet || item.content || "").trim().slice(0, 500),
+        titre: texteSur(item.title, 300),
+        extrait: texteSur(item.contentSnippet || item.content || "", 500),
         sourceNom: source.nom,
         sourceUrl: source.url,
-        lien: item.link || null,
+        lien: urlSure(item.link),
         hash: hacher(item.title.trim(), item.link || source.url),
       }));
   } catch (err) {
