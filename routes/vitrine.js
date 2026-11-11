@@ -5,6 +5,7 @@
 // ============================================================
 
 const express = require("express");
+const { exigerEmailValide } = require("../middleware/neutraliser");
 const router  = express.Router();
 const ctrl    = require("../controllers/vitrineController");
 const auth    = require("../middleware/auth");
@@ -12,7 +13,7 @@ const admin   = require("../middleware/admin");
 
 // Public
 router.get("/stats",        ctrl.statsPubliques);       // GET  /api/vitrine/stats
-router.post("/newsletter",  ctrl.inscrireNewsletter);    // POST /api/vitrine/newsletter
+router.post("/newsletter",  exigerEmailValide, ctrl.inscrireNewsletter);    // POST /api/vitrine/newsletter
 router.get("/temoignages",  ctrl.temoignagesPublics);    // GET  /api/vitrine/temoignages
 
 // Admin

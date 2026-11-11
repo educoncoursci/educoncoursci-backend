@@ -7,6 +7,7 @@
 const express = require("express");
 const router  = express.Router();
 const auth    = require("../middleware/auth");
+const { nomValide, emailValide } = require("../middleware/neutraliser");
 const User    = require("../models/User");
 const Score   = require("../models/Score");
 const { uploadPhoto, handleUploadError, cloudinaryConfigure, envoyerVersCloudinary } = require("../middleware/upload");
@@ -85,6 +86,12 @@ return res.status(403).json({ error: "Accès refusé." });
 // uniquement. role/premium ne sont JAMAIS pris depuis req.body ici —
 // leur modification passe uniquement par les routes admin dédiées.
 const { nom, email } = req.body;
+if (nom !== undefined && !nomValide(nom)) {
+  return res.status(400).json({ error: "Nom invalide : lettres, chiffres, espaces, tirets et apostrophes uniquement." });
+}
+if (email !== undefined && !emailValide(email)) {
+  return res.status(400).json({ error: "Adresse e-mail invalide." });
+}
 const updated = await User.updateProfil(req.params.id, { nom, email });
 res.json({ message: "Profil mis à jour.", user: updated });
 } catch (err) {
