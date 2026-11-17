@@ -1,6 +1,6 @@
 // ============================================================
 //  server.js
-//  Point d'entrée du backend EduConcoursCI
+//  Point d'entrée du backend ProInsertion
 //  Lance le serveur Express, connecte la base de données,
 //  monte toutes les routes API.
 // ============================================================
@@ -142,8 +142,10 @@ app.use("/api/qcm",      require("./routes/qcm"));
 app.use("/api/qcm-ia",   require("./routes/qcmIA")); // Générateur de QCM par IA (admin)
 app.use("/api/academie", require("./routes/academie")); // Académie : cours, leçons, progression
 app.use("/api/recruteurs", require("./routes/recruteurs")); // Espace recruteurs : offres soumises
+app.use("/api/catalogue", require("./routes/catalogue")); // Catalogue des produits et tarifs
 app.use("/api/payment",  require("./routes/payment"));
 app.use("/api/cv",       require("./routes/cv"));
+app.use("/api/offres",   require("./routes/offres"));
 app.use("/api/documents", require("./routes/documents"));
 app.use("/api/documents-admin", require("./routes/documentsAdmin"));
 app.use("/api/search", require("./routes/search"));
@@ -158,7 +160,7 @@ app.use("/api/diagnostic", require("./routes/diagnostic"));
 app.get("/api/health", (req, res) => {
 res.json({
 status:  "ok",
-service: "EduConcoursCI API",
+service: "ProInsertion API",
 version: "1.0.0",
 date:    new Date().toLocaleDateString("fr-FR"),
 });
@@ -190,6 +192,10 @@ await initDatabase(); // Crée les tables si nécessaire
 for (const [nom, creer] of [
   ["Académie", () => require("./config/academieSchema").initAcademieTables()],
   ["recruteurs", () => require("./config/recruteursSchema").initRecruteursTables()],
+  ["catalogue", () => require("./config/catalogueSchema").initCatalogue()],
+  ["concours V2", () => require("./config/concoursSchemaV2").initConcoursV2()],
+  ["analyses offres", () => require("./config/analysesOffresSchema").initAnalysesOffres()],
+  ["commandes CV", () => require("./config/commandeCvSchema").initCommandesCv()],
 ]) {
   try {
     await creer();
@@ -222,7 +228,7 @@ require("./services/transactionsScheduler").demarrerPlanification(); // Nettoyag
 require("./services/concoursStatutScheduler").demarrerPlanification(); // Lot 18 — statut automatique des concours
 require("./services/concoursFeed").demarrerPlanification(); // Lot 18 — détection automatique de nouveaux concours
 app.listen(PORT, () => {
-console.log(`🚀 Serveur EduConcoursCI démarré sur le port ${PORT}`);
+console.log(`🚀 Serveur ProInsertion démarré sur le port ${PORT}`);
 console.log(`📡 API disponible : http://localhost:${PORT}/api/health`);
 console.log(`🌍 Environnement  : ${process.env.NODE_ENV || "development"}`);
 });

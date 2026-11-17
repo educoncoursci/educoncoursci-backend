@@ -1,4 +1,4 @@
-# Guide de lancement — EduConcoursCI
+# Guide de lancement — ProInsertion
 
 Déploiement actuel : **backend sur Render** (service gratuit, sans accès Shell),
 **frontend sur Netlify**, base **PostgreSQL**. Tout se fait depuis GitHub et les
@@ -63,6 +63,11 @@ Après toute modification de variable, Render redémarre le service.
   Les tables sont créées automatiquement au démarrage. Public : `/academie.html`.
   Le lien « Académie » n'est volontairement pas dans le menu du site : ajoute-le
   (`js/layout.js`) une fois quelques cours publiés.
+- **Tarifs et produits** : **/admin/tarifs.html**. Toute la grille ProInsertion (CV, lettres, packs,
+  entretiens, documents, accompagnement, abonnement, offres recruteurs) est enregistrée avec son
+  identifiant, sa catégorie, sa description et son prix fixe. Tu modifies noms, descriptions et prix
+  sans toucher au code ; tes modifications ne sont jamais écrasées au redémarrage. Un produit n'apparaît
+  sur l'accueil (section « Nos tarifs ») que s'il est **actif** : active-le quand le service est prêt.
 - **Offres soumises par les entreprises** : **/admin/offres-soumises.html**.
   Une entreprise inscrite remplit `/publier-offre.html` ; tu reçois un e-mail d'alerte (`ADMIN_EMAIL`).
   Tu étudies la demande, tu peux corriger le texte, tu convens du tarif avec l'entreprise (hors site :
@@ -131,7 +136,21 @@ Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en ha
 3. Passe un QCM publié de bout en bout (correction, score).
 4. Ouvre le site sur un téléphone : pages concours, boutique, CV.
 
-## 9. Ce qui n'est pas bloquant
+## 9. Identité ProInsertion : ce qui a changé et ce qui reste à décider
+
+- Le nom visible (menus, titres, e-mails, PDF, notifications, admin) est maintenant **ProInsertion**,
+  avec le slogan « Votre avenir professionnel commence ici. ».
+- **Volontairement inchangés** (les changer casserait le site) : l'adresse `educoncoursci.netlify.app`,
+  les noms des dépôts GitHub et du service Render, le dossier Cloudinary `educoncoursci/`.
+- Les adresses e-mail `support@educoncoursci.ci` et `noreply@educoncoursci.ci` sont conservées : à
+  remplacer le jour où tu auras ton propre nom de domaine ProInsertion.
+- **Service worker** : le nom du cache est passé à `proinsertion-v3`. À chaque déploiement qui modifie
+  `js/api.js`, `js/auth.js`, `js/main.js`, `index.html` ou les feuilles de style, incrémente ce numéro
+  dans `sw.js` (v4, v5…), sinon les visiteurs déjà venus continuent de voir l'ancienne version.
+- Pour changer l'adresse du site : Netlify → *Domain management* (renommer le site ou brancher un
+  domaine). Après cela, mets à jour `FRONTEND_URL` sur Render et les adresses du `sitemap.xml`.
+
+## 10. Ce qui n'est pas bloquant
 
 - CinetPay (en attente d'un compte entreprise), SMS, WhatsApp API, notifications push.
 - Nom de domaine personnalisé : l'URL Netlify fonctionne très bien pour démarrer.

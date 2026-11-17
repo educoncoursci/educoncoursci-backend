@@ -1,7 +1,7 @@
 {
   "name": "educoncoursci-backend",
   "version": "1.0.0",
-  "description": "Backend API EduConcoursCI — Plateforme de préparation aux concours CI",
+  "description": "Backend API ProInsertion — Plateforme de préparation aux concours CI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -63,6 +63,6 @@
     "railway",
     "render"
   ],
-  "author": "EduConcoursCI — Abidjan, Côte d'Ivoire",
+  "author": "ProInsertion — Abidjan, Côte d'Ivoire",
   "license": "ISC"
 }
