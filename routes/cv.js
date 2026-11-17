@@ -20,6 +20,19 @@ router.post("/generate", auth, quotaIA("cv"), ctrl.generateCV);
 // Note : monté sur /api/cv dans server.js → accessible via /api/cv/lm/generate
 router.post("/lm/generate", auth, quotaIA("lm"), ctrl.generateLM);
 
+// ── CV à l'acte (génération stockée → aperçu → paiement → PDF) ──
+const commande = require("../controllers/commandeCvController");
+router.get("/redaction/types", commande.typesRedaction);
+router.post("/commande/simulation", auth, quotaIA("cv"), commande.creerSimulation);
+router.post("/commande/:id/repondre", auth, commande.repondre);
+router.post("/commande/pack", auth, quotaIA("cv"), commande.creerPack);
+router.get("/commande/pack/:gid", auth, commande.lirePack);
+router.post("/commande", auth, quotaIA("cv"), commande.creer);
+router.get("/commande", auth, commande.lister);
+router.get("/commande/:id", auth, commande.lire);
+router.post("/commande/:id/payer", auth, commande.payer);
+router.get("/commande/:id/pdf", auth, commande.telechargerPDF);
+
 // POST /api/cv/pdf  — Exporter en PDF (connecté requis ; le contrôleur
 // vérifie lui-même si le modèle choisi est premium, cf. cvController.js)
 router.post("/pdf", auth, ctrl.exportPDF);

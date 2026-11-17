@@ -61,7 +61,7 @@ return `
         <td style="background:linear-gradient(135deg,#1A6B3C,#0A6EBD);
                     padding:28px 30px;text-align:center;">
           <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:900;
-                      letter-spacing:0.5px;">🎓 EduConcoursCI</h1>
+                      letter-spacing:0.5px;">🎓 ProInsertion</h1>
           <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">
             Plateforme de préparation aux concours de Côte d'Ivoire
           </p>
@@ -80,7 +80,7 @@ return `
         <td style="background:#F4F6F9;padding:20px 30px;text-align:center;
                     border-top:1px solid #E5E7EB;">
           <p style="color:#888;font-size:12px;margin:0;line-height:1.6;">
-            EduConcoursCI · Abidjan, Côte d'Ivoire<br>
+            ProInsertion · Votre avenir professionnel commence ici.<br>Abidjan, Côte d'Ivoire<br>
             <a href="#" style="color:#1A6B3C;text-decoration:none;">Se désabonner</a>
           </p>
         </td>
@@ -111,9 +111,9 @@ console.warn(
 return { simule: true, to, subject };
 }
 
-const nomExpediteur = (process.env.EMAIL_FROM || "EduConcoursCI <noreply@educoncoursci.ci>")
+const nomExpediteur = (process.env.EMAIL_FROM || "ProInsertion <noreply@educoncoursci.ci>")
 .match(/^(.*?)\s*<(.+)>$/);
-const senderName  = nomExpediteur ? nomExpediteur[1].trim() : "EduConcoursCI";
+const senderName  = nomExpediteur ? nomExpediteur[1].trim() : "ProInsertion";
 const senderEmail = nomExpediteur ? nomExpediteur[2].trim() : (process.env.EMAIL_FROM || "noreply@educoncoursci.ci");
 
 const response = await fetch(BREVO_API_URL, {
@@ -162,18 +162,18 @@ return { messageId: data.messageId, to };
 
 // ── 1. Bienvenue ─────────────────────────────────────────────
 async function envoyerBienvenue(user) {
-const html = templateBase("Bienvenue sur EduConcoursCI !", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Bienvenue, ${user.nom} ! 🎉 </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;"> Ton compte a été créé avec succès sur <strong>EduConcoursCI</strong>, la plateforme de référence pour la préparation aux concours de Côte d'Ivoire. </p> <div style="background:#F0FDF4;border-radius:12px;padding:18px;margin:20px 0;"> <p style="margin:0 0 10px;font-weight:700;color:#1A6B3C;">Tu as maintenant accès à :</p> <ul style="margin:0;padding-left:20px;color:#333;line-height:1.9;font-size:14px;"> <li>📋 La liste complète des concours et examens CI</li> <li>🧠 Des QCM de préparation gratuits</li> <li>📰 Les dernières actualités et alertes</li> <li>📚 Des ressources de préparation</li> </ul> </div> <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px;"> Pour accéder aux cours complets, sujets corrigés et vidéos de formation, passe en <strong>Premium</strong> dès 2 000 FCFA/mois. </p> <div style="text-align:center;margin:24px 0;"> <a href="${process.env.FRONTEND_URL || "https://educoncoursci.netlify.app"}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Accéder à la plateforme → </a> </div>`);
+const html = templateBase("Bienvenue sur ProInsertion !", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Bienvenue, ${user.nom} ! 🎉 </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;"> Ton compte a été créé avec succès sur <strong>ProInsertion</strong>, la plateforme de référence pour la préparation aux concours de Côte d'Ivoire. </p> <div style="background:#F0FDF4;border-radius:12px;padding:18px;margin:20px 0;"> <p style="margin:0 0 10px;font-weight:700;color:#1A6B3C;">Tu as maintenant accès à :</p> <ul style="margin:0;padding-left:20px;color:#333;line-height:1.9;font-size:14px;"> <li>📋 La liste complète des concours et examens CI</li> <li>🧠 Des QCM de préparation gratuits</li> <li>📰 Les dernières actualités et alertes</li> <li>📚 Des ressources de préparation</li> </ul> </div> <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px;"> Pour accéder aux cours complets, sujets corrigés et vidéos de formation, passe en <strong>Premium</strong> dès 2 000 FCFA/mois. </p> <div style="text-align:center;margin:24px 0;"> <a href="${process.env.FRONTEND_URL || "https://educoncoursci.netlify.app"}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Accéder à la plateforme → </a> </div>`);
 
 return envoyer({
 to:      user.email,
-subject: "Bienvenue sur EduConcoursCI ! 🎓",
+subject: "Bienvenue sur ProInsertion ! 🎓",
 html,
 });
 }
 
 // ── 2. Confirmation de paiement ──────────────────────────────
 async function envoyerConfirmationPaiement(user, transaction) {
-const html = templateBase("Paiement validé — EduConcoursCI", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Paiement validé ! ✅ </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${user.nom}</strong>, ton abonnement <strong>Premium ${transaction.plan}</strong> est maintenant actif. </p> <div style="background:#F9FAFB;border-radius:12px;padding:18px;margin:0 0 20px;"> <table width="100%" cellpadding="0" cellspacing="0"> ${[ ["Plan",      `Premium ${transaction.plan}`], ["Montant",    `${transaction.montant?.toLocaleString("fr-CI")} FCFA`], ["Moyen",      transaction.moyen], ["Référence",  transaction.txId], ["Date",       new Date().toLocaleDateString("fr-FR")], ["Expiration", transaction.expiration || "Voir votre profil"], ].map(([k, v]) => `
+const html = templateBase("Paiement validé — ProInsertion", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Paiement validé ! ✅ </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${user.nom}</strong>, ton abonnement <strong>Premium ${transaction.plan}</strong> est maintenant actif. </p> <div style="background:#F9FAFB;border-radius:12px;padding:18px;margin:0 0 20px;"> <table width="100%" cellpadding="0" cellspacing="0"> ${[ ["Plan",      `Premium ${transaction.plan}`], ["Montant",    `${transaction.montant?.toLocaleString("fr-CI")} FCFA`], ["Moyen",      transaction.moyen], ["Référence",  transaction.txId], ["Date",       new Date().toLocaleDateString("fr-FR")], ["Expiration", transaction.expiration || "Voir votre profil"], ].map(([k, v]) => `
 <tr>
 <td style="padding:8px 0;color:#888;font-size:13px;border-bottom:1px solid #E5E7EB;">${k}</td>
 <td style="padding:8px 0;font-weight:700;font-size:13px;border-bottom:1px solid #E5E7EB;text-align:right;">${v}</td>
@@ -189,7 +189,7 @@ html,
 
 // ── 3. Alerte nouveau concours ───────────────────────────────
 async function envoyerAlerteConcours(email, nom, concours) {
-const html = templateBase("Nouveau concours disponible", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> 🏛️ Nouveau concours disponible ! </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${nom}</strong>, un nouveau concours vient d'être publié sur EduConcoursCI. </p> <div style="background:#F0FDF4;border-radius:12px;padding:20px;margin:0 0 20px; border-left:4px solid #1A6B3C;"> <h3 style="margin:0 0 12px;color:#1A6B3C;font-size:16px;">${concours.titre}</h3> <table width="100%" cellpadding="0" cellspacing="0"> ${[ ["🏢 Organisme", concours.organisme], ["📂 Catégorie", concours.categorie], ["📅 Ouverture", concours.ouverture || "Voir le site"], ["⏰ Clôture",   concours.cloture   || "Voir le site"], ["💰 Frais",     concours.frais ?`${concours.frais.toLocaleString("fr-CI")} FCFA`: "Gratuit"], ["🎓 Niveau",    concours.niveau || "Voir le site"], ].map(([k, v]) =>`
+const html = templateBase("Nouveau concours disponible", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> 🏛️ Nouveau concours disponible ! </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${nom}</strong>, un nouveau concours vient d'être publié sur ProInsertion. </p> <div style="background:#F0FDF4;border-radius:12px;padding:20px;margin:0 0 20px; border-left:4px solid #1A6B3C;"> <h3 style="margin:0 0 12px;color:#1A6B3C;font-size:16px;">${concours.titre}</h3> <table width="100%" cellpadding="0" cellspacing="0"> ${[ ["🏢 Organisme", concours.organisme], ["📂 Catégorie", concours.categorie], ["📅 Ouverture", concours.ouverture || "Voir le site"], ["⏰ Clôture",   concours.cloture   || "Voir le site"], ["💰 Frais",     concours.frais ?`${concours.frais.toLocaleString("fr-CI")} FCFA`: "Gratuit"], ["🎓 Niveau",    concours.niveau || "Voir le site"], ].map(([k, v]) =>`
 <tr>
 <td style="padding:6px 0;color:#555;font-size:13px;">${k}</td>
 <td style="padding:6px 0;font-weight:600;font-size:13px;text-align:right;">${v}</td>
@@ -238,7 +238,7 @@ async function envoyerNotificationAdmin(destinataires, { titre, message, urgent 
 const html = templateBase(titre, `${urgent ?`<div style="background:#FEF2F2;border:1px solid #D9000D;border-radius:10px;
 padding:12px 16px;margin:0 0 20px;text-align:center;">
 <span style="color:#D9000D;font-weight:700;font-size:14px;">🔴 NOTIFICATION URGENTE</span>
-</div>`: ""} <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">${titre}</h2> <div style="color:#333;font-size:15px;line-height:1.8;white-space:pre-line;"> ${message} </div> <div style="text-align:center;margin-top:24px;"> <a href="${process.env.FRONTEND_URL}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Voir sur EduConcoursCI → </a> </div>`);
+</div>`: ""} <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">${titre}</h2> <div style="color:#333;font-size:15px;line-height:1.8;white-space:pre-line;"> ${message} </div> <div style="text-align:center;margin-top:24px;"> <a href="${process.env.FRONTEND_URL}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Voir sur ProInsertion → </a> </div>`);
 
 // Envoie à tous les destinataires
 const resultats = await Promise.allSettled(
@@ -257,10 +257,10 @@ return { envoyes: succes, echecs, total: destinataires.length };
 
 // ── 7. Réinitialisation de mot de passe ───────────────────────
 async function envoyerResetMotDePasse(user, lienReset) {
-const html = templateBase("Réinitialisation de mot de passe — EduConcoursCI", `
+const html = templateBase("Réinitialisation de mot de passe — ProInsertion", `
   <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Réinitialisation de ton mot de passe 🔑</h2>
   <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
-    Bonjour <strong>${user.nom}</strong>, tu as demandé à réinitialiser ton mot de passe sur EduConcoursCI.
+    Bonjour <strong>${user.nom}</strong>, tu as demandé à réinitialiser ton mot de passe sur ProInsertion.
     Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe.
   </p>
   <div style="text-align:center;margin:24px 0;">
@@ -294,10 +294,10 @@ html,
 // confirmation dans sa boîte mail, seulement le message affiché sur
 // le site lui-même.
 async function envoyerConfirmationNewsletter(email) {
-const html = templateBase("Inscription confirmée — EduConcoursCI", `
+const html = templateBase("Inscription confirmée — ProInsertion", `
   <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Inscription confirmée ! 📬</h2>
   <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
-    Merci de t'être inscrit(e) à la newsletter d'EduConcoursCI. Tu recevras désormais un résumé
+    Merci de t'être inscrit(e) à la newsletter d'ProInsertion. Tu recevras désormais un résumé
     des nouveaux concours et des actualités importantes directement dans cette boîte mail.
   </p>
   <p style="color:#888;font-size:13px;line-height:1.7;margin:20px 0 0;">
@@ -308,7 +308,7 @@ const html = templateBase("Inscription confirmée — EduConcoursCI", `
 
 return envoyer({
 to:      email,
-subject: "📬 Inscription à la newsletter EduConcoursCI confirmée",
+subject: "📬 Inscription à la newsletter ProInsertion confirmée",
 html,
 });
 }

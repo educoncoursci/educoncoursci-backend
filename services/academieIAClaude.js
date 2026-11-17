@@ -1,6 +1,6 @@
 // ============================================================
 //  services/academieIAClaude.js
-//  Académie EduConcoursCI — génération assistée par IA :
+//  Académie ProInsertion — génération assistée par IA :
 //    1. genererPlan()  : titre, description et liste des leçons d'un cours
 //    2. genererLecon() : texte, points clés et exercices d'UNE leçon
 //

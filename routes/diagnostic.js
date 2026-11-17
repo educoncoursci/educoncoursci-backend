@@ -70,8 +70,8 @@ router.get("/email/test", async (req, res) => {
   try {
     const resultat = await envoyer({
       to: destinataire,
-      subject: "✅ Test EduConcoursCI — la configuration e-mail fonctionne",
-      html: `<p>Si tu lis ce message, l'envoi d'e-mails depuis EduConcoursCI fonctionne correctement 🎉</p>`,
+      subject: "✅ Test ProInsertion — la configuration e-mail fonctionne",
+      html: `<p>Si tu lis ce message, l'envoi d'e-mails depuis ProInsertion fonctionne correctement 🎉</p>`,
     });
     res.json({
       succes: true,

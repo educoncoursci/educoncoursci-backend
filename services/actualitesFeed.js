@@ -49,7 +49,7 @@ function chargerSources() {
   return [];
 }
 
-// ── Mots-clés définissant ce qui intéresse EduConcoursCI ─────
+// ── Mots-clés définissant ce qui intéresse ProInsertion ─────
 const MOTS_CLES = [
   "concours", "cafop", "ena ", "ena,", "fonction publique", "examen", "bepc",
   "baccalauréat", "bac ", "résultat", "inscription", "recrutement", "emploi",

@@ -13,6 +13,7 @@ const admin   = require("../middleware/admin");
 // Routes publiques (lecture)
 router.get("/",         ctrl.liste);   // GET /api/concours
 router.get("/ouverts",  ctrl.ouverts); // GET /api/concours/ouverts
+router.get("/compteurs", ctrl.compteurs); // GET /api/concours/compteurs — AVANT /:id
 router.get("/stats",    ctrl.stats);   // GET /api/concours/stats — AVANT /:id, sinon "stats" serait interprété comme un id
 
 // Admin — lance la bibliothèque de concours vérifiés (scripts/seed-

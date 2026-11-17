@@ -17,7 +17,7 @@ if (!fs.existsSync(storageDir)) {
 fs.mkdirSync(storageDir, { recursive: true });
 }
 
-// ── Couleurs & styles EduConcoursCI ──────────────────────────
+// ── Couleurs & styles ProInsertion ──────────────────────────
 const COULEURS = {
 primaire:    "#1A6B3C",
 secondaire:  "#0A6EBD",
@@ -64,7 +64,7 @@ doc.fillColor(COULEURS.blanc)
 
 doc.fontSize(10)
    .font("Helvetica")
-   .text("EduConcoursCI — Préparation aux concours CI", 60, 55, { align: "center" });
+   .text("ProInsertion — Votre avenir professionnel commence ici.", 60, 55, { align: "center" });
 
 // ── Corps du document ─────────────────────────────────────
 doc.moveDown(3);
@@ -125,7 +125,7 @@ doc.rect(0, pageHeight - 40, doc.page.width, 40).fill(COULEURS.grisClair);
 doc.fillColor(COULEURS.gris)
    .fontSize(8)
    .text(
-     `Document généré par EduConcoursCI — ${new Date().toLocaleDateString("fr-FR")}`,
+     `Document généré par ProInsertion — ${new Date().toLocaleDateString("fr-FR")}`,
      60,
      pageHeight - 26,
      { align: "center" }
@@ -179,7 +179,7 @@ function genererPDFProfessionnel(contenu, nomFichier, type, options = {}) {
       size: "A4",
       margins: { top: 50, bottom: 50, left: 55, right: 55 },
       info: {
-        Title: estCV ? `CV ${data?.nom || ""}`.trim() : "Lettre de motivation",
+        Title: estCV ? `CV ${data?.nom || ""}`.trim() : (options.titre || "Lettre de motivation"),
         Author: data?.nom || "",
       },
     });
@@ -322,7 +322,7 @@ async function genererCertificatPDF(nomFichier, { titre, sousTitre, nomCandidat,
     doc.font("Helvetica").fontSize(10).fillColor(COULEURS.gris)
        .text(`Délivré le ${date}`, 0, hauteur - 90, { align: "center" });
     doc.font("Helvetica-Oblique").fontSize(9).fillColor(COULEURS.gris)
-       .text("Certificat auto-déclaratif généré par EduConcoursCI — ne remplace aucun diplôme ni attestation officielle.", 60, hauteur - 65, { align: "center", width: largeur - 120 });
+       .text("Certificat auto-déclaratif généré par ProInsertion — ne remplace aucun diplôme ni attestation officielle.", 60, hauteur - 65, { align: "center", width: largeur - 120 });
 
     doc.end();
     stream.on("finish", () => resolve(filePath));

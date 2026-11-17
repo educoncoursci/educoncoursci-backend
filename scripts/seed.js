@@ -9,7 +9,7 @@ const { query, initDatabase } = require("../config/database");
 const bcrypt = require("bcryptjs");
 
 async function seed() {
-console.log("🌱 Démarrage du seed EduConcoursCI…\n");
+console.log("🌱 Démarrage du seed ProInsertion…\n");
 
 try {
 // Initialise les tables

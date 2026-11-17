@@ -61,7 +61,7 @@ async function repondreAssistantSocial(message, historique = []) {
   const alerteDetectee = detecterAlerte(message);
 
   const systemPrompt = `Tu es un assistant d'orientation sociale et administrative pour la plateforme
-EduConcoursCI, à destination d'usagers en Côte d'Ivoire. Tu n'es PAS un travailleur
+ProInsertion, à destination d'usagers en Côte d'Ivoire. Tu n'es PAS un travailleur
 social, un médecin, un psychologue ou un avocat — tu es un outil d'orientation et
 d'information générale.
 

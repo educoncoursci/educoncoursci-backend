@@ -1,5 +1,5 @@
 // ============================================================
-//  routes/academie.js — Académie EduConcoursCI
+//  routes/academie.js — Académie ProInsertion
 //  Préfixe : /api/academie
 // ============================================================
 

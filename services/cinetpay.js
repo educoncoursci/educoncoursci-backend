@@ -41,7 +41,7 @@ const CinetPay = {
         currency: "XOF",
         description,
         customer_email: email,
-        customer_name: nom || "Candidat EduConcoursCI",
+        customer_name: nom || "Candidat ProInsertion",
         notify_url: process.env.CINETPAY_NOTIFY_URL,
         return_url: process.env.CINETPAY_RETURN_URL,
         channels: "ALL", // carte bancaire + tout mobile money disponible via CinetPay

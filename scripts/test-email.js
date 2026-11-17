@@ -60,8 +60,8 @@ const destinataire = process.argv[2];
   try {
     const resultat = await envoyer({
       to: destinataire,
-      subject: "✅ Test EduConcoursCI — la configuration e-mail fonctionne",
-      html: `<p>Si tu lis ce message, l'envoi d'e-mails depuis EduConcoursCI fonctionne correctement 🎉</p>`,
+      subject: "✅ Test ProInsertion — la configuration e-mail fonctionne",
+      html: `<p>Si tu lis ce message, l'envoi d'e-mails depuis ProInsertion fonctionne correctement 🎉</p>`,
     });
     console.log("✅ E-mail envoyé avec succès !");
     console.log(`   Identifiant du message : ${resultat.messageId}`);

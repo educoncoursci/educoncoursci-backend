@@ -21,6 +21,7 @@ router.use(auth, isAdmin);
 // ── Statistiques ─────────────────────────────────────────────
 router.get("/stats",    admin.stats);      // GET /api/admin/stats
 router.get("/journal",  admin.journal);    // GET /api/admin/journal
+router.get("/ventes",   require("../controllers/ventesController").tableauDeBord); // GET /api/admin/ventes?jours=30
 
 // ── Utilisateurs ─────────────────────────────────────────────
 router.get("/users",         admin.getUsers);    // GET /api/admin/users

@@ -6,7 +6,7 @@
 //  RÈGLES DE SÉCURITÉ STRICTES :
 //  - Ne garantit JAMAIS une admission ou une réussite
 //  - N'invente jamais de dates, de résultats ou de textes
-//    officiels — renvoie vers la fiche concours EduConcoursCI ou
+//    officiels — renvoie vers la fiche concours ProInsertion ou
 //    la source officielle en cas de doute
 //  - Rappelle qu'aucun intermédiaire ne peut garantir un concours
 //    (numéro vert anti-fraude 1364) si la question laisse penser
@@ -41,7 +41,7 @@ async function repondreAssistantConcours(message, historique = [], contexteConco
       ` questions générales sur d'autres concours ivoiriens.`
     : "";
 
-  const systemPrompt = `Tu es l'assistant IA d'EduConcoursCI, spécialisé dans les concours de la
+  const systemPrompt = `Tu es l'assistant IA d'ProInsertion, spécialisé dans les concours de la
 Fonction Publique et des grandes écoles de Côte d'Ivoire (conditions d'accès, épreuves,
 pièces à fournir, méthodologie de révision, orientation générale).
 

@@ -35,7 +35,7 @@
 //  pages HTML serait donc une extraction non autorisée. La méthode
 //  conforme retenue ici est de les interroger via l'API Google Custom
 //  Search restreinte à leur domaine (site:jobivoire.ci, site:emploi.ci)
-//  — EduConcoursCI ne récupère alors que ce que Google a déjà indexé
+//  — ProInsertion ne récupère alors que ce que Google a déjà indexé
 //  publiquement, via une API que Google autorise explicitement pour cet
 //  usage, exactement comme pour Educarriere et l'Agence Emploi Jeunes.
 //
@@ -48,7 +48,7 @@
 //
 //  ⚠️ "Google Jobs" (l'encart d'offres qui s'affiche dans Google
 //  Search) n'a pas d'API publique de LECTURE pour un site tiers comme
-//  EduConcoursCI — au contraire, ce sont les sites d'offres qui
+//  ProInsertion — au contraire, ce sont les sites d'offres qui
 //  soumettent leurs propres annonces à Google via des données
 //  structurées (schema.org/JobPosting) pour y apparaître. On ne peut
 //  donc pas "récupérer depuis Google Jobs" au sens where l'énoncé
