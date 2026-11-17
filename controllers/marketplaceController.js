@@ -3,7 +3,7 @@
 //  Lot 14 — Marketplace (façade publique). Liste/détail des
 //  offres publiées et envoi d'une demande de contact/devis au
 //  partenaire. Aucun paiement en ligne dans cette première
-//  version — EduConcoursCI met en relation, la transaction se
+//  version — ProInsertion met en relation, la transaction se
 //  fait directement entre le candidat et le partenaire.
 // ============================================================
 

@@ -1,6 +1,6 @@
 // ============================================================
 //  config/academieSchema.js
-//  Tables de l'Académie EduConcoursCI (cours → leçons → progression).
+//  Tables de l'Académie ProInsertion (cours → leçons → progression).
 //  Créées au démarrage si elles n'existent pas (CREATE IF NOT EXISTS) :
 //  aucune migration manuelle à lancer, aucune table existante modifiée.
 // ============================================================

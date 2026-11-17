@@ -95,7 +95,7 @@ const user = await User.create({
 const token = genererToken({ ...user, role: "user", premium: false });
 
 res.status(201).json({
-  message: "Compte créé avec succès. Bienvenue sur EduConcoursCI !",
+  message: "Compte créé avec succès. Bienvenue sur ProInsertion !",
   token,
   user: {
     id:              user.id,

@@ -40,7 +40,7 @@ exports.setup = async (req, res) => {
     }
 
     const secret = speakeasy.generateSecret({
-      name: `EduConcoursCI (${utilisateur.email})`,
+      name: `ProInsertion (${utilisateur.email})`,
       length: 20,
     });
 

@@ -1,6 +1,6 @@
 // ============================================================
 //  controllers/academieController.js
-//  Académie EduConcoursCI : cours → leçons (texte, points clés,
+//  Académie ProInsertion : cours → leçons (texte, points clés,
 //  exercices) → progression de l'utilisateur.
 //
 //  Accès :

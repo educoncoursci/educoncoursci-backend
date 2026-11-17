@@ -2,7 +2,7 @@
 //  models/CandidatureConcours.js
 //  Lot 8 — Suivi de candidature aux concours (workflow personnel
 //  multi-étapes "Enregistré → Admission"). Auto-déclaratif : c'est
-//  le candidat lui-même qui fait avancer son suivi, EduConcoursCI
+//  le candidat lui-même qui fait avancer son suivi, ProInsertion
 //  n'étant pas branché sur les systèmes officiels d'inscription.
 // ============================================================
 

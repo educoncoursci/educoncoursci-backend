@@ -282,7 +282,7 @@ exports.adminAccepter = async (req, res) => {
     const lien = `${process.env.FRONTEND_URL || ""}/emploi.html`;
     envoyerEnSilence(
       o.contact_email,
-      "Ton offre est publiée sur EduConcoursCI",
+      "Ton offre est publiée sur ProInsertion",
       `Bonjour ${echapper(o.contact_nom)},<br><br>` +
       `Ton offre « ${echapper(o.titre)} » est maintenant publiée. ` +
       `Tu peux la retrouver ici : <a href="${echapper(lien)}">${echapper(lien)}</a>.<br><br>Merci de ta confiance !`,

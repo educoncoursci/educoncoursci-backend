@@ -149,8 +149,8 @@ exports.certificatBadge = async (req, res) => {
     const nomFichier = `certificat_badge_${req.params.badgeId}_${userId}_${Date.now()}`;
     filePath = await genererCertificatPDF(nomFichier, {
       titre: `${definition.icone} Badge « ${definition.nom} »`,
-      sousTitre: "Espace préparation EduConcoursCI",
-      nomCandidat: user?.nom || "Candidat EduConcoursCI",
+      sousTitre: "Espace préparation ProInsertion",
+      nomCandidat: user?.nom || "Candidat ProInsertion",
       detail: definition.description,
       date: DATE_FR(),
     });
@@ -191,8 +191,8 @@ exports.certificatExamen = async (req, res) => {
     const nomFichier = `certificat_examen_${score.id}_${Date.now()}`;
     filePath = await genererCertificatPDF(nomFichier, {
       titre: "🏅 Certificat de réussite",
-      sousTitre: "Examen blanc — Espace préparation EduConcoursCI",
-      nomCandidat: user?.nom || "Candidat EduConcoursCI",
+      sousTitre: "Examen blanc — Espace préparation ProInsertion",
+      nomCandidat: user?.nom || "Candidat ProInsertion",
       detail: `${score.qcm_titre || "Examen blanc"} — Score obtenu : ${score.pourcentage}% (${score.score}/${score.total})`,
       date: new Date(score.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
     });

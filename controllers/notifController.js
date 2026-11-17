@@ -112,7 +112,7 @@ const echecsEmail = resultatsEmail.filter(r => r.status === "rejected").length;
 
 // Envoi WhatsApp (pour ceux qui ont le canal activé + un numéro renseigné)
 const destinatairesWhatsapp = destinataires.filter((u) => u.canal_whatsapp && u.whatsapp_numero);
-const messageWhatsapp = `🔔 Nouveau concours EduConcoursCI : ${concours.titre} (${concours.organisme}). Clôture : ${concours.cloture || "à préciser"}. Plus d'infos : https://educoncoursci.netlify.app/concours-detail.html?id=${concours.id}`;
+const messageWhatsapp = `🔔 Nouveau concours ProInsertion : ${concours.titre} (${concours.organisme}). Clôture : ${concours.cloture || "à préciser"}. Plus d'infos : https://educoncoursci.netlify.app/concours-detail.html?id=${concours.id}`;
 const resultatsWhatsapp = await Promise.allSettled(
   destinatairesWhatsapp.map(u => envoyerWhatsapp(u.whatsapp_numero, messageWhatsapp))
 );
@@ -122,7 +122,7 @@ const succesWhatsapp = resultatsWhatsapp.filter(
 
 // Envoi SMS (pour ceux qui ont le canal activé + un numéro renseigné)
 const destinatairesSms = destinataires.filter((u) => u.canal_sms && u.sms_numero);
-const messageSms = `EduConcoursCI : nouveau concours "${concours.titre}" (${concours.organisme}). Clôture : ${concours.cloture || "à préciser"}. Détails sur educoncoursci.netlify.app`;
+const messageSms = `ProInsertion : nouveau concours "${concours.titre}" (${concours.organisme}). Clôture : ${concours.cloture || "à préciser"}. Détails sur educoncoursci.netlify.app`;
 const resultatsSms = await Promise.allSettled(
   destinatairesSms.map(u => envoyerSMS(u.sms_numero, messageSms))
 );
@@ -238,7 +238,7 @@ for (const concours of result.rows) {
   const succesEmail = resultatsEmail.filter(r => r.status === "fulfilled").length;
 
   const destinatairesWhatsapp = destinataires.filter((u) => u.canal_whatsapp && u.whatsapp_numero);
-  const messageWhatsapp = `⏰ Rappel EduConcoursCI : il reste ${joursRestants} jour(s) pour t'inscrire à "${concours.titre}" (${concours.organisme}). Clôture le ${concours.cloture}.`;
+  const messageWhatsapp = `⏰ Rappel ProInsertion : il reste ${joursRestants} jour(s) pour t'inscrire à "${concours.titre}" (${concours.organisme}). Clôture le ${concours.cloture}.`;
   const resultatsWhatsapp = await Promise.allSettled(
     destinatairesWhatsapp.map(u => envoyerWhatsapp(u.whatsapp_numero, messageWhatsapp))
   );
@@ -247,7 +247,7 @@ for (const concours of result.rows) {
   ).length;
 
   const destinatairesSms = destinataires.filter((u) => u.canal_sms && u.sms_numero);
-  const messageSms = `EduConcoursCI : plus que ${joursRestants} jour(s) pour t'inscrire à "${concours.titre}" (clôture le ${concours.cloture}).`;
+  const messageSms = `ProInsertion : plus que ${joursRestants} jour(s) pour t'inscrire à "${concours.titre}" (clôture le ${concours.cloture}).`;
   const resultatsSms = await Promise.allSettled(
     destinatairesSms.map(u => envoyerSMS(u.sms_numero, messageSms))
   );

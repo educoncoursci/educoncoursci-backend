@@ -91,7 +91,7 @@ await client.query(`
     centres     TEXT DEFAULT '[]',
     premium     BOOLEAN DEFAULT FALSE,
     statut      VARCHAR(50) DEFAULT 'à venir'
-                CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée')),
+                CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée', 'suspendu', 'en attente de résultats', 'annulé')),
     couleur     VARCHAR(20) DEFAULT '#1A6B3C',
     created_at  TIMESTAMP DEFAULT NOW()
   );
@@ -807,7 +807,7 @@ await client.query(`
 // Table : marketplace_contacts (Lot 14 — demandes de contact/devis envoyées
 // à un partenaire à propos d'une offre. Pas de paiement en ligne pour cette
 // première version : la transaction se fait directement entre le candidat
-// et le partenaire, EduConcoursCI met simplement en relation.)
+// et le partenaire, ProInsertion met simplement en relation.)
 await client.query(`
   CREATE TABLE IF NOT EXISTS marketplace_contacts (
     id         SERIAL PRIMARY KEY,
@@ -1256,7 +1256,7 @@ await client.query(`
     END IF;
 
     ALTER TABLE concours ADD CONSTRAINT concours_statut_check
-      CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée'));
+      CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée', 'suspendu', 'en attente de résultats', 'annulé'));
   END $$;
 `);
 
@@ -1284,7 +1284,7 @@ await client.query(`
     END IF;
 
     ALTER TABLE concours ADD CONSTRAINT concours_statut_check
-      CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée', 'suspendu'));
+      CHECK (statut IN ('ouvert', 'à venir', 'fermé', 'résultats', 'information non confirmée', 'suspendu', 'en attente de résultats', 'annulé'));
   END $$;
 `);
 

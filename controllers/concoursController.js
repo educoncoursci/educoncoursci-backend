@@ -5,13 +5,15 @@
 
 const Concours = require("../models/Concours");
 const Journal  = require("../models/Journal");
+const Statut   = require("../services/concoursStatut");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/concours — Liste avec filtres
 // ════════════════════════════════════════════════════════════
 exports.liste = async (req, res) => {
 try {
-const { categorie, statut, recherche, premium, structureId, limit, offset } = req.query;
+await Statut.rafraichirSiNecessaire();
+const { categorie, statut, recherche, premium, structureId, limit, offset, archive } = req.query;
 
 // Les utilisateurs non-premium ne voient que le contenu gratuit
 let filtrerPremium;
@@ -23,9 +25,10 @@ const concours = await Concours.findAll({
   categorie,
   statut,
   search: recherche,
+  archive,
   premium: filtrerPremium,
   structureId: structureId ? parseInt(structureId) : undefined,
-  limit:  parseInt(limit)  || 50,
+  limit:  Math.min(parseInt(limit) || 50, 500),
   offset: parseInt(offset) || 0,
 });
 
@@ -88,7 +91,8 @@ if (!champs.titre || !champs.organisme || !champs.categorie) {
   });
 }
 
-const nouveau = await Concours.create(champs);
+let nouveau = await Concours.create(champs);
+nouveau = await Concours.appliquerChampsV2(nouveau.id, champs);
 
 // Relations optionnelles matières / diplômes (Module 1)
 const Matiere = require("../models/Matiere");
@@ -108,6 +112,7 @@ Journal.enregistrer(req.user.id, req.user.nom, "création", "concours", nouveau.
 
 } catch (err) {
 console.error("Erreur créer concours :", err.message);
+if (err.status === 400) return res.status(400).json({ error: err.message });
 if (err.code === "23505") {
   return res.status(409).json({
     error: "Un concours avec ce titre et cet organisme existe déjà en base — modifie le titre ou l'organisme, ou édite directement la fiche existante.",
@@ -127,7 +132,8 @@ if (!concours) {
 return res.status(404).json({ error: "Concours introuvable." });
 }
 
-const modifie = await Concours.update(req.params.id, req.body);
+await Concours.update(req.params.id, req.body);
+const modifie = await Concours.appliquerChampsV2(req.params.id, req.body);
 
 // Relations optionnelles matières / diplômes (Module 1)
 const Matiere = require("../models/Matiere");
@@ -147,6 +153,7 @@ Journal.enregistrer(req.user.id, req.user.nom, "modification", "concours", req.p
 
 } catch (err) {
 console.error("Erreur modifier concours :", err.message);
+if (err.status === 400) return res.status(400).json({ error: err.message });
 res.status(500).json({ error: "Erreur lors de la modification du concours." });
 }
 };
@@ -174,6 +181,17 @@ res.status(500).json({ error: "Erreur lors de la suppression du concours." });
 // ════════════════════════════════════════════════════════════
 //  GET /api/concours/ouverts — Concours ouverts (pour alertes)
 // ════════════════════════════════════════════════════════════
+// GET /api/concours/compteurs — compteurs dynamiques par catégorie d'affichage
+exports.compteurs = async (req, res) => {
+try {
+await Statut.rafraichirSiNecessaire();
+res.json(await Concours.compteurs());
+} catch (err) {
+console.error("Erreur compteurs concours :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
+}
+};
+
 exports.ouverts = async (req, res) => {
 try {
 const concours = await Concours.findOuverts();

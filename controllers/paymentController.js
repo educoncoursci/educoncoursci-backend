@@ -200,6 +200,10 @@ if (!transaction) {
 if (transaction.statut === "validé") {
   return res.status(409).json({ error: "Cette transaction est déjà validée." });
 }
+// Paiement d'un CV ou d'une lettre à l'acte : confirme la transaction sans activer de Premium.
+if (typeof transaction.plan === "string" && (transaction.plan.startsWith("cv-") || transaction.plan.startsWith("lm-") || transaction.plan.startsWith("doc-") || transaction.plan.startsWith("pack-") || transaction.plan.startsWith("entretien-") || transaction.plan === "cv-correction" || transaction.plan === "cv-optimisation-offre")) {
+  return require("./commandeCvController").confirmerPaiementCv(req, res, transaction);
+}
 if (!PLANS[transaction.plan]) {
   return res.status(400).json({ error: "Plan de la transaction invalide." });
 }
@@ -387,7 +391,7 @@ exports.initierCinetPay = async (req, res) => {
     const { paymentUrl } = await CinetPay.creerPaiement({
       transactionId,
       montant,
-      description: `Abonnement Premium EduConcoursCI — ${plan}`,
+      description: `Abonnement Premium ProInsertion — ${plan}`,
       email: req.user.email,
       nom: req.user.nom,
     });

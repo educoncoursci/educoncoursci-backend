@@ -5,6 +5,10 @@
 // ============================================================
 
 const { query } = require("../config/database");
+const Statut = require("../services/concoursStatut");
+
+// Statuts décidés par un admin (événements réels) : jamais écrasés par un calcul de date.
+const STATUTS_MANUELS = Statut.STATUTS_MANUELS;
 
 // ── Lot 18 : dates fiables → texte affiché + statut automatique ──
 const MOIS_FR = [
@@ -108,7 +112,7 @@ const Concours = {
     // simplement désactivé le calcul automatique pour toute création
     // passée par l'admin — statutAuto (une case à cocher dédiée côté
     // admin) est le seul signal fiable de l'intention réelle.
-    const statutCalcule  = (dateOuverture || dateCloture) && statutAuto !== false
+    const statutCalcule  = (dateOuverture || dateCloture) && statutAuto !== false && !STATUTS_MANUELS.includes(statut)
       ? calculerStatutDepuisDates(dateOuverture, dateCloture)
       : statut;
 
@@ -203,6 +207,7 @@ const Concours = {
     premium,
     search,
     structureId,
+    archive,
     limit = 50,
     offset = 0,
   } = {}) {
@@ -223,12 +228,20 @@ const Concours = {
       // statut='résultats' injoignables depuis ce filtre alors qu'ils
       // s'affichent avec exactement le même badge visuel.
       if (statut === "fermé") {
-        conditions.push(`statut IN ('fermé', 'résultats')`);
+        // « Terminé » public = clôturé + en attente de résultats + résultats publiés
+        conditions.push(`statut IN ('fermé', 'en attente de résultats', 'résultats')`);
+      } else if (statut === "suspendu") {
+        conditions.push(`statut IN ('suspendu', 'annulé')`);
       } else {
         conditions.push(`statut = $${idx++}`);
         params.push(statut);
       }
     }
+    // Archives : par défaut les concours archivés ne polluent pas les listes ;
+    // archive=1 les affiche seuls ; archive=tous les inclut (ils ne disparaissent jamais).
+    if (archive === "tous") { /* aucun filtre */ }
+    else if (archive === true || archive === "1" || archive === "true") conditions.push(`concours.archive = TRUE`);
+    else conditions.push(`COALESCE(concours.archive, FALSE) = FALSE`);
     if (premium !== undefined) {
       conditions.push(`premium = $${idx++}`);
       params.push(premium);
@@ -334,7 +347,7 @@ const Concours = {
     const clotureFinale   = dateCloture   ? formaterDateFr(dateCloture)   : cloture;
     // Même principe que create() — voir son commentaire : seul statutAuto
     // fait foi, jamais la présence de `statut` dans la requête.
-    const statutFinal = (dateOuverture || dateCloture) && statutAuto !== false
+    const statutFinal = (dateOuverture || dateCloture) && statutAuto !== false && !STATUTS_MANUELS.includes(statut)
       ? calculerStatutDepuisDates(dateOuverture, dateCloture)
       : statut;
     // Si l'admin fournit explicitement dateVerifiee, on le respecte tel
@@ -509,6 +522,56 @@ const Concours = {
   //    frontend doit prévoir une valeur par défaut de 0 pour chaque
   //    statut de la liste fixe, pas supposer que les 6 seront toujours
   //    renvoyées. ──────────────────────────────────────────────────
+  // ── Champs de fiabilité / cycle de vie (composition, résultats, source…) ──
+  async appliquerChampsV2(id, f = {}) {
+    const date = (v, nom) => {
+      if (v === "" || v === null) return null;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(v)) || isNaN(new Date(v).getTime())) {
+        const e = new Error(`Date invalide pour « ${nom} » (format attendu : AAAA-MM-JJ).`); e.status = 400; throw e;
+      }
+      return v;
+    };
+    const url = (v) => {
+      if (v === "" || v === null) return null;
+      if (!/^https?:\/\/\S+$/i.test(String(v))) { const e = new Error("Le lien de la source doit commencer par http:// ou https://."); e.status = 400; throw e; }
+      return String(v).slice(0, 1000);
+    };
+    const texte = (v, max) => (v === "" || v === null ? null : String(v).slice(0, max));
+    const champs = {};
+    if (f.dateComposition !== undefined) champs.date_composition = date(f.dateComposition, "date de composition");
+    if (f.dateResultats !== undefined) champs.date_resultats = date(f.dateResultats, "date des résultats");
+    if (f.procedureInscription !== undefined) champs.procedure_inscription = texte(f.procedureInscription, 5000);
+    if (f.conseils !== undefined) champs.conseils = texte(f.conseils, 5000);
+    if (f.sourceInfo !== undefined) champs.source_info = texte(f.sourceInfo, 500);
+    if (f.sourceUrl !== undefined) champs.source_url = url(f.sourceUrl);
+    if (f.verifieLe !== undefined) champs.verifie_le = date(f.verifieLe, "date de vérification");
+    else if (f.sourceInfo || f.sourceUrl) champs.verifie_le = Statut.aujourdhuiAbidjan(); // renseigner une source vaut vérification du jour
+    if (f.archive !== undefined) champs.archive = f.archive === true || f.archive === "true" || f.archive === 1 || f.archive === "1";
+
+    const cles = Object.keys(champs);
+    if (cles.length) {
+      await query(`UPDATE concours SET ${cles.map((k, i) => `${k} = $${i + 1}`).join(", ")} WHERE id = $${cles.length + 1}`, [...cles.map((k) => champs[k]), id]);
+    }
+    // Les dates de la fiche ont pu changer : le statut est recalculé immédiatement
+    await Statut.recalculerUn(id);
+    return this.findById(id);
+  },
+
+  // ── Compteurs par catégorie d'affichage (hors archives) + archives ──
+  async compteurs() {
+    const r = await query(
+      `SELECT COALESCE(archive, FALSE) AS archive, statut, COUNT(*)::int AS n FROM concours GROUP BY 1, 2`,
+    );
+    const out = { total: 0, archives: 0 };
+    for (const cle of Object.keys(Statut.GROUPES)) out[cle] = 0;
+    for (const row of r.rows) {
+      if (row.archive) { out.archives += row.n; continue; }
+      out.total += row.n;
+      for (const [cle, statuts] of Object.entries(Statut.GROUPES)) if (statuts.includes(row.statut)) out[cle] += row.n;
+    }
+    return out;
+  },
+
   async getStatsParStatut() {
     const [total, parStatut, parCategorie] = await Promise.all([
       query(`SELECT COUNT(*)::int AS n FROM concours`),
@@ -541,7 +604,18 @@ function formatConcours(row) {
     centres: tryParse(row.centres, []),
     communiques: tryParse(row.communiques, []),
     faq: tryParse(row.faq, []),
+    date_composition: jour(row.date_composition),
+    date_resultats: jour(row.date_resultats),
+    verifie_le: jour(row.verifie_le),
   };
+}
+
+// DATE PostgreSQL → « AAAA-MM-JJ » (composantes locales : aucun décalage de fuseau)
+function jour(v) {
+  if (!v) return v === undefined ? undefined : null;
+  if (typeof v === "string") return v.slice(0, 10);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
 }
 
 function tryParse(val, fallback) {
