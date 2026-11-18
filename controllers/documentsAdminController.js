@@ -61,7 +61,7 @@ exports.genererDocument = async (req, res) => {
 
     if (!contenu) {
       return res.status(500).json({
-        error: "La génération du document a échoué. Réessaie dans quelques secondes."
+        error: "La génération du document a échoué. Réessayez dans quelques secondes."
       });
     }
 
@@ -74,7 +74,7 @@ exports.genererDocument = async (req, res) => {
     console.error("Erreur génération document admin :", err.message);
     if (err.message.includes("API")) {
       return res.status(503).json({
-        error: "Service IA temporairement indisponible. Réessaie dans quelques instants."
+        error: "Service temporairement indisponible. Réessayez dans quelques instants."
       });
     }
     res.status(500).json({ error: "Erreur lors de la génération du document." });

@@ -15,7 +15,7 @@ exports.mesCandidatures = async (req, res) => {
     res.json({ total: candidatures.length, candidatures });
   } catch (err) {
     console.error("Erreur liste candidatures concours :", err.message);
-    res.status(500).json({ error: "Erreur lors de la récupération de tes suivis." });
+    res.status(500).json({ error: "Erreur lors de la récupération de vos suivis." });
   }
 };
 

@@ -27,7 +27,7 @@ exports.demander = async (req, res) => {
   } catch (err) {
     console.error("Erreur assistant IA concours :", err.message);
     if (err.message.includes("API")) {
-      return res.status(503).json({ error: "Service IA temporairement indisponible. Réessaie dans quelques instants." });
+      return res.status(503).json({ error: "Service temporairement indisponible. Réessayez dans quelques instants." });
     }
     res.status(500).json({ error: "Erreur lors de la réponse de l'assistant." });
   }

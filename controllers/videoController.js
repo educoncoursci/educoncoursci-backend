@@ -18,17 +18,20 @@ return match ? match[1] : null;
 // ════════════════════════════════════════════════════════════
 exports.liste = async (req, res) => {
 try {
-const { categorie, premium, limit, offset } = req.query;
+const { categorie, premium, limit, offset, q, tri } = req.query;
 
 let filtrerPremium;
 if (premium !== undefined) filtrerPremium = premium === "true";
 
-const videos = await Video.findAll({
-  categorie,
-  premium:  filtrerPremium,
-  limit:    parseInt(limit)  || 50,
-  offset:   parseInt(offset) || 0,
-});
+const lim = Math.min(Math.max(parseInt(limit) || 24, 1), 60);
+const off = Math.max(parseInt(offset) || 0, 0);
+const recherche = typeof q === "string" ? q.trim().slice(0, 80) : "";
+const filtre = { categorie: typeof categorie === "string" ? categorie : undefined, premium: filtrerPremium, q: recherche || undefined };
+const [videos, totalReel, categories] = await Promise.all([
+  Video.findAll({ ...filtre, tri: typeof tri === "string" ? tri : "recent", limit: lim, offset: off }),
+  Video.compter(filtre),
+  off === 0 ? Video.categories() : Promise.resolve(undefined),
+]);
 
 // Ajoute l'ID YouTube et la miniature pour chaque vidéo
 const videosFormatees = videos.map(v => {
@@ -45,7 +48,7 @@ const videosFormatees = videos.map(v => {
   };
 });
 
-res.json({ total: videosFormatees.length, videos: videosFormatees });
+res.json({ total: totalReel, videos: videosFormatees, ...(categories ? { categories } : {}) });
 
 } catch (err) {
 console.error("Erreur liste vidéos :", err.message);

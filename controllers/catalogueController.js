@@ -86,10 +86,10 @@ exports.adminModifier = async (req, res) => {
     if (!Number.isInteger(prix) || prix < 0 || prix > 1000000) {
       return res.status(400).json({ error: "Prix invalide : nombre entier de FCFA entre 0 et 1 000 000." });
     }
-    if (typeof req.body?.actif !== "boolean") return res.status(400).json({ error: "Indique si le produit est actif (true/false)." });
+    if (typeof req.body?.actif !== "boolean") return res.status(400).json({ error: "Indiquez si le produit est actif (true/false)." });
 
     await query(
-      `UPDATE produits SET nom=$1, description=$2, prix_fcfa=$3, actif=$4, modifie_par_admin=TRUE, updated_at=NOW() WHERE id=$5`,
+      `UPDATE produits SET nom=$1, description=$2, prix_fcfa=$3, actif=$4, modifiez_par_admin=TRUE, updated_at=NOW() WHERE id=$5`,
       [nom, description, prix, req.body.actif, existant.id],
     );
     Journal.enregistrer(req.user.id, req.user.nom, "modification", "tarif", null,

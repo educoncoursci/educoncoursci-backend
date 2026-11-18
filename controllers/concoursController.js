@@ -115,7 +115,7 @@ console.error("Erreur créer concours :", err.message);
 if (err.status === 400) return res.status(400).json({ error: err.message });
 if (err.code === "23505") {
   return res.status(409).json({
-    error: "Un concours avec ce titre et cet organisme existe déjà en base — modifie le titre ou l'organisme, ou édite directement la fiche existante.",
+    error: "Un concours avec ce titre et cet organisme existe déjà en base — modifiez le titre ou l'organisme, ou édite directement la fiche existante.",
   });
 }
 res.status(500).json({ error: "Erreur lors de la création du concours." });

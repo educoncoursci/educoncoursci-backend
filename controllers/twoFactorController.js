@@ -40,7 +40,7 @@ exports.setup = async (req, res) => {
     }
 
     const secret = speakeasy.generateSecret({
-      name: `ProInsertion (${utilisateur.email})`,
+      name: `ProInsertion CI (${utilisateur.email})`,
       length: 20,
     });
 
@@ -78,7 +78,7 @@ exports.confirmer = async (req, res) => {
       window: 1,
     });
     if (!valide) {
-      return res.status(400).json({ error: "Code invalide. Vérifie l'heure de ton téléphone et réessaie." });
+      return res.status(400).json({ error: "Code invalide. Vérifiez l'heure de votre téléphone et réessayez." });
     }
 
     const codesRecuperation = genererCodesRecuperation();
@@ -108,7 +108,7 @@ exports.desactiver = async (req, res) => {
     const utilisateur = await User.findByEmail(req.user.email);
     const motDePasseCorrect = await bcrypt.compare(password, utilisateur.password_hash);
     if (!motDePasseCorrect) {
-      return res.status(401).json({ error: "Mot de passe incorrect." });
+      return res.status(403).json({ error: "Mot de passe incorrect." }); // 403 : un 401 déconnecterait le navigateur
     }
 
     await User.desactiverDeuxFacteur(req.user.id);
@@ -133,9 +133,9 @@ exports.verifierLogin = async (req, res) => {
 
     let payload;
     try {
-      payload = jwt.verify(tempToken, process.env.JWT_SECRET);
+      payload = jwt.verify(tempToken, process.env.JWT_SECRET, { algorithms: ["HS256"] });
     } catch {
-      return res.status(401).json({ error: "Session de connexion expirée. Reconnecte-toi." });
+      return res.status(401).json({ error: "Session de connexion expirée. Reconnectez-vous." });
     }
     if (payload.purpose !== "2fa-pending") {
       return res.status(401).json({ error: "Jeton invalide." });

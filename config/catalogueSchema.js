@@ -1,6 +1,6 @@
 // ============================================================
 //  config/catalogueSchema.js
-//  Table des produits et tarifs de ProInsertion. Créée au démarrage
+//  Table des produits et tarifs de ProInsertion CI. Créée au démarrage
 //  (CREATE IF NOT EXISTS) et remplie une seule fois avec la grille
 //  de départ : les modifications de l'administrateur sont conservées.
 // ============================================================

@@ -613,6 +613,26 @@ await client.query(`
   END $$;
 `);
 
+// Date du dernier changement de mot de passe : les sessions ouvertes avant
+// cette date sont refusées (un jeton volé ne survit pas à un changement).
+await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMPTZ`);
+
+// Vérification d'adresse e-mail. Les comptes existants restent « vérifiés »
+// (DEFAULT TRUE) ; seules les nouvelles inscriptions démarrent non vérifiées.
+await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE`);
+await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verif_hash TEXT`);
+await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verif_expire TIMESTAMPTZ`);
+await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verif_envoye_le TIMESTAMPTZ`);
+
+// Compteur d'échecs de connexion par compte : stocké en base pour survivre
+// aux redémarrages du serveur (middleware/limiteConnexion.js).
+await client.query(`
+  CREATE TABLE IF NOT EXISTS tentatives_connexion (
+    cle    TEXT PRIMARY KEY,
+    n      INTEGER NOT NULL DEFAULT 0,
+    debut  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+
 // Ajoute structure_id à concours si absent (lien optionnel vers la
 // nouvelle table structures — le champ texte "organisme" existant
 // n'est pas touché, pour ne rien casser côté affichage actuel)
@@ -807,7 +827,7 @@ await client.query(`
 // Table : marketplace_contacts (Lot 14 — demandes de contact/devis envoyées
 // à un partenaire à propos d'une offre. Pas de paiement en ligne pour cette
 // première version : la transaction se fait directement entre le candidat
-// et le partenaire, ProInsertion met simplement en relation.)
+// et le partenaire, ProInsertion CI met simplement en relation.)
 await client.query(`
   CREATE TABLE IF NOT EXISTS marketplace_contacts (
     id         SERIAL PRIMARY KEY,

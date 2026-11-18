@@ -83,7 +83,7 @@ exports.supprimerSujet = async (req, res) => {
       return res.status(404).json({ error: "Sujet introuvable." });
     }
     if (sujet.user_id !== req.user.id && req.user.role !== "admin") {
-      return res.status(403).json({ error: "Tu ne peux supprimer que tes propres sujets." });
+      return res.status(403).json({ error: "Vous ne pouvez supprimer que vos propres sujets." });
     }
     await Forum.supprimerSujet(req.params.id);
     res.json({ message: "Sujet supprimé." });
@@ -140,7 +140,7 @@ exports.supprimerReponse = async (req, res) => {
       return res.status(404).json({ error: "Réponse introuvable." });
     }
     if (reponse.user_id !== req.user.id && req.user.role !== "admin") {
-      return res.status(403).json({ error: "Tu ne peux supprimer que tes propres réponses." });
+      return res.status(403).json({ error: "Vous ne pouvez supprimer que vos propres réponses." });
     }
     await Forum.supprimerReponse(req.params.id);
     res.json({ message: "Réponse supprimée." });

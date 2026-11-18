@@ -1,6 +1,6 @@
 // ============================================================
 //  controllers/academieController.js
-//  Académie ProInsertion : cours → leçons (texte, points clés,
+//  Académie ProInsertion CI : cours → leçons (texte, points clés,
 //  exercices) → progression de l'utilisateur.
 //
 //  Accès :
@@ -396,7 +396,7 @@ exports.adminGenererLecon = async (req, res) => {
     const x = maj.rows[0];
     res.json({
       message: resultat.exercices.length
-        ? "Leçon rédigée. Relis-la avant de la valider."
+        ? "Leçon rédigée. Relisez-la avant de la valider."
         : "Leçon rédigée, mais aucun exercice valide n'a été produit : ajoutes-en ou régénère.",
       exercicesRejetes: resultat.exercicesRejetes,
       lecon: {
@@ -505,7 +505,7 @@ exports.adminPublier = async (req, res) => {
     const nonVerifiees = cours.lecons.filter((l) => !l.verifiee).length;
     if (nonVerifiees > 0) {
       return res.status(400).json({
-        error: `${nonVerifiees} leçon(s) pas encore marquée(s) « vérifiée ». Relis-les puis enregistre avant de publier.`,
+        error: `${nonVerifiees} leçon(s) pas encore marquée(s) « vérifiée ». Relisez-les puis enregistrez avant de publier.`,
       });
     }
     await query(`UPDATE academie_cours SET statut = 'publié', updated_at = NOW() WHERE id = $1`, [cours.id]);

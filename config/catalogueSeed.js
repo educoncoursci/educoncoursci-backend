@@ -1,6 +1,6 @@
 // ============================================================
 //  config/catalogueSeed.js
-//  Grille de produits et de tarifs de ProInsertion (valeurs de départ).
+//  Grille de produits et de tarifs de ProInsertion CI (valeurs de départ).
 //
 //  - Chaque produit a un identifiant unique, un nom, une catégorie,
 //    une description et un prix fixe en FCFA.

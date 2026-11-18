@@ -14,7 +14,7 @@ const User = require("../models/User");
 const admin = async (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
-      error: "Accès refusé. Connecte-toi pour continuer."
+      error: "Accès refusé. Connectez-vous pour continuer."
     });
   }
 

@@ -81,7 +81,7 @@ const candidature = await Emploi.postuler({
 });
 
 if (!candidature) {
-  return res.status(409).json({ error: "Tu as déjà postulé à cette offre." });
+  return res.status(409).json({ error: "Vous avez déjà postulé à cette offre." });
 }
 
 res.status(201).json({ message: "Candidature envoyée avec succès !", candidature });

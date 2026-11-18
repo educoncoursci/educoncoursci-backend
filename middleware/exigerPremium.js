@@ -32,7 +32,7 @@ async function exigerPremium(req, res, next) {
     // accès qui devrait être payant (comportement inverse de quotaIA,
     // volontairement, puisqu'ici l'enjeu est la monétisation et pas
     // seulement la protection contre l'abus).
-    return res.status(503).json({ error: "Impossible de vérifier ton statut Premium pour le moment. Réessaie dans un instant." });
+    return res.status(503).json({ error: "Impossible de vérifier votre statut Premium pour le moment. Réessayez dans un instant." });
   }
 }
 

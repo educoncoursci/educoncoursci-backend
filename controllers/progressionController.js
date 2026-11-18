@@ -61,7 +61,7 @@ const recommandations = statsParMatiere
   .map((m) => ({
     matiere: m.matiere,
     moyenne: Number(m.moyenne),
-    message: `Tu es à ${m.moyenne}% en ${m.matiere} — reprends des QCM sur cette matière pour progresser.`,
+    message: `Vous êtes à ${m.moyenne}% en ${m.matiere} — reprenez des QCM sur cette matière pour progresser.`,
   }));
 
 // Badges (Lot 5) — calculés à partir des stats déjà chargées, aucune
@@ -87,7 +87,7 @@ res.json({
 
 } catch (err) {
 console.error("Erreur tableau de bord progression :", err.message);
-res.status(500).json({ error: "Erreur lors du calcul de ta progression." });
+res.status(500).json({ error: "Erreur lors du calcul de votre progression." });
 }
 };
 
@@ -143,14 +143,14 @@ exports.certificatBadge = async (req, res) => {
     const badge = badges.find((b) => b.id === req.params.badgeId);
 
     if (!badge?.debloque) {
-      return res.status(403).json({ error: "Ce badge n'est pas encore débloqué sur ton compte." });
+      return res.status(403).json({ error: "Ce badge n'est pas encore débloqué sur votre compte." });
     }
 
     const nomFichier = `certificat_badge_${req.params.badgeId}_${userId}_${Date.now()}`;
     filePath = await genererCertificatPDF(nomFichier, {
       titre: `${definition.icone} Badge « ${definition.nom} »`,
-      sousTitre: "Espace préparation ProInsertion",
-      nomCandidat: user?.nom || "Candidat ProInsertion",
+      sousTitre: "Espace préparation ProInsertion CI",
+      nomCandidat: user?.nom || "Candidat ProInsertion CI",
       detail: definition.description,
       date: DATE_FR(),
     });
@@ -191,8 +191,8 @@ exports.certificatExamen = async (req, res) => {
     const nomFichier = `certificat_examen_${score.id}_${Date.now()}`;
     filePath = await genererCertificatPDF(nomFichier, {
       titre: "🏅 Certificat de réussite",
-      sousTitre: "Examen blanc — Espace préparation ProInsertion",
-      nomCandidat: user?.nom || "Candidat ProInsertion",
+      sousTitre: "Examen blanc — Espace préparation ProInsertion CI",
+      nomCandidat: user?.nom || "Candidat ProInsertion CI",
       detail: `${score.qcm_titre || "Examen blanc"} — Score obtenu : ${score.pourcentage}% (${score.score}/${score.total})`,
       date: new Date(score.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
     });

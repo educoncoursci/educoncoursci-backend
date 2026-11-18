@@ -49,7 +49,7 @@ if (!email || !/\S+@\S+\.\S+/.test(email)) {
 
 const inscription = await Newsletter.inscrire(email.toLowerCase().trim());
 if (!inscription) {
-  return res.json({ message: "Tu es déjà inscrit à la newsletter !", dejaInscrit: true });
+  return res.json({ message: "Vous êtes déjà inscrit à la newsletter !", dejaInscrit: true });
 }
 
 // Non bloquant : une éventuelle erreur d'envoi (Brevo non configurée,

@@ -21,7 +21,7 @@ premium: user.premium,
 },
 process.env.JWT_SECRET,
 // Session administrateur plus courte : un jeton volé reste utilisable moins longtemps
-  { expiresIn: user.role === "admin" ? "12h" : (process.env.JWT_EXPIRES_IN || "7d") }
+  { algorithm: "HS256", expiresIn: user.role === "admin" ? "12h" : (process.env.JWT_EXPIRES_IN || "7d") }
 );
 }
 
@@ -48,6 +48,14 @@ return premium;
 }
 
 // ── POST /api/auth/register ───────────────────────────────────
+// Envoie (sans jamais faire échouer la requête) le lien de confirmation d'e-mail.
+function envoyerLienVerification(user) {
+  const lien = `${process.env.FRONTEND_URL || "https://proinsertionci.netlify.app"}/auth/verifier-email.html?token=${user.jetonVerification}`;
+  Promise.resolve()
+    .then(() => require("../services/email").envoyerVerificationEmail(user, lien))
+    .catch((e) => console.error(`❌ ÉCHEC ENVOI E-MAIL DE VÉRIFICATION — ${user.email} — ${e.message}`));
+}
+
 const register = async (req, res) => {
 try {
 const { nom, email, password } = req.body;
@@ -94,8 +102,11 @@ const user = await User.create({
 // Générer le token
 const token = genererToken({ ...user, role: "user", premium: false });
 
+envoyerLienVerification(user);
+
 res.status(201).json({
-  message: "Compte créé avec succès. Bienvenue sur ProInsertion !",
+  message: "Compte créé avec succès. Un e-mail de confirmation vient de vous être envoyé : cliquez sur le lien qu'il contient pour valider votre adresse.",
+  email_verifie: false,
   token,
   user: {
     id:              user.id,
@@ -169,6 +180,7 @@ res.json({
     premium_plan:   user.premium_plan,
     premium_expire: user.premium_expire,
     photo_url:      user.photo_url,
+    email_verifie:  user.email_verified !== false,
   },
 });
 
@@ -205,6 +217,7 @@ res.json({
     favoris:  JSON.parse(user.favoris_json  || "[]"),
     scores:   JSON.parse(user.scores_json   || "[]"),
     two_factor_enabled: user.two_factor_enabled || false,
+    email_verifie: user.email_verified !== false,
   },
 });
 
@@ -241,18 +254,21 @@ if (nouveauPassword.length < 8) {
 const user = await User.findByEmail(req.user.email);
 const correct = await bcrypt.compare(ancienPassword, user.password_hash);
 if (!correct) {
-  return res.status(401).json({
+  // 403 et non 401 : le navigateur traite tout 401 comme « session expirée »
+  // et déconnecterait l'utilisateur pour une simple faute de frappe.
+  return res.status(403).json({
     error: "Ancien mot de passe incorrect."
   });
 }
 
 const newHash = await bcrypt.hash(nouveauPassword, 12);
-await require("../config/database").query(
-  "UPDATE users SET password_hash = $1 WHERE id = $2",
-  [newHash, req.user.id]
-);
+await User.updatePassword(req.user.id, newHash); // invalide aussi les autres sessions ouvertes
 
-res.json({ message: "Mot de passe modifié avec succès." });
+// Nouveau jeton pour la session en cours (les anciens, y compris volés, ne sont plus acceptés)
+const compte = await User.findById(req.user.id);
+const token = genererToken({ id: compte.id, email: compte.email, nom: compte.nom, role: compte.role, premium: compte.premium });
+
+res.json({ message: "Mot de passe modifié avec succès.", token });
 
 } catch (err) {
 console.error("Erreur changePassword :", err.message);
@@ -286,7 +302,7 @@ const expire = new Date(Date.now() + 60 * 60 * 1000); // valable 1h
 
 await User.setResetToken(user.email, token, expire);
 
-const lienReset = `${process.env.FRONTEND_URL || "https://educoncoursci.netlify.app"}/auth/reset-password.html?token=${token}`;
+const lienReset = `${process.env.FRONTEND_URL || "https://proinsertionci.netlify.app"}/auth/reset-password.html?token=${token}`;
 
 try {
   await require("../services/email").envoyerResetMotDePasse(user, lienReset);
@@ -329,7 +345,7 @@ if (!user) {
 const passwordHash = await bcrypt.hash(password, 12);
 await User.resetPassword(user.id, passwordHash);
 
-res.json({ message: "Mot de passe réinitialisé avec succès. Tu peux maintenant te connecter." });
+res.json({ message: "Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter." });
 
 } catch (err) {
 console.error("Erreur resetPassword :", err.message);
@@ -337,4 +353,77 @@ res.status(500).json({ error: "Erreur lors de la réinitialisation du mot de pas
 }
 };
 
-module.exports = { register, login, me, logout, changePassword, forgotPassword, resetPassword };
+// ── POST /api/auth/verify-email — confirme l'adresse via le lien reçu ──
+const verifyEmail = async (req, res) => {
+  try {
+    const jeton = req.body && req.body.token;
+    if (typeof jeton !== "string" || jeton.length < 20 || jeton.length > 200) {
+      return res.status(400).json({ error: "Lien invalide." });
+    }
+    const u = await User.confirmerEmail(jeton);
+    if (!u) return res.status(400).json({ error: "Lien invalide ou expiré. Demandez un nouvel e-mail de confirmation depuis votre espace." });
+    require("../services/sessionUtilisateur").oublier(u.id);
+    res.json({ message: "Adresse e-mail confirmée. Merci !" });
+  } catch (err) {
+    console.error("Erreur verifyEmail :", err.message);
+    res.status(500).json({ error: "Erreur lors de la confirmation." });
+  }
+};
+
+// ── POST /api/auth/resend-verification (connecté) ──
+const resendVerification = async (req, res) => {
+  try {
+    if (await User.emailVerifie(req.user.id)) return res.json({ message: "Votre adresse est déjà confirmée." });
+    const u = await User.renouvelerVerification(req.user.id);
+    if (!u) return res.status(429).json({ error: "Un e-mail vient d'être envoyé. Patientez une minute avant de redemander." });
+    envoyerLienVerification(u);
+    res.json({ message: "E-mail de confirmation renvoyé. Pensez à vérifier vos courriers indésirables." });
+  } catch (err) {
+    console.error("Erreur resendVerification :", err.message);
+    res.status(500).json({ error: "Erreur lors de l'envoi." });
+  }
+};
+
+// ── DELETE /api/auth/account — suppression du compte par son titulaire ──
+// Exige le mot de passe (un jeton volé ne suffit pas). Les comptes
+// administrateur ne peuvent pas être supprimés ici (évite de perdre
+// l'accès à l'administration par erreur).
+const supprimerMonCompte = async (req, res) => {
+  try {
+    const { password, confirmation } = req.body || {};
+    if (typeof password !== "string" || !password) {
+      return res.status(400).json({ error: "Mot de passe requis pour supprimer votre compte." });
+    }
+    if (confirmation !== "SUPPRIMER") {
+      return res.status(400).json({ error: "Tapez SUPPRIMER pour confirmer." });
+    }
+    if (req.user.role === "admin") {
+      return res.status(403).json({ error: "Un compte administrateur ne peut pas être supprimé ici." });
+    }
+    const user = await User.findByEmail(req.user.email);
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(403).json({ error: "Mot de passe incorrect." }); // 403 : un 401 déconnecterait le navigateur
+    }
+    await User.delete(req.user.id);
+    console.log(`🗑️  Compte supprimé à la demande de son titulaire (id ${req.user.id})`);
+    res.json({ message: "Votre compte et vos données personnelles ont été supprimés." });
+  } catch (err) {
+    console.error("Erreur supprimerMonCompte :", err.message);
+    res.status(500).json({ error: "Erreur lors de la suppression du compte." });
+  }
+};
+
+// ── POST /api/auth/logout-all — déconnecte tous les appareils ──
+const logoutAll = async (req, res) => {
+  try {
+    await User.deconnecterPartout(req.user.id);
+    const compte = await User.findById(req.user.id);
+    const token = genererToken({ id: compte.id, email: compte.email, nom: compte.nom, role: compte.role, premium: compte.premium });
+    res.json({ message: "Tous vos autres appareils ont été déconnectés.", token });
+  } catch (err) {
+    console.error("Erreur logoutAll :", err.message);
+    res.status(500).json({ error: "Erreur lors de la déconnexion." });
+  }
+};
+
+module.exports = { supprimerMonCompte, logoutAll, verifyEmail, resendVerification, register, login, me, logout, changePassword, forgotPassword, resetPassword };

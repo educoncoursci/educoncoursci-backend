@@ -56,7 +56,7 @@ function validerOffre(body) {
     return { erreur: `La description doit contenir au moins ${DESCRIPTION_MIN} caractères.` };
   }
   if (!emailValide(candidature) && !urlSure(candidature)) {
-    return { erreur: "Indique une adresse e-mail ou un lien (https://…) pour recevoir les candidatures." };
+    return { erreur: "Indiquez une adresse e-mail ou un lien (https://…) pour recevoir les candidatures." };
   }
   return {
     champs: {
@@ -120,17 +120,17 @@ exports.soumettre = async (req, res) => {
     );
     envoyerEnSilence(
       champs.contact_email,
-      "Ta demande de publication a bien été reçue",
+      "Votre demande de publication a bien été reçue",
       `Bonjour ${echapper(champs.contact_nom)},<br><br>` +
-      `Nous avons bien reçu ta demande pour le poste « ${echapper(champs.titre)} ». ` +
-      `Nous l'étudions et nous te recontactons rapidement pour les conditions de publication ` +
-      `(la publication des offres est payante). Tu peux suivre l'état de ta demande depuis ton compte.`,
+      `Nous avons bien reçu votre demande pour le poste « ${echapper(champs.titre)} ». ` +
+      `Nous l'étudions et nous vous recontactons rapidement pour les conditions de publication ` +
+      `(la publication des offres est payante). Vous pouvez suivre l'état de votre demande depuis votre compte.`,
       "accusé de réception entreprise",
     );
 
     Journal.enregistrer(req.user.id, req.user.nom, "soumission", "offre", id,
       `${champs.entreprise} — ${champs.titre}`);
-    res.status(201).json({ message: "Demande envoyée. Nous te recontactons rapidement.", id });
+    res.status(201).json({ message: "Demande envoyée. Nous vous recontactons rapidement.", id });
   } catch (err) {
     console.error("Erreur soumission offre :", err.message);
     res.status(500).json({ error: "Erreur lors de l'envoi de la demande." });
@@ -282,10 +282,10 @@ exports.adminAccepter = async (req, res) => {
     const lien = `${process.env.FRONTEND_URL || ""}/emploi.html`;
     envoyerEnSilence(
       o.contact_email,
-      "Ton offre est publiée sur ProInsertion",
+      "Votre offre est publiée sur ProInsertion CI",
       `Bonjour ${echapper(o.contact_nom)},<br><br>` +
-      `Ton offre « ${echapper(o.titre)} » est maintenant publiée. ` +
-      `Tu peux la retrouver ici : <a href="${echapper(lien)}">${echapper(lien)}</a>.<br><br>Merci de ta confiance !`,
+      `Votre offre « ${echapper(o.titre)} » est maintenant publiée. ` +
+      `Vous pouvez la retrouver ici : <a href="${echapper(lien)}">${echapper(lien)}</a>.<br><br>Merci de votre confiance !`,
       "offre publiée",
     );
     res.json({ message: "Offre publiée.", offre_id: offre.id });
@@ -302,7 +302,7 @@ exports.adminRefuser = async (req, res) => {
     if (!o) return res.status(404).json({ error: "Demande introuvable." });
     if (o.statut === "acceptee") return res.status(409).json({ error: "Cette offre est déjà publiée." });
     const motif = nettoyerTexte(req.body?.motif, 500);
-    if (motif.length < 3) return res.status(400).json({ error: "Indique un motif de refus." });
+    if (motif.length < 3) return res.status(400).json({ error: "Indiquez un motif de refus." });
 
     await query(
       `UPDATE offres_soumises SET statut='refusee', motif_refus=$1, traitee_le=NOW() WHERE id=$2`,
@@ -311,11 +311,11 @@ exports.adminRefuser = async (req, res) => {
     Journal.enregistrer(req.user.id, req.user.nom, "refus", "offre", o.id, `${o.entreprise} — ${o.titre}`);
     envoyerEnSilence(
       o.contact_email,
-      "À propos de ta demande de publication",
+      "À propos de votre demande de publication",
       `Bonjour ${echapper(o.contact_nom)},<br><br>` +
       `Nous ne pouvons pas publier l'offre « ${echapper(o.titre)} » pour le moment.<br>` +
       `<strong>Motif :</strong> ${echapper(motif)}<br><br>` +
-      `Tu peux soumettre une nouvelle demande corrigée depuis ton compte.`,
+      `Vous pouvez soumettre une nouvelle demande corrigée depuis votre compte.`,
       "offre refusée",
     );
     res.json({ message: "Demande refusée." });
@@ -332,7 +332,7 @@ exports.adminPaiement = async (req, res) => {
     if (!o) return res.status(404).json({ error: "Demande introuvable." });
     const { tarif, erreur } = lireTarif(req.body?.tarif_fcfa);
     if (erreur) return res.status(400).json({ error: erreur });
-    if (typeof req.body?.paye !== "boolean") return res.status(400).json({ error: "Indique si le paiement est reçu (paye: true/false)." });
+    if (typeof req.body?.paye !== "boolean") return res.status(400).json({ error: "Indiquez si le paiement est reçu (paye: true/false)." });
     await query(`UPDATE offres_soumises SET tarif_fcfa=$1, paye=$2 WHERE id=$3`, [tarif, req.body.paye, o.id]);
     Journal.enregistrer(req.user.id, req.user.nom, "paiement", "offre", o.id,
       `${o.entreprise} — ${tarif ?? 0} FCFA — ${req.body.paye ? "encaissé" : "non encaissé"}`);

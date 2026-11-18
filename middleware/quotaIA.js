@@ -31,7 +31,7 @@ function quotaIA(type) {
 
       if (compte >= LIMITE_GRATUIT_JOUR) {
         return res.status(403).json({
-          error: `Limite quotidienne de ${LIMITE_GRATUIT_JOUR} générations IA gratuites atteinte. Passe Premium pour un accès illimité.`,
+          error: `Limite quotidienne de ${LIMITE_GRATUIT_JOUR} générations gratuites atteinte. Passe Premium pour un accès illimité.`,
           quotaAtteint: true,
           limite: LIMITE_GRATUIT_JOUR,
         });

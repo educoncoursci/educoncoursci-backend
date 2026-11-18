@@ -16,7 +16,7 @@ exports.listerConversations = async (req, res) => {
     res.json({ total: conversations.length, conversations });
   } catch (err) {
     console.error("Erreur liste conversations :", err.message);
-    res.status(500).json({ error: "Erreur lors du chargement de tes messages." });
+    res.status(500).json({ error: "Erreur lors du chargement de vos messages." });
   }
 };
 
@@ -31,7 +31,7 @@ exports.demarrerConversation = async (req, res) => {
       return res.status(400).json({ error: "destinataireId est requis." });
     }
     if (parseInt(destinataireId, 10) === req.user.id) {
-      return res.status(400).json({ error: "Tu ne peux pas t'envoyer un message à toi-même." });
+      return res.status(400).json({ error: "Vous ne pouvez pas vous envoyer un message à vous-même." });
     }
     const destinataire = await User.findById(destinataireId);
     if (!destinataire) {

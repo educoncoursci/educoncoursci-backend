@@ -43,7 +43,7 @@ function creerStorageDisque({ dossier }) {
       const baseName = path.basename(file.originalname, path.extname(file.originalname))
         .replace(/[^a-zA-Z0-9-_]/g, "_")
         .substring(0, 60);
-      const fileName = `${Date.now()}_${baseName}${ext}`;
+      const fileName = `${Date.now()}_${require("crypto").randomBytes(8).toString("hex")}_${baseName}${ext}`; // suffixe aléatoire : impossible à deviner
       cb(null, fileName);
     },
   });

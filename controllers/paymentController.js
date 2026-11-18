@@ -45,13 +45,13 @@ function alerterAdminNouveauPaiement(transaction) {
       to: destinataire,
       subject: `💰 Nouveau paiement à valider — ${transaction.plan} (${transaction.montant} FCFA)`,
       text:
-        `Un paiement attend ta validation.<br><br>` +
+        `Un paiement attend votre validation.<br><br>` +
         `<strong>Client :</strong> ${echapperHtml(transaction.email)}<br>` +
         `<strong>Plan :</strong> ${echapperHtml(transaction.plan)}<br>` +
         `<strong>Montant :</strong> ${echapperHtml(transaction.montant)} FCFA<br>` +
         `<strong>Moyen :</strong> ${echapperHtml(transaction.moyen)}<br>` +
         `<strong>Identifiant :</strong> ${echapperHtml(transaction.txId || transaction.tx_id)}<br><br>` +
-        `Vérifie la réception des fonds, puis valide ici : <a href="${lien}">${lien}</a>`,
+        `Vérifiez la réception des fonds, puis valide ici : <a href="${lien}">${lien}</a>`,
     }),
     "alerte admin nouveau paiement",
   );
@@ -115,7 +115,7 @@ const SERVICES_MOYEN = { wave: Wave, orange: Orange, mtn: MTN, moov: Moov };
 const service = SERVICES_MOYEN[moyen];
 if (!service) {
   return res.status(400).json({
-    error: "Moyen de paiement invalide. Utilise 'wave', 'orange', 'mtn' ou 'moov'."
+    error: "Moyen de paiement invalide. Utilisez 'wave', 'orange', 'mtn' ou 'moov'."
   });
 }
 const txIdNormalise = service.normaliserTxId(txId);
@@ -136,7 +136,7 @@ if (!formatValide) {
 const dejaUtilise = await Transaction.txIdDejaUtilise(txIdNormalise);
 if (dejaUtilise) {
   return res.status(409).json({
-    error: "Cet identifiant de transaction a déjà été utilisé pour activer un compte. Si c'est une erreur, contacte le support."
+    error: "Cet identifiant de transaction a déjà été utilisé pour activer un compte. Si c'est une erreur, contactez le support."
   });
 }
 
@@ -165,15 +165,15 @@ notifierEnSilence(
     subject: "Paiement reçu — vérification en cours",
     text:
       `Bonjour ${echapperHtml(req.user.nom || "")},<br><br>` +
-      `Nous avons bien reçu l'identifiant de ton paiement pour le plan <strong>Premium ${echapperHtml(plan)}</strong>. ` +
-      `Notre équipe vérifie la réception des fonds et active ton abonnement dans les meilleurs délais (24 h maximum). ` +
-      `Tu recevras un e-mail dès que ce sera fait.`,
+      `Nous avons bien reçu l'identifiant de votre paiement pour le plan <strong>Premium ${echapperHtml(plan)}</strong>. ` +
+      `Notre équipe vérifie la réception des fonds et active votre abonnement dans les meilleurs délais (24 h maximum). ` +
+      `Vous recevrez un e-mail dès que ce sera fait.`,
   }),
   "accusé de réception client",
 );
 
 res.json({
-  message: `Identifiant reçu ! Ton paiement ${LABELS_MOYEN[moyen]} est en cours de vérification par notre équipe. Ton Premium ${plan} sera activé sous peu (généralement quelques heures) une fois le paiement confirmé.`,
+  message: `Identifiant reçu ! Votre paiement ${LABELS_MOYEN[moyen]} est en cours de vérification par notre équipe. Votre Premium ${plan} sera activé sous peu (généralement quelques heures) une fois le paiement confirmé.`,
   enAttente: true,
   transaction,
 });
@@ -267,11 +267,11 @@ if (transaction.email) {
   notifierEnSilence(
     Email.envoyer({
       to: transaction.email,
-      subject: "Ton paiement n'a pas pu être confirmé",
+      subject: "Votre paiement n'a pas pu être confirmé",
       text:
-        `Bonjour,<br><br>Nous n'avons pas pu confirmer ton paiement pour le plan ` +
+        `Bonjour,<br><br>Nous n'avons pas pu confirmer votre paiement pour le plan ` +
         `<strong>Premium ${echapperHtml(transaction.plan)}</strong> (l'identifiant de transaction est introuvable ou incorrect). ` +
-        `Vérifie l'identifiant reçu par SMS et soumets-le à nouveau depuis la page Boutique, ou contacte-nous si tu penses qu'il s'agit d'une erreur.`,
+        `Vérifiez l'identifiant reçu par SMS et soumettez-le à nouveau depuis la page Boutique, ou contacte-nous si vous pensez qu'il s'agit d'une erreur.`,
     }),
     "rejet de paiement client",
   );
@@ -376,7 +376,7 @@ exports.initierCinetPay = async (req, res) => {
   try {
     if (!CinetPay.API_CONFIGUREE) {
       return res.status(503).json({
-        error: "Le paiement en ligne CinetPay n'est pas encore configuré sur ce serveur. Utilise Wave, Orange Money, MTN Money ou Moov Money en attendant.",
+        error: "Le paiement en ligne CinetPay n'est pas encore configuré sur ce serveur. Utilisez Wave, Orange Money, MTN Money ou Moov Money en attendant.",
       });
     }
 
@@ -391,7 +391,7 @@ exports.initierCinetPay = async (req, res) => {
     const { paymentUrl } = await CinetPay.creerPaiement({
       transactionId,
       montant,
-      description: `Abonnement Premium ProInsertion — ${plan}`,
+      description: `Abonnement Premium ProInsertion CI — ${plan}`,
       email: req.user.email,
       nom: req.user.nom,
     });
@@ -481,7 +481,7 @@ exports.initierWave = async (req, res) => {
   try {
     if (!Wave.API_CONFIGUREE) {
       return res.status(503).json({
-        error: "Le paiement Wave via API n'est pas encore configuré sur ce serveur. Utilise le mode manuel Wave en attendant.",
+        error: "Le paiement Wave via API n'est pas encore configuré sur ce serveur. Utilisez le mode manuel Wave en attendant.",
       });
     }
 

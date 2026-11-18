@@ -115,11 +115,11 @@ exports.generer = async (req, res) => {
 
     if (resultat.questions.length === 0) {
       return res.status(502).json({
-        error: "L'IA n'a produit aucune question valide. Réessaie ou précise le thème.",
+        error: "Aucune question valide n'a pu être générée. Réessayez ou précise le thème.",
       });
     }
 
-    const titre = `${matiere}${theme ? " — " + theme : ""} (IA ${new Date().toLocaleDateString("fr-FR")})`.slice(0, 200);
+    const titre = `${matiere}${theme ? " — " + theme : ""} (${new Date().toLocaleDateString("fr-FR")})`.slice(0, 200);
     const insertion = await query(
       `INSERT INTO qcm (titre, matiere, difficulte, statut, questions_json, premium)
        VALUES ($1, $2, $3, 'brouillon', $4, FALSE)
@@ -238,7 +238,7 @@ exports.publier = async (req, res) => {
     const nonVerifiees = questions.filter((q) => q.verifiee !== true).length;
     if (nonVerifiees > 0) {
       return res.status(400).json({
-        error: `${nonVerifiees} question(s) pas encore marquée(s) « vérifiée ». Relis-les puis enregistre avant de publier.`,
+        error: `${nonVerifiees} question(s) pas encore marquée(s) « vérifiée ». Relisez-les puis enregistrez avant de publier.`,
       });
     }
 

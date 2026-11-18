@@ -23,7 +23,7 @@ function fichierDepuisReq(file, autorises) {
   if (!file) return null;
   const mime = typeReel(file.buffer);
   if (!mime || !autorises.includes(mime)) {
-    const e = new Error("Fichier non pris en charge. Envoie un PDF, une capture JPG/PNG/WEBP ou colle le texte."); e.status = 400; throw e;
+    const e = new Error("Fichier non pris en charge. Envoyez un PDF, une capture JPG/PNG/WEBP ou colle le texte."); e.status = 400; throw e;
   }
   return { mime, base64: file.buffer.toString("base64") };
 }
@@ -47,24 +47,24 @@ function nettoyerAnalyse(a) {
 function erreurIA(err, res, defaut) {
   console.error(defaut, err.message);
   if (err.status === 400) return res.status(400).json({ error: err.message });
-  if (/API|IA/.test(err.message) && !/illisible/.test(err.message)) return res.status(503).json({ error: "Service IA temporairement indisponible. Réessaie dans un instant." });
-  return res.status(502).json({ error: "L'analyse n'a pas pu être terminée. Réessaie, ou colle le texte de l'offre." });
+  if (/service de génération|Erreur du service/.test(err.message) && !/illisible/.test(err.message)) return res.status(503).json({ error: "Service temporairement indisponible. Réessayez dans un instant." });
+  return res.status(502).json({ error: "L'analyse n'a pas pu être terminée. Réessayez, ou colle le texte de l'offre." });
 }
 
 // POST /api/offres/analyser   (multipart : texte? , fichier?)
 exports.analyser = async (req, res) => {
   try {
-    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: "Service IA non configuré." });
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: "Service non disponible pour le moment." });
     const texte = String(req.body.texte || "").trim().slice(0, MAX_TEXTE);
     const fichier = fichierDepuisReq(req.files?.offre?.[0], MIMES_OFFRE);
-    if (!texte && !fichier) return res.status(400).json({ error: "Colle le texte de l'offre ou envoie un PDF / une capture d'écran." });
-    if (!fichier && texte.length < 80) return res.status(400).json({ error: "Le texte est trop court pour être une offre d'emploi. Colle l'offre complète." });
+    if (!texte && !fichier) return res.status(400).json({ error: "Collez le texte de l'offre ou envoyez un PDF / une capture d'écran." });
+    if (!fichier && texte.length < 80) return res.status(400).json({ error: "Le texte est trop court pour être une offre d'emploi. Collez l'offre complète." });
 
     const brut = await analyserOffre({ texte, fichier });
-    if (brut.lisible === false) return res.status(422).json({ error: `Ce contenu ne semble pas être une offre d'emploi exploitable${brut.raison ? " : " + String(brut.raison).slice(0, 200) : ""}. Essaie avec une image plus nette ou colle le texte.` });
+    if (brut.lisible === false) return res.status(422).json({ error: `Ce contenu ne semble pas être une offre d'emploi exploitable${brut.raison ? " : " + String(brut.raison).slice(0, 200) : ""}. Essayez avec une image plus nette ou colle le texte.` });
     const analyse = nettoyerAnalyse(brut);
     if (!analyse.competences.techniques.length && !analyse.attentes.missions.length && !analyse.competences.qualifications.length)
-      return res.status(422).json({ error: "Impossible d'extraire des informations utiles de ce contenu. Colle le texte complet de l'offre." });
+      return res.status(422).json({ error: "Impossible d'extraire des informations utiles de ce contenu. Collez le texte complet de l'offre." });
 
     const r = await query(`INSERT INTO analyses_offres (user_id, intitule, organisation, analyse_json) VALUES ($1,$2,$3,$4) RETURNING id, created_at`,
       [req.user.id, analyse.intitule.slice(0, 200), analyse.organisation.slice(0, 200), JSON.stringify(analyse)]);
@@ -75,17 +75,17 @@ exports.analyser = async (req, res) => {
 // POST /api/offres/:id/comparer   (multipart : cv? fichier PDF, cvTexte?)  — Premium
 exports.comparer = async (req, res) => {
   try {
-    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: "Service IA non configuré." });
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: "Service non disponible pour le moment." });
     const o = await query(`SELECT id, analyse_json FROM analyses_offres WHERE id = $1 AND user_id = $2`, [req.params.id, req.user.id]);
     if (!o.rows[0]) return res.status(404).json({ error: "Analyse introuvable." });
     const cvTexte = String(req.body.cvTexte || "").trim().slice(0, MAX_TEXTE);
     const cvFichier = fichierDepuisReq(req.files?.cv?.[0], ["application/pdf"]);
-    if (!cvTexte && !cvFichier) return res.status(400).json({ error: "Importe ton CV en PDF ou colle son texte." });
+    if (!cvTexte && !cvFichier) return res.status(400).json({ error: "Importez votre CV en PDF ou collez son texte." });
 
     const brut = await comparerCVOffre({ analyse: JSON.parse(o.rows[0].analyse_json), cvFichier, cvTexte });
-    if (brut.lisible === false) return res.status(422).json({ error: `Ce document ne semble pas être un CV exploitable${brut.raison ? " : " + String(brut.raison).slice(0, 200) : ""}. Vérifie que le PDF contient du texte lisible.` });
+    if (brut.lisible === false) return res.status(422).json({ error: `Ce document ne semble pas être un CV exploitable${brut.raison ? " : " + String(brut.raison).slice(0, 200) : ""}. Vérifiez que le PDF contient du texte lisible.` });
     const score = Math.max(0, Math.min(100, Math.round(Number(brut.score))));
-    if (!Number.isFinite(score)) throw new Error("Réponse IA illisible");
+    if (!Number.isFinite(score)) throw new Error("Réponse illisible");
     const comparaison = { score, verdict: txt(brut.verdict, ""), points_forts: liste(brut.points_forts), competences_manquantes: liste(brut.competences_manquantes), a_mieux_valoriser: liste(brut.a_mieux_valoriser), mots_cles_a_ajouter: liste(brut.mots_cles_a_ajouter), ameliorations: liste(brut.ameliorations) };
     await query(`UPDATE analyses_offres SET comparaison = $1 WHERE id = $2`, [JSON.stringify(comparaison), o.rows[0].id]);
     res.json({ id: o.rows[0].id, comparaison });

@@ -191,7 +191,7 @@ if (!user) {
 // Empêche de modifier son propre rôle admin
 if (parseInt(id) === req.user.id && role && role !== "admin") {
   return res.status(403).json({
-    error: "Tu ne peux pas retirer ton propre rôle admin."
+    error: "Vous ne pouvez pas retirer votre propre rôle admin."
   });
 }
 
@@ -261,7 +261,7 @@ const { id } = req.params;
 // Empêche de se supprimer soi-même
 if (parseInt(id) === req.user.id) {
   return res.status(403).json({
-    error: "Tu ne peux pas supprimer ton propre compte admin."
+    error: "Vous ne pouvez pas supprimer votre propre compte admin."
   });
 }
 

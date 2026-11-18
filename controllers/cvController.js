@@ -43,7 +43,7 @@ const contenuCV = await genererCV(req.body);
 
 if (!contenuCV) {
   return res.status(500).json({
-    error: "La génération du CV a échoué. Réessaie dans quelques secondes."
+    error: "La génération du CV a échoué. Réessayez dans quelques secondes."
   });
 }
 
@@ -59,7 +59,7 @@ console.error("Erreur génération CV :", err.message);
 // Message spécifique si la clé API est manquante
 if (err.message.includes("API")) {
   return res.status(503).json({
-    error: "Service IA temporairement indisponible. Réessaie dans quelques instants."
+    error: "Service temporairement indisponible. Réessayez dans quelques instants."
   });
 }
 
@@ -94,7 +94,7 @@ const contenuLM = await genererLM(req.body);
 
 if (!contenuLM) {
   return res.status(500).json({
-    error: "La génération de la lettre a échoué. Réessaie dans quelques secondes."
+    error: "La génération de la lettre a échoué. Réessayez dans quelques secondes."
   });
 }
 
@@ -108,7 +108,7 @@ res.json({
 console.error("Erreur génération LM :", err.message);
 if (err.message.includes("API")) {
 return res.status(503).json({
-error: "Service IA temporairement indisponible."
+error: "Service temporairement indisponible."
 });
 }
 res.status(500).json({ error: "Erreur lors de la génération de la lettre." });
@@ -294,7 +294,7 @@ res.json({ message: "Analyse ATS terminée.", analyse });
 } catch (err) {
 console.error("Erreur analyse ATS :", err.message);
 if (err.message.includes("API")) {
-  return res.status(503).json({ error: "Service IA temporairement indisponible." });
+  return res.status(503).json({ error: "Service temporairement indisponible." });
 }
 res.status(500).json({ error: "Erreur lors de l'analyse ATS." });
 }
@@ -319,7 +319,7 @@ res.json({ message: "CV adapté à l'offre avec succès.", cv: cvAdapte });
 } catch (err) {
 console.error("Erreur adaptation offre :", err.message);
 if (err.message.includes("API")) {
-  return res.status(503).json({ error: "Service IA temporairement indisponible." });
+  return res.status(503).json({ error: "Service temporairement indisponible." });
 }
 res.status(500).json({ error: "Erreur lors de l'adaptation du CV à l'offre." });
 }

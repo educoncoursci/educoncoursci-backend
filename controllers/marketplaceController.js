@@ -3,7 +3,7 @@
 //  Lot 14 — Marketplace (façade publique). Liste/détail des
 //  offres publiées et envoi d'une demande de contact/devis au
 //  partenaire. Aucun paiement en ligne dans cette première
-//  version — ProInsertion met en relation, la transaction se
+//  version — ProInsertion CI met en relation, la transaction se
 //  fait directement entre le candidat et le partenaire.
 // ============================================================
 
@@ -72,7 +72,7 @@ exports.contacterPartenaire = async (req, res) => {
     });
 
     res.status(201).json({
-      message: `Ta demande a été transmise à ${offre.partenaire_nom}. Il te recontactera directement.`,
+      message: `Votre demande a été transmise à ${offre.partenaire_nom}. Il vous recontactera directement.`,
       contact,
     });
   } catch (err) {

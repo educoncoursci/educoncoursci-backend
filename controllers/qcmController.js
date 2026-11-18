@@ -63,7 +63,8 @@ if (qcm.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) 
 
 // On n'envoie PAS les bonnes réponses au frontend avant soumission
 // pour éviter la triche (inspection réseau)
-const questionsSansReponses = qcm.questions.map(q => ({
+const questionsSansReponses = qcm.questions.map((q, index) => ({
+  index,
   id:          q.id,
   question:    q.question,
   options:     q.options,
@@ -242,31 +243,93 @@ res.status(500).json({ error: "Erreur lors de la suppression." });
 //  modèle Score déjà en place.
 // ════════════════════════════════════════════════════════════
 exports.soumettreExamenBlanc = async (req, res) => {
-try {
-if (!req.user) {
-  return res.json({ enregistre: false, raison: "non_connecte" });
-}
-
-const { score, total } = req.body;
-if (
-  typeof score !== "number" || typeof total !== "number" ||
-  total <= 0 || score < 0 || score > total
-) {
-  return res.status(400).json({ error: "score/total invalides." });
-}
-
-const enregistrement = await Score.create({
-  userId:   req.user.id,
-  qcmId:    null,
-  qcmTitre: `Examen blanc — ${new Date().toLocaleDateString("fr-FR")}`,
-  score,
-  total,
+// Ancienne méthode : le navigateur envoyait lui-même son score, donc n'importe
+// qui pouvait s'attribuer 100 %. Le score est désormais calculé par le serveur
+// (POST /api/qcm/examen-blanc/corriger) ; cette route n'accepte plus de score.
+return res.status(410).json({
+  error: "Cette méthode n'est plus disponible. Actualisez la page pour utiliser la nouvelle correction.",
 });
+};
 
-res.json({ enregistre: true, score: enregistrement });
+// ════════════════════════════════════════════════════════════
+//  POST /api/qcm/examen-blanc/corriger — Correction d'un examen blanc
+//  Le navigateur envoie uniquement les réponses choisies :
+//    { reponses: [ { qcmId, index, reponse }, … ] }
+//  Le serveur retrouve les questions, applique les mêmes règles d'accès
+//  que la lecture d'un QCM (publié, Premium), corrige, renvoie le détail
+//  et enregistre le score si l'utilisateur est connecté.
+// ════════════════════════════════════════════════════════════
+exports.corrigerExamenBlanc = async (req, res) => {
+try {
+  const { reponses } = req.body || {};
+  if (!Array.isArray(reponses) || reponses.length === 0 || reponses.length > 100) {
+    return res.status(400).json({ error: "Réponses manquantes ou trop nombreuses (100 maximum)." });
+  }
 
+  // Dédoublonne (qcmId + index) : une question ne compte qu'une fois
+  const vues = new Map();
+  for (const r of reponses) {
+    const qcmId = Number.parseInt(r && r.qcmId, 10);
+    const index = Number.parseInt(r && r.index, 10);
+    if (!Number.isInteger(qcmId) || !Number.isInteger(index) || qcmId <= 0 || index < 0) {
+      return res.status(400).json({ error: "Réponse invalide." });
+    }
+    const choix = r.reponse === null || r.reponse === undefined ? null : Number.parseInt(r.reponse, 10);
+    vues.set(`${qcmId}:${index}`, { qcmId, index, choix: Number.isInteger(choix) ? choix : null });
+  }
+
+  const ids = [...new Set([...vues.values()].map((v) => v.qcmId))];
+  if (ids.length > 20) return res.status(400).json({ error: "Trop de matières dans une même épreuve." });
+
+  const qcms = new Map();
+  for (const id of ids) {
+    const qcm = await QCM.findById(id);
+    if (!qcm || qcm.statut !== "publié") continue;
+    const acces = !qcm.premium || (req.user && (req.user.role === "admin" || req.user.premium));
+    if (acces) qcms.set(id, qcm);
+  }
+
+  let score = 0;
+  const corrections = [];
+  for (const v of vues.values()) {
+    const qcm = qcms.get(v.qcmId);
+    const q = qcm && qcm.questions[v.index];
+    if (!q) continue; // question inconnue ou réservée : ignorée, jamais comptée
+    const ok = v.choix === q.correct;
+    if (ok) score++;
+    corrections.push({
+      qcmId: v.qcmId,
+      index: v.index,
+      matiere: qcm.matiere,
+      question: q.question,
+      options: q.options,
+      rep: v.choix,
+      correct: q.correct,
+      ok,
+      explication: q.explication || null,
+    });
+  }
+
+  const total = corrections.length;
+  if (total === 0) return res.status(400).json({ error: "Aucune question valide dans cette épreuve." });
+  const pourcentage = Math.round((score / total) * 100);
+
+  // Enregistré dans la progression seulement si l'épreuve est assez longue
+  // pour avoir un sens (évite les « examens » d'une seule question).
+  let enregistre = null;
+  if (req.user && total >= 5) {
+    enregistre = await Score.create({
+      userId: req.user.id,
+      qcmId: null,
+      qcmTitre: `Examen blanc — ${new Date().toLocaleDateString("fr-FR")}`,
+      score,
+      total,
+    });
+  }
+
+  res.json({ score, total, pourcentage, mention: getMention(pourcentage), corrections, enregistre: !!enregistre });
 } catch (err) {
-console.error("Erreur enregistrement examen blanc :", err.message);
-res.status(500).json({ error: "Erreur lors de l'enregistrement." });
+  console.error("Erreur correction examen blanc :", err.message);
+  res.status(500).json({ error: "Erreur lors de la correction." });
 }
 };

@@ -55,7 +55,7 @@ try {
 const pdf = await PDF.findById(req.params.id);
 if (!pdf) return res.status(404).json({ error: "PDF introuvable." });
 
-if (pdf.premium && req.user && req.user.role !== "admin" && !req.user.premium) {
+if (pdf.premium && (req.user ? (req.user.role !== "admin" && !req.user.premium) : true)) {
   return res.status(403).json({
     error:   "Contenu réservé aux abonnés Premium.",
     premium: true,
@@ -100,6 +100,9 @@ if (req.user) {
 
 // Si l'URL est un lien externe (Drive, etc.), rediriger
 if (pdf.url.startsWith("http")) {
+  // Le navigateur appelle cette route avec fetch (jeton dans l'en-tête, jamais
+  // dans l'adresse) : il reçoit l'adresse du fichier et l'ouvre lui-même.
+  if (req.query.format === "json") return res.json({ url: pdf.url });
   return res.redirect(pdf.url);
 }
 

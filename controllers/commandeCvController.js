@@ -175,7 +175,7 @@ exports.creer = async (req, res) => {
       donnees.formations = donnees.formations.slice(0, MAX_LIGNES_LISTE);
       contenu = await genererCV(donnees, { consigne: def.consigne, tokens: def.tokens });
     }
-    if (!contenu) return res.status(500).json({ error: "La rédaction a échoué. Réessaie dans quelques secondes." });
+    if (!contenu) return res.status(500).json({ error: "La rédaction a échoué. Réessayez dans quelques secondes." });
 
     const ins = await query(
       `INSERT INTO commandes_cv (user_id, produit_id, donnees, contenu) VALUES ($1,$2,$3,$4) RETURNING id`,
@@ -186,7 +186,7 @@ exports.creer = async (req, res) => {
   } catch (err) {
     console.error("Erreur création commande CV :", err.message);
     if (String(err.message).includes("API")) {
-      return res.status(503).json({ error: "Service temporairement indisponible. Réessaie dans quelques instants." });
+      return res.status(503).json({ error: "Service temporairement indisponible. Réessayez dans quelques instants." });
     }
     res.status(500).json({ error: "Erreur lors de la création du document." });
   }
@@ -212,12 +212,12 @@ exports.creerPack = async (req, res) => {
         return res.status(400).json({ error: "Les expériences et les formations sont requises." });
       }
       if (avecLettre && (!donnees.organisation || !donnees.motivation)) {
-        return res.status(400).json({ error: "L'organisation visée et ta motivation sont requises pour les lettres du pack." });
+        return res.status(400).json({ error: "L'organisation visée et votre motivation sont requises pour les lettres du pack." });
       }
       donnees.experiences = donnees.experiences.slice(0, MAX_LIGNES_LISTE);
       donnees.formations = donnees.formations.slice(0, MAX_LIGNES_LISTE);
     } else if (!donnees.profil) {
-      return res.status(400).json({ error: "Décris ton profil (formation, expériences, atouts) pour personnaliser l'entretien." });
+      return res.status(400).json({ error: "Décrivez votre profil (formation, expériences, atouts) pour personnaliser l'entretien." });
     }
 
     const champsBonus = [{ id: "inquietudes", label: "Inquiétudes" }, { id: "organisation", label: "Organisation" }, { id: "nom", label: "Nom" }, { id: "poste", label: "Poste recherché" }, { id: "profil", label: "Profil" }, { id: "competences", label: "Compétences" }, { id: "langues", label: "Langues" }];
@@ -227,7 +227,7 @@ exports.creerPack = async (req, res) => {
       if (el === ID_SIMULATION) return genererQuestionsEntretien(donnees, NB_QUESTIONS);
       return genererRedaction(TYPES_REDACTION[el], donnees, champsBonus);
     }));
-    if (contenus.some((c) => !c)) return res.status(500).json({ error: "La rédaction a échoué. Réessaie dans quelques secondes." });
+    if (contenus.some((c) => !c)) return res.status(500).json({ error: "La rédaction a échoué. Réessayez dans quelques secondes." });
 
     let groupe = null;
     const ids = [];
@@ -252,7 +252,7 @@ exports.creerPack = async (req, res) => {
     res.status(201).json({ groupe_id: groupe, pack: produit.nom, documents });
   } catch (err) {
     console.error("Erreur création pack :", err.message);
-    if (String(err.message).includes("API")) return res.status(503).json({ error: "Service temporairement indisponible. Réessaie dans quelques instants." });
+    if (String(err.message).includes("API")) return res.status(503).json({ error: "Service temporairement indisponible. Réessayez dans quelques instants." });
     res.status(500).json({ error: "Erreur lors de la création du pack." });
   }
 };
@@ -281,12 +281,12 @@ exports.creerSimulation = async (req, res) => {
   try {
     const donnees = { ...(req.body || {}) };
     delete donnees.type;
-    if (!donnees.nom || !donnees.poste) return res.status(400).json({ error: "Ton nom et le poste visé sont requis." });
+    if (!donnees.nom || !donnees.poste) return res.status(400).json({ error: "Votre nom et le poste visé sont requis." });
     const produit = (await query(`SELECT * FROM produits WHERE id = $1 AND actif = TRUE`, [ID_SIMULATION])).rows[0];
     if (!produit) return res.status(400).json({ error: "La simulation n'est pas disponible pour le moment." });
 
     const questions = await genererQuestionsEntretien(donnees, NB_QUESTIONS);
-    if (!questions) return res.status(500).json({ error: "La préparation de l'entretien a échoué. Réessaie dans quelques secondes." });
+    if (!questions) return res.status(500).json({ error: "La préparation de l'entretien a échoué. Réessayez dans quelques secondes." });
     donnees.questions = questions;
     const contenu = questions.map((q, i) => `Question ${i + 1}\n${q}`).join("\n\n");
 
@@ -297,7 +297,7 @@ exports.creerSimulation = async (req, res) => {
     res.status(201).json({ commande: vueCommande(await chargerCommande(ins.rows[0].id, req.user.id)) });
   } catch (err) {
     console.error("Erreur création simulation :", err.message);
-    if (String(err.message).includes("API")) return res.status(503).json({ error: "Service temporairement indisponible. Réessaie dans quelques instants." });
+    if (String(err.message).includes("API")) return res.status(503).json({ error: "Service temporairement indisponible. Réessayez dans quelques instants." });
     res.status(500).json({ error: "Erreur lors de la préparation de la simulation." });
   }
 };
@@ -309,24 +309,24 @@ exports.repondre = async (req, res) => {
   try {
     const c = await chargerCommande(parseInt(req.params.id, 10) || 0, req.user.id);
     if (!c || c.produit_id !== ID_SIMULATION) return res.status(404).json({ error: "Simulation introuvable." });
-    if (etatPaiement(c) !== "valide") return res.status(402).json({ error: "La simulation sera disponible après validation de ton paiement." });
+    if (etatPaiement(c) !== "valide") return res.status(402).json({ error: "La simulation sera disponible après validation de votre paiement." });
     if (c.resultat) return res.status(409).json({ error: "Cette simulation a déjà été analysée." });
 
     const donnees = JSON.parse(c.donnees);
     const questions = donnees.questions || [];
     const reponses = Array.isArray(req.body?.reponses) ? req.body.reponses.slice(0, questions.length).map((r) => String(r || "").trim().slice(0, 2000)) : [];
-    if (!reponses.some((r) => r.length > 0)) return res.status(400).json({ error: "Réponds à au moins une question." });
+    if (!reponses.some((r) => r.length > 0)) return res.status(400).json({ error: "Répondez à au moins une question." });
     while (reponses.length < questions.length) reponses.push("");
 
     const resultat = await analyserEntretien(donnees, questions, reponses);
-    if (!resultat) return res.status(500).json({ error: "L'analyse a échoué. Réessaie dans quelques secondes." });
+    if (!resultat) return res.status(500).json({ error: "L'analyse a échoué. Réessayez dans quelques secondes." });
     // Une seule analyse enregistrée par simulation, même en cas de double envoi simultané
     const maj = await query(`UPDATE commandes_cv SET reponses = $1, resultat = $2 WHERE id = $3 AND resultat IS NULL RETURNING id`, [JSON.stringify(reponses), JSON.stringify(resultat), c.id]);
     if (!maj.rows.length) return res.status(409).json({ error: "Cette simulation a déjà été analysée." });
     res.json({ commande: vueCommande(await chargerCommande(c.id, req.user.id)) });
   } catch (err) {
     console.error("Erreur analyse simulation :", err.message);
-    res.status(500).json({ error: "Erreur lors de l'analyse de tes réponses." });
+    res.status(500).json({ error: "Erreur lors de l'analyse de vos réponses." });
   }
 };
 
@@ -342,7 +342,7 @@ function rapportEntretien(c) {
   L.push("", "DÉTAIL PAR QUESTION");
   const reps = c.reponses ? JSON.parse(c.reponses) : [];
   (d.questions || []).forEach((q, i) => {
-    L.push("", `Question ${i + 1} (${r.questions[i]?.note ?? 0}/10) : ${q}`, `Ta réponse : ${reps[i] || "(pas de réponse)"}`,
+    L.push("", `Question ${i + 1} (${r.questions[i]?.note ?? 0}/10) : ${q}`, `Votre réponse : ${reps[i] || "(pas de réponse)"}`,
       `Analyse : ${r.questions[i]?.commentaire || ""}`, `Pour progresser : ${r.questions[i]?.amelioration || ""}`);
   });
   return L.join("\n");
@@ -371,7 +371,7 @@ exports.lister = async (req, res) => {
     });
   } catch (err) {
     console.error("Erreur liste commandes CV :", err.message);
-    res.status(500).json({ error: "Erreur lors de la récupération de tes CV." });
+    res.status(500).json({ error: "Erreur lors de la récupération de vos CV." });
   }
 };
 
@@ -404,7 +404,7 @@ exports.payer = async (req, res) => {
 
     const etat = etatPaiement(c);
     if (etat === "valide") return res.status(409).json({ error: "Ce document est déjà payé." });
-    if (etat === "en_verification") return res.status(409).json({ error: "Ton paiement est déjà en cours de vérification." });
+    if (etat === "en_verification") return res.status(409).json({ error: "Votre paiement est déjà en cours de vérification." });
     if (!Number.isInteger(c.prix_fcfa)) return res.status(400).json({ error: "Tarif indisponible pour ce document." });
 
     const txNormalise = service.normaliserTxId(txId);
@@ -414,7 +414,7 @@ exports.payer = async (req, res) => {
       });
     }
     if (await Transaction.txIdDejaUtilise(txNormalise)) {
-      return res.status(409).json({ error: "Cet identifiant de transaction a déjà été utilisé. Si c'est une erreur, contacte le support." });
+      return res.status(409).json({ error: "Cet identifiant de transaction a déjà été utilisé. Si c'est une erreur, contactez le support." });
     }
 
     let transaction;
@@ -437,12 +437,12 @@ exports.payer = async (req, res) => {
         subject: `💰 Paiement à valider — ${c.pack_nom || c.produit_nom} (${c.prix_fcfa} FCFA)`,
         text: `Client : ${echapper(req.user.email)}<br>Produit : ${echapper(c.pack_nom || c.produit_nom)}<br>` +
               `Montant : ${echapper(c.prix_fcfa)} FCFA<br>Moyen : ${echapper(transaction.moyen)}<br>` +
-              `Identifiant : ${echapper(txNormalise)}<br><br>Vérifie la réception des fonds puis valide : <a href="${lien}">${lien}</a>`,
+              `Identifiant : ${echapper(txNormalise)}<br><br>Vérifiez la réception des fonds puis valide : <a href="${lien}">${lien}</a>`,
       }), "alerte admin paiement");
     }
 
     res.json({
-      message: "Identifiant reçu. Ton paiement est en cours de vérification (24 h maximum). Ton document sera téléchargeable dès la validation.",
+      message: "Identifiant reçu. Votre paiement est en cours de vérification (24 h maximum). Votre document sera téléchargeable dès la validation.",
       etat: "en_verification",
     });
   } catch (err) {
@@ -460,10 +460,10 @@ exports.telechargerPDF = async (req, res) => {
     const c = await chargerCommande(parseInt(req.params.id, 10) || 0, req.user.id);
     if (!c) return res.status(404).json({ error: "Document introuvable." });
     if (etatPaiement(c) !== "valide") {
-      return res.status(402).json({ error: "Ce document sera téléchargeable après validation de ton paiement." });
+      return res.status(402).json({ error: "Ce document sera téléchargeable après validation de votre paiement." });
     }
     if (c.produit_id === ID_SIMULATION) {
-      if (!c.resultat) return res.status(409).json({ error: "Réponds d'abord aux questions pour obtenir ton rapport." });
+      if (!c.resultat) return res.status(409).json({ error: "Répondez d'abord aux questions pour obtenir votre rapport." });
       const d = JSON.parse(c.donnees);
       const base = String(d.nom || "rapport").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "") || "rapport";
       chemin = await genererPDFTexte(rapportEntretien(c), `ENTRETIEN_${base}_${Date.now()}`, "lm", null, { data: d, modele: null, titre: "Rapport de simulation d'entretien" });
@@ -505,8 +505,8 @@ exports.confirmerPaiementCv = async (req, res, transaction) => {
   if (transaction.email) {
     enSilence(Email.envoyer({
       to: transaction.email,
-      subject: "Paiement confirmé — ton document est prêt",
-      text: `Bonjour,<br><br>Ton paiement est confirmé. Tu peux maintenant télécharger ton document en PDF depuis la page ` +
+      subject: "Paiement confirmé — votre document est prêt",
+      text: `Bonjour,<br><br>Votre paiement est confirmé. Vous pouvez maintenant télécharger votre document en PDF depuis la page ` +
             `<a href="${process.env.FRONTEND_URL || ""}/cv-generator.html">CV et lettre</a> (rubrique « Mes documents »).`,
     }), "confirmation paiement CV");
   }
