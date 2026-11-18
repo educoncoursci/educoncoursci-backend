@@ -61,7 +61,7 @@ async function repondreAssistantSocial(message, historique = []) {
   const alerteDetectee = detecterAlerte(message);
 
   const systemPrompt = `Tu es un assistant d'orientation sociale et administrative pour la plateforme
-ProInsertion, à destination d'usagers en Côte d'Ivoire. Tu n'es PAS un travailleur
+ProInsertion CI, à destination d'usagers en Côte d'Ivoire. Tu n'es PAS un travailleur
 social, un médecin, un psychologue ou un avocat — tu es un outil d'orientation et
 d'information générale.
 
@@ -101,7 +101,7 @@ RÈGLES STRICTES QUE TU DOIS TOUJOURS RESPECTER :
 
   if (!response.ok) {
     const err = await response.json();
-    throw new Error(`Erreur API Claude : ${err.error?.message || response.statusText}`);
+    throw new Error(`Erreur du service de génération : ${err.error?.message || response.statusText}`);
   }
 
   const data = await response.json();

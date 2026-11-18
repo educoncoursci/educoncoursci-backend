@@ -1,6 +1,6 @@
 // ============================================================
 //  services/academieIAClaude.js
-//  Académie ProInsertion — génération assistée par IA :
+//  Académie ProInsertion CI — génération assistée par IA :
 //    1. genererPlan()  : titre, description et liste des leçons d'un cours
 //    2. genererLecon() : texte, points clés et exercices d'UNE leçon
 //
@@ -59,7 +59,7 @@ async function appelClaude(prompt, maxTokens) {
     } catch {
       /* ignore */
     }
-    throw new Error(`Erreur API Claude : ${detail}`);
+    throw new Error(`Erreur du service de génération : ${detail}`);
   }
   const data = await response.json();
   return data.content?.find((b) => b.type === "text")?.text || "";
@@ -85,7 +85,7 @@ async function appelJson(prompt, maxTokens) {
     const obj = extraireObjetJson(await appelClaude(prompt, maxTokens));
     if (obj) return obj;
   }
-  throw new Error("Réponse de l'IA illisible (JSON invalide). Réessaie.");
+  throw new Error("Réponse illisible. Réessaie.");
 }
 
 const texte = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");

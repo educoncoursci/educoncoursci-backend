@@ -58,10 +58,10 @@ numero:       numeroMtn || process.env.MTN_NUMERO,
 montant:      `${montant?.toLocaleString("fr-CI")} FCFA`,
 modePaiement: "manuel",
 etapes: [
-"Compose *133# sur ton téléphone MTN (ou ouvre l'app MoMo)",
-`Envoie exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroMtn || process.env.MTN_NUMERO}`,
+"Compose *133# sur votre téléphone MTN (ou ouvre l'app MoMo)",
+`Envoyez exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroMtn || process.env.MTN_NUMERO}`,
 "Note l'identifiant de transaction reçu par SMS",
-"Reviens sur le site et saisis cet identifiant pour activer ton compte",
+"Revenez sur le site et saisissez cet identifiant pour activer votre compte",
 ],
 format_exemple: "MP-AB1234567",
 };

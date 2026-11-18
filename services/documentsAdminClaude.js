@@ -26,7 +26,7 @@ async function appelClaude(prompt, maxTokens = 1500) {
 
   if (!response.ok) {
     const err = await response.json();
-    throw new Error(`Erreur API Claude : ${err.error?.message || response.statusText}`);
+    throw new Error(`Erreur du service de génération : ${err.error?.message || response.statusText}`);
   }
 
   const data = await response.json();

@@ -12,7 +12,7 @@ const DEFINITIONS = [
   {
     id: "premier-pas",
     nom: "Premier pas",
-    description: "Complète ton premier QCM",
+    description: "Complétez votre premier QCM",
     icone: "🎯",
     critere: (s) => s.total_tentatives >= 1,
   },

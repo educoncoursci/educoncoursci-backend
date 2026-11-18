@@ -189,10 +189,10 @@ if (API_CONFIGUREE) {
     montant:      `${montant?.toLocaleString("fr-CI")} FCFA`,
     modePaiement: "api",
     etapes: [
-      "Clique sur le bouton \"Payer avec Wave\" ci-dessous",
-      `Tu arrives directement dans Wave avec le montant de ${montant?.toLocaleString("fr-CI")} FCFA déjà rempli`,
-      "Confirme le paiement avec ton code Wave",
-      "Ton Premium s'active automatiquement, sans rien saisir de plus",
+      "Cliquez sur le bouton \"Payer avec Wave\" ci-dessous",
+      `Vous arrivez directement dans Wave avec le montant de ${montant?.toLocaleString("fr-CI")} FCFA déjà rempli`,
+      "Confirmez le paiement avec votre code Wave",
+      "Votre Premium s'active automatiquement, sans rien saisir de plus",
     ],
   };
 }
@@ -210,11 +210,11 @@ if (lienPaiement) {
     lienPaiement,
     modePaiement: "lien",
     etapes: [
-      "Clique sur le bouton \"Payer avec Wave\" ci-dessous",
-      `Une fois sur Wave, saisis exactement ${montant?.toLocaleString("fr-CI")} FCFA`,
-      "Confirme le paiement avec ton code Wave",
+      "Cliquez sur le bouton \"Payer avec Wave\" ci-dessous",
+      `Une fois sur Wave, saisissez exactement ${montant?.toLocaleString("fr-CI")} FCFA`,
+      "Confirmez le paiement avec votre code Wave",
       "Note l'identifiant de transaction reçu par SMS (ex: T_5L7D2SFHD3VMTIPJ)",
-      "Reviens sur cette page et saisis cet identifiant ci-dessous pour activer ton Premium",
+      "Revenez sur cette page et saisissez cet identifiant ci-dessous pour activer votre Premium",
     ],
   };
 }
@@ -226,10 +226,10 @@ numero:     numeroWave || process.env.WAVE_NUMERO,
 montant:    `${montant?.toLocaleString("fr-CI")} FCFA`,
 modePaiement: "manuel",
 etapes: [
-"Ouvre l'application Wave sur ton téléphone",
-`Envoie exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroWave || process.env.WAVE_NUMERO}`,
+"Ouvrez l'application Wave sur votre téléphone",
+`Envoyez exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroWave || process.env.WAVE_NUMERO}`,
 "Note l'identifiant de transaction reçu par SMS (ex: T_5L7D2SFHD3VMTIPJ)",
-"Reviens sur le site et saisis cet identifiant pour activer ton compte",
+"Revenez sur le site et saisissez cet identifiant pour activer votre compte",
 ],
 format_exemple: "T_5L7D2SFHD3VMTIPJ",
 };

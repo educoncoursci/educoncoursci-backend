@@ -27,7 +27,7 @@ messages:   [{ role: "user", content: prompt }],
 
 if (!response.ok) {
 const err = await response.json();
-throw new Error(`Erreur API Claude : ${err.error?.message || response.statusText}`);
+throw new Error(`Erreur du service de génération : ${err.error?.message || response.statusText}`);
 }
 
 const data = await response.json();
@@ -300,7 +300,7 @@ async function appelClaudeContenu(contenu, maxTokens = 3000) {
   if (!response.ok) {
     let msg = response.statusText;
     try { msg = (await response.json()).error?.message || msg; } catch {}
-    throw new Error(`Erreur API Claude : ${msg}`);
+    throw new Error(`Erreur du service de génération : ${msg}`);
   }
   const data = await response.json();
   return data.content?.find((b) => b.type === "text")?.text || "";
@@ -346,7 +346,7 @@ ${REGLE_DONNEES}`;
     : [{ type: "text", text: `${consigne}\n\n<offre>\n${texte}\n</offre>` }];
   const brut = await appelClaudeContenu(contenu, 3000);
   const json = extraireJSON(brut);
-  if (!json || typeof json !== "object") throw new Error("Réponse IA illisible");
+  if (!json || typeof json !== "object") throw new Error("Réponse illisible");
   return json;
 }
 
@@ -375,7 +375,7 @@ ${JSON.stringify(analyse).slice(0, 6000)}
     : [{ type: "text", text: `${consigne}\n\n<cv>\n${cvTexte}\n</cv>` }];
   const brut = await appelClaudeContenu(contenu, 2500);
   const json = extraireJSON(brut);
-  if (!json || typeof json !== "object") throw new Error("Réponse IA illisible");
+  if (!json || typeof json !== "object") throw new Error("Réponse illisible");
   return json;
 }
 

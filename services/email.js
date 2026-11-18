@@ -61,7 +61,7 @@ return `
         <td style="background:linear-gradient(135deg,#1A6B3C,#0A6EBD);
                     padding:28px 30px;text-align:center;">
           <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:900;
-                      letter-spacing:0.5px;">🎓 ProInsertion</h1>
+                      letter-spacing:0.5px;">🎓 ProInsertion CI</h1>
           <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">
             Plateforme de préparation aux concours de Côte d'Ivoire
           </p>
@@ -80,7 +80,7 @@ return `
         <td style="background:#F4F6F9;padding:20px 30px;text-align:center;
                     border-top:1px solid #E5E7EB;">
           <p style="color:#888;font-size:12px;margin:0;line-height:1.6;">
-            ProInsertion · Votre avenir professionnel commence ici.<br>Abidjan, Côte d'Ivoire<br>
+            ProInsertion CI · Votre avenir professionnel commence ici.<br>Abidjan, Côte d'Ivoire<br>
             <a href="#" style="color:#1A6B3C;text-decoration:none;">Se désabonner</a>
           </p>
         </td>
@@ -106,14 +106,14 @@ async function envoyer({ to, subject, html, text }) {
 if (!emailConfigure()) {
 console.warn(
   `⚠️  E-mail NON envoyé (BREVO_API_KEY absente) → ${to} | Sujet: ${subject}. ` +
-  `Configure cette variable dans les Environment Variables de ton hébergeur (Render) pour activer l'envoi réel.`,
+  `Configure cette variable dans les Environment Variables de votre hébergeur (Render) pour activer l'envoi réel.`,
 );
 return { simule: true, to, subject };
 }
 
-const nomExpediteur = (process.env.EMAIL_FROM || "ProInsertion <noreply@educoncoursci.ci>")
+const nomExpediteur = (process.env.EMAIL_FROM || "ProInsertion CI <noreply@educoncoursci.ci>")
 .match(/^(.*?)\s*<(.+)>$/);
-const senderName  = nomExpediteur ? nomExpediteur[1].trim() : "ProInsertion";
+const senderName  = nomExpediteur ? nomExpediteur[1].trim() : "ProInsertion CI";
 const senderEmail = nomExpediteur ? nomExpediteur[2].trim() : (process.env.EMAIL_FROM || "noreply@educoncoursci.ci");
 
 const response = await fetch(BREVO_API_URL, {
@@ -144,7 +144,7 @@ if (!response.ok) {
 const detail = data.message || JSON.stringify(data);
 const erreur = new Error(
   `Erreur Brevo (HTTP ${response.status}, code: ${data.code || "inconnu"}) : ${detail} ` +
-  `| Expéditeur utilisé : ${senderEmail} — vérifie qu'il est EXACTEMENT celui validé dans Brevo (Paramètres → Expéditeurs).`,
+  `| Expéditeur utilisé : ${senderEmail} — vérifiez qu'il est EXACTEMENT celui validé dans Brevo (Paramètres → Expéditeurs).`,
 );
 erreur.brevoStatus = response.status;
 erreur.brevoCode = data.code;
@@ -162,23 +162,23 @@ return { messageId: data.messageId, to };
 
 // ── 1. Bienvenue ─────────────────────────────────────────────
 async function envoyerBienvenue(user) {
-const html = templateBase("Bienvenue sur ProInsertion !", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Bienvenue, ${user.nom} ! 🎉 </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;"> Ton compte a été créé avec succès sur <strong>ProInsertion</strong>, la plateforme de référence pour la préparation aux concours de Côte d'Ivoire. </p> <div style="background:#F0FDF4;border-radius:12px;padding:18px;margin:20px 0;"> <p style="margin:0 0 10px;font-weight:700;color:#1A6B3C;">Tu as maintenant accès à :</p> <ul style="margin:0;padding-left:20px;color:#333;line-height:1.9;font-size:14px;"> <li>📋 La liste complète des concours et examens CI</li> <li>🧠 Des QCM de préparation gratuits</li> <li>📰 Les dernières actualités et alertes</li> <li>📚 Des ressources de préparation</li> </ul> </div> <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px;"> Pour accéder aux cours complets, sujets corrigés et vidéos de formation, passe en <strong>Premium</strong> dès 2 000 FCFA/mois. </p> <div style="text-align:center;margin:24px 0;"> <a href="${process.env.FRONTEND_URL || "https://educoncoursci.netlify.app"}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Accéder à la plateforme → </a> </div>`);
+const html = templateBase("Bienvenue sur ProInsertion CI !", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Bienvenue, ${user.nom} ! 🎉 </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;"> Votre compte a été créé avec succès sur <strong>ProInsertion CI</strong>, la plateforme de référence pour la préparation aux concours de Côte d'Ivoire. </p> <div style="background:#F0FDF4;border-radius:12px;padding:18px;margin:20px 0;"> <p style="margin:0 0 10px;font-weight:700;color:#1A6B3C;">Vous avez maintenant accès à :</p> <ul style="margin:0;padding-left:20px;color:#333;line-height:1.9;font-size:14px;"> <li>📋 La liste complète des concours et examens CI</li> <li>🧠 Des QCM de préparation gratuits</li> <li>📰 Les dernières actualités et alertes</li> <li>📚 Des ressources de préparation</li> </ul> </div> <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px;"> Pour accéder aux cours complets, sujets corrigés et vidéos de formation, passe en <strong>Premium</strong> dès 2 000 FCFA/mois. </p> <div style="text-align:center;margin:24px 0;"> <a href="${process.env.FRONTEND_URL || "https://proinsertionci.netlify.app"}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Accéder à la plateforme → </a> </div>`);
 
 return envoyer({
 to:      user.email,
-subject: "Bienvenue sur ProInsertion ! 🎓",
+subject: "Bienvenue sur ProInsertion CI ! 🎓",
 html,
 });
 }
 
 // ── 2. Confirmation de paiement ──────────────────────────────
 async function envoyerConfirmationPaiement(user, transaction) {
-const html = templateBase("Paiement validé — ProInsertion", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Paiement validé ! ✅ </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${user.nom}</strong>, ton abonnement <strong>Premium ${transaction.plan}</strong> est maintenant actif. </p> <div style="background:#F9FAFB;border-radius:12px;padding:18px;margin:0 0 20px;"> <table width="100%" cellpadding="0" cellspacing="0"> ${[ ["Plan",      `Premium ${transaction.plan}`], ["Montant",    `${transaction.montant?.toLocaleString("fr-CI")} FCFA`], ["Moyen",      transaction.moyen], ["Référence",  transaction.txId], ["Date",       new Date().toLocaleDateString("fr-FR")], ["Expiration", transaction.expiration || "Voir votre profil"], ].map(([k, v]) => `
+const html = templateBase("Paiement validé — ProInsertion CI", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Paiement validé ! ✅ </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${user.nom}</strong>, votre abonnement <strong>Premium ${transaction.plan}</strong> est maintenant actif. </p> <div style="background:#F9FAFB;border-radius:12px;padding:18px;margin:0 0 20px;"> <table width="100%" cellpadding="0" cellspacing="0"> ${[ ["Plan",      `Premium ${transaction.plan}`], ["Montant",    `${transaction.montant?.toLocaleString("fr-CI")} FCFA`], ["Moyen",      transaction.moyen], ["Référence",  transaction.txId], ["Date",       new Date().toLocaleDateString("fr-FR")], ["Expiration", transaction.expiration || "Voir votre profil"], ].map(([k, v]) => `
 <tr>
 <td style="padding:8px 0;color:#888;font-size:13px;border-bottom:1px solid #E5E7EB;">${k}</td>
 <td style="padding:8px 0;font-weight:700;font-size:13px;border-bottom:1px solid #E5E7EB;text-align:right;">${v}</td>
 </tr>
-`).join("")} </table> </div> <div style="background:#EFF6FF;border-radius:12px;padding:16px;margin:0 0 20px;"> <p style="margin:0 0 8px;font-weight:700;color:#0A6EBD;">Tu as maintenant accès à :</p> <p style="margin:0;color:#333;font-size:13px;line-height:1.8;"> 📚 Tous les cours PDF · 🎬 Vidéos de formation · 📝 Sujets corrigés · ⏱ Examens blancs · 🤖 Corrections détaillées IA </p> </div> <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/dashboard" style="background:#F5820D;color:#fff;text-decoration:none; padding:14px 28px;border-radius:10px;font-weight:700; font-size:15px;display:inline-block;"> Accéder à mon espace Premium ⭐ </a> </div> `);
+`).join("")} </table> </div> <div style="background:#EFF6FF;border-radius:12px;padding:16px;margin:0 0 20px;"> <p style="margin:0 0 8px;font-weight:700;color:#0A6EBD;">Vous avez maintenant accès à :</p> <p style="margin:0;color:#333;font-size:13px;line-height:1.8;"> 📚 Tous les cours PDF · 🎬 Vidéos de formation · 📝 Sujets corrigés · ⏱ Examens blancs · Corrections détaillées </p> </div> <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/dashboard" style="background:#F5820D;color:#fff;text-decoration:none; padding:14px 28px;border-radius:10px;font-weight:700; font-size:15px;display:inline-block;"> Accéder à mon espace Premium ⭐ </a> </div> `);
 
 return envoyer({
 to:      user.email,
@@ -189,7 +189,7 @@ html,
 
 // ── 3. Alerte nouveau concours ───────────────────────────────
 async function envoyerAlerteConcours(email, nom, concours) {
-const html = templateBase("Nouveau concours disponible", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> 🏛️ Nouveau concours disponible ! </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${nom}</strong>, un nouveau concours vient d'être publié sur ProInsertion. </p> <div style="background:#F0FDF4;border-radius:12px;padding:20px;margin:0 0 20px; border-left:4px solid #1A6B3C;"> <h3 style="margin:0 0 12px;color:#1A6B3C;font-size:16px;">${concours.titre}</h3> <table width="100%" cellpadding="0" cellspacing="0"> ${[ ["🏢 Organisme", concours.organisme], ["📂 Catégorie", concours.categorie], ["📅 Ouverture", concours.ouverture || "Voir le site"], ["⏰ Clôture",   concours.cloture   || "Voir le site"], ["💰 Frais",     concours.frais ?`${concours.frais.toLocaleString("fr-CI")} FCFA`: "Gratuit"], ["🎓 Niveau",    concours.niveau || "Voir le site"], ].map(([k, v]) =>`
+const html = templateBase("Nouveau concours disponible", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> 🏛️ Nouveau concours disponible ! </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${nom}</strong>, un nouveau concours vient d'être publié sur ProInsertion CI. </p> <div style="background:#F0FDF4;border-radius:12px;padding:20px;margin:0 0 20px; border-left:4px solid #1A6B3C;"> <h3 style="margin:0 0 12px;color:#1A6B3C;font-size:16px;">${concours.titre}</h3> <table width="100%" cellpadding="0" cellspacing="0"> ${[ ["🏢 Organisme", concours.organisme], ["📂 Catégorie", concours.categorie], ["📅 Ouverture", concours.ouverture || "Voir le site"], ["⏰ Clôture",   concours.cloture   || "Voir le site"], ["💰 Frais",     concours.frais ?`${concours.frais.toLocaleString("fr-CI")} FCFA`: "Gratuit"], ["🎓 Niveau",    concours.niveau || "Voir le site"], ].map(([k, v]) =>`
 <tr>
 <td style="padding:6px 0;color:#555;font-size:13px;">${k}</td>
 <td style="padding:6px 0;font-weight:600;font-size:13px;text-align:right;">${v}</td>
@@ -209,9 +209,9 @@ const couleur = resultat.pourcentage >= 75 ? "#1A6B3C"
 : resultat.pourcentage >= 50 ? "#F5820D"
 : "#D9000D";
 
-const html = templateBase("Ton résultat QCM", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Ton résultat QCM 🧠 </h2> <p style="color:#333;font-size:15px;margin:0 0 20px;"> Bonjour <strong>${user.nom}</strong>, voici ton résultat pour le QCM <em>${resultat.qcmTitre}</em>. </p> <div style="text-align:center;padding:24px;background:#F9FAFB; border-radius:16px;margin:0 0 20px;"> <div style="font-size:52px;font-weight:900;color:${couleur};"> ${resultat.pourcentage}% </div> <div style="font-size:18px;color:#333;margin:8px 0;"> ${resultat.score} / ${resultat.total} bonnes réponses </div> <div style="font-size:16px;font-weight:700;color:${couleur};"> ${resultat.mention} </div> </div> ${resultat.conseil ?`
+const html = templateBase("Votre résultat QCM", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Votre résultat QCM 🧠 </h2> <p style="color:#333;font-size:15px;margin:0 0 20px;"> Bonjour <strong>${user.nom}</strong>, voici votre résultat pour le QCM <em>${resultat.qcmTitre}</em>. </p> <div style="text-align:center;padding:24px;background:#F9FAFB; border-radius:16px;margin:0 0 20px;"> <div style="font-size:52px;font-weight:900;color:${couleur};"> ${resultat.pourcentage}% </div> <div style="font-size:18px;color:#333;margin:8px 0;"> ${resultat.score} / ${resultat.total} bonnes réponses </div> <div style="font-size:16px;font-weight:700;color:${couleur};"> ${resultat.mention} </div> </div> ${resultat.conseil ?`
 <div style="background:#EFF6FF;border-radius:12px;padding:16px;margin:0 0 20px;">
-<p style="margin:0 0 6px;font-weight:700;color:#0A6EBD;">💡 Conseil personnalisé IA :</p>
+<p style="margin:0 0 6px;font-weight:700;color:#0A6EBD;">💡 Conseil personnalisé :</p>
 <p style="margin:0;color:#333;font-size:13px;line-height:1.7;">${resultat.conseil}</p>
 </div>`: ""} <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/preparation.html" style="background:#0A6EBD;color:#fff;text-decoration:none; padding:14px 28px;border-radius:10px;font-weight:700; font-size:15px;display:inline-block;"> Continuer la préparation → </a> </div>`);
 
@@ -224,7 +224,7 @@ html,
 
 // ── 5. Rappel clôture concours (J-7) ────────────────────────
 async function envoyerRappelCloture(email, nom, concours, joursRestants) {
-const html = templateBase("Rappel : clôture imminente", `<h2 style="color:#D9000D;font-size:20px;margin:0 0 16px;"> ⏰ Rappel : Il reste ${joursRestants} jour${joursRestants > 1 ? "s" : ""} ! </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${nom}</strong>, la date limite d'inscription au concours ci-dessous approche. Ne rate pas cette opportunité ! </p> <div style="background:#FEF2F2;border-radius:12px;padding:20px;margin:0 0 20px; border-left:4px solid #D9000D;"> <h3 style="margin:0 0 8px;color:#D9000D;">${concours.titre}</h3> <p style="margin:0;color:#555;font-size:14px;"> ⏰ Date limite : <strong>${concours.cloture}</strong> | 🏢 Organisme : <strong>${concours.organisme}</strong> </p> </div> <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/concours-detail.html?id=${concours.id}" style="background:#D9000D;color:#fff;text-decoration:none; padding:14px 28px;border-radius:10px;font-weight:700; font-size:15px;display:inline-block;"> Voir les pièces à fournir → </a> </div>`);
+const html = templateBase("Rappel : clôture imminente", `<h2 style="color:#D9000D;font-size:20px;margin:0 0 16px;"> ⏰ Rappel : Il reste ${joursRestants} jour${joursRestants > 1 ? "s" : ""} ! </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;"> Bonjour <strong>${nom}</strong>, la date limite d'inscription au concours ci-dessous approche. Ne ratez pas cette opportunité ! </p> <div style="background:#FEF2F2;border-radius:12px;padding:20px;margin:0 0 20px; border-left:4px solid #D9000D;"> <h3 style="margin:0 0 8px;color:#D9000D;">${concours.titre}</h3> <p style="margin:0;color:#555;font-size:14px;"> ⏰ Date limite : <strong>${concours.cloture}</strong> | 🏢 Organisme : <strong>${concours.organisme}</strong> </p> </div> <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/concours-detail.html?id=${concours.id}" style="background:#D9000D;color:#fff;text-decoration:none; padding:14px 28px;border-radius:10px;font-weight:700; font-size:15px;display:inline-block;"> Voir les pièces à fournir → </a> </div>`);
 
 return envoyer({
 to:      email,
@@ -238,7 +238,7 @@ async function envoyerNotificationAdmin(destinataires, { titre, message, urgent 
 const html = templateBase(titre, `${urgent ?`<div style="background:#FEF2F2;border:1px solid #D9000D;border-radius:10px;
 padding:12px 16px;margin:0 0 20px;text-align:center;">
 <span style="color:#D9000D;font-weight:700;font-size:14px;">🔴 NOTIFICATION URGENTE</span>
-</div>`: ""} <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">${titre}</h2> <div style="color:#333;font-size:15px;line-height:1.8;white-space:pre-line;"> ${message} </div> <div style="text-align:center;margin-top:24px;"> <a href="${process.env.FRONTEND_URL}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Voir sur ProInsertion → </a> </div>`);
+</div>`: ""} <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">${titre}</h2> <div style="color:#333;font-size:15px;line-height:1.8;white-space:pre-line;"> ${message} </div> <div style="text-align:center;margin-top:24px;"> <a href="${process.env.FRONTEND_URL}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Voir sur ProInsertion CI → </a> </div>`);
 
 // Envoie à tous les destinataires
 const resultats = await Promise.allSettled(
@@ -257,11 +257,11 @@ return { envoyes: succes, echecs, total: destinataires.length };
 
 // ── 7. Réinitialisation de mot de passe ───────────────────────
 async function envoyerResetMotDePasse(user, lienReset) {
-const html = templateBase("Réinitialisation de mot de passe — ProInsertion", `
-  <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Réinitialisation de ton mot de passe 🔑</h2>
+const html = templateBase("Réinitialisation de mot de passe — ProInsertion CI", `
+  <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Réinitialisation de votre mot de passe 🔑</h2>
   <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
-    Bonjour <strong>${user.nom}</strong>, tu as demandé à réinitialiser ton mot de passe sur ProInsertion.
-    Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+    Bonjour <strong>${user.nom}</strong>, vous avez demandé à réinitialiser votre mot de passe sur ProInsertion CI.
+    Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
   </p>
   <div style="text-align:center;margin:24px 0;">
     <a href="${lienReset}" style="background-color:#1A6B3C;background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#ffffff !important;
@@ -271,20 +271,45 @@ const html = templateBase("Réinitialisation de mot de passe — ProInsertion", 
     </a>
   </div>
   <p style="color:#333;font-size:13px;line-height:1.6;margin:0 0 20px;word-break:break-all;">
-    Si le bouton ne s'affiche pas, copie-colle ce lien dans ton navigateur :<br>
+    Si le bouton ne s'affiche pas, copie-colle ce lien dans votre navigateur :<br>
     <a href="${lienReset}" style="color:#0A6EBD;">${lienReset}</a>
   </p>
   <p style="color:#888;font-size:13px;line-height:1.7;margin:20px 0 0;">
-    Ce lien est valable 1 heure. Si tu n'es pas à l'origine de cette demande, ignore simplement cet e-mail —
-    ton mot de passe actuel reste inchangé.
+    Ce lien est valable 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet e-mail —
+    votre mot de passe actuel reste inchangé.
   </p>
 `);
 
 return envoyer({
 to:      user.email,
-subject: "🔑 Réinitialisation de ton mot de passe",
+subject: "🔑 Réinitialisation de votre mot de passe",
 html,
 });
+}
+
+// ── Vérification d'adresse e-mail ─────────────────────────────
+async function envoyerVerificationEmail(user, lien) {
+const nom = String(user.nom || "").replace(/[<>&"]/g, "");
+const html = templateBase("Confirmez votre adresse e-mail — ProInsertion CI", `
+  <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Confirmez votre adresse e-mail ✉️</h2>
+  <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
+    Bonjour <strong>${nom}</strong>, merci de vous être inscrit(e) sur ProInsertion CI.
+    Pour activer toutes les fonctionnalités de votre compte, confirmez votre adresse e-mail.
+  </p>
+  <div style="text-align:center;margin:24px 0;">
+    <a href="${lien}" style="background-color:#1A6B3C;background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#ffffff !important;
+      text-decoration:none;padding:14px 28px;border-radius:10px;border:1px solid #1A6B3C;
+      font-weight:700;font-size:15px;display:inline-block;">Confirmer mon adresse e-mail →</a>
+  </div>
+  <p style="color:#333;font-size:13px;line-height:1.6;margin:0 0 20px;word-break:break-all;">
+    Si le bouton ne s'affiche pas, copiez-collez ce lien dans votre navigateur :<br>
+    <a href="${lien}" style="color:#0A6EBD;">${lien}</a>
+  </p>
+  <p style="color:#888;font-size:13px;line-height:1.7;margin:20px 0 0;">
+    Ce lien est valable 48 heures. Si vous n'êtes pas à l'origine de cette inscription, ignorez simplement cet e-mail.
+  </p>
+`);
+return envoyer({ to: user.email, subject: "✉️ Confirmez votre adresse e-mail — ProInsertion CI", html });
 }
 
 // ── E-mail de confirmation d'inscription à la newsletter ─────────
@@ -294,21 +319,21 @@ html,
 // confirmation dans sa boîte mail, seulement le message affiché sur
 // le site lui-même.
 async function envoyerConfirmationNewsletter(email) {
-const html = templateBase("Inscription confirmée — ProInsertion", `
+const html = templateBase("Inscription confirmée — ProInsertion CI", `
   <h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Inscription confirmée ! 📬</h2>
   <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
-    Merci de t'être inscrit(e) à la newsletter d'ProInsertion. Tu recevras désormais un résumé
+    Merci de vous être inscrit(e) à la newsletter de ProInsertion CI. Vous recevrez désormais un résumé
     des nouveaux concours et des actualités importantes directement dans cette boîte mail.
   </p>
   <p style="color:#888;font-size:13px;line-height:1.7;margin:20px 0 0;">
-    Tu n'es pas à l'origine de cette inscription ? Ignore simplement cet e-mail, ou contacte-nous
+    Vous n'êtes pas à l'origine de cette inscription ? Ignore simplement cet e-mail, ou contactez-nous
     pour être retiré(e) de la liste.
   </p>
 `);
 
 return envoyer({
 to:      email,
-subject: "📬 Inscription à la newsletter ProInsertion confirmée",
+subject: "📬 Inscription à la newsletter ProInsertion CI confirmée",
 html,
 });
 }
@@ -322,6 +347,7 @@ envoyerResultatQCM,
 envoyerRappelCloture,
 envoyerNotificationAdmin,
 envoyerResetMotDePasse,
+envoyerVerificationEmail,
 envoyerConfirmationNewsletter,
 emailConfigure,
 getTransporter,

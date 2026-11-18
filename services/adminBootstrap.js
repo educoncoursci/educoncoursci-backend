@@ -25,7 +25,7 @@ async function assurerAdminUnique(emailCible) {
   );
 
   const cible = await query(
-    `SELECT id, nom, email, role FROM users WHERE email = $1`,
+    `SELECT id, nom, email, role, email_verified FROM users WHERE email = $1`,
     [email],
   );
 
@@ -35,6 +35,15 @@ async function assurerAdminUnique(emailCible) {
       email,
       avant: avant.rows,
       message: `Aucun compte trouvé avec l'e-mail ${email}. Le compte doit d'abord être créé via l'inscription du site.`,
+    };
+  }
+
+  if (cible.rows[0].email_verified === false) {
+    return {
+      ok: false,
+      email,
+      avant: avant.rows,
+      message: `Le compte ${email} n'a pas confirmé son adresse e-mail : confirmez-la (lien reçu à l'inscription) avant de le promouvoir administrateur.`,
     };
   }
 

@@ -52,10 +52,10 @@ numero:       numeroMoov || process.env.MOOV_NUMERO,
 montant:      `${montant?.toLocaleString("fr-CI")} FCFA`,
 modePaiement: "manuel",
 etapes: [
-"Compose #155# sur ton téléphone Moov (ou ouvre l'app Moov Money)",
-`Envoie exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroMoov || process.env.MOOV_NUMERO}`,
+"Compose #155# sur votre téléphone Moov (ou ouvre l'app Moov Money)",
+`Envoyez exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroMoov || process.env.MOOV_NUMERO}`,
 "Note l'identifiant de transaction reçu par SMS",
-"Reviens sur le site et saisis cet identifiant pour activer ton compte",
+"Revenez sur le site et saisissez cet identifiant pour activer votre compte",
 ],
 format_exemple: "MV-AB1234567",
 };

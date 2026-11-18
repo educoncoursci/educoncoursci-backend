@@ -160,14 +160,14 @@ async function genererQuestions(params) {
     } catch {
       /* ignore */
     }
-    throw new Error(`Erreur API Claude : ${detail}`);
+    throw new Error(`Erreur du service de génération : ${detail}`);
   }
 
   const data = await response.json();
   const texte = data.content?.find((b) => b.type === "text")?.text || "";
   const brutes = extraireJson(texte);
   if (!brutes) {
-    throw new Error("Réponse de l'IA illisible (JSON invalide). Réessaie.");
+    throw new Error("Réponse illisible. Réessaie.");
   }
 
   const vues = new Set();

@@ -62,7 +62,7 @@ async function calculerEligibilite({ age, sexe, diplomeId }) {
               : c.age_min != null
                 ? `à partir de ${c.age_min} ans`
                 : `jusqu'à ${c.age_max} ans`;
-          raisons.push(`Âge requis : ${borne} (tu as indiqué ${age} ans)`);
+          raisons.push(`Âge requis : ${borne} (vous avez indiqué ${age} ans)`);
         }
       }
     }
