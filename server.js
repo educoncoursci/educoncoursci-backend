@@ -1,6 +1,6 @@
 // ============================================================
 //  server.js
-//  Point d'entrée du backend ProInsertion
+//  Point d'entrée du backend ProInsertion CI
 //  Lance le serveur Express, connecte la base de données,
 //  monte toutes les routes API.
 // ============================================================
@@ -25,6 +25,11 @@ const app = express();
 // ce qui reste sûr contre une IP falsifiée par le visiteur lui-même.
 app.set("trust proxy", 1);
 
+// Un secret JWT court se devine par force brute : avertissement net dans les journaux.
+if ((process.env.JWT_SECRET || "").length < 32) {
+  console.error("⚠️  SÉCURITÉ : JWT_SECRET fait moins de 32 caractères. Générez-en un solide : npm run jwt:secret");
+}
+
 // ── Sécurité ──────────────────────────────────────────────────
 app.use(helmet());
 
@@ -34,7 +39,7 @@ app.use(helmet());
 const limiter = rateLimit({
 windowMs: 15 * 60 * 1000,
 max: 600,
-message: { error: "Trop de requêtes, réessaie dans 15 minutes." },
+message: { error: "Trop de requêtes, réessayez dans 15 minutes." },
 });
 app.use("/api/", limiter);
 
@@ -42,7 +47,7 @@ app.use("/api/", limiter);
 // Seuls les ÉCHECS comptent pour la connexion (skipSuccessfulRequests), et la
 // protection fine se fait COMPTE PAR COMPTE (middleware/limiteConnexion.js),
 // pour ne pas pénaliser les utilisateurs qui partagent une IP mobile.
-const msgTentatives = { error: "Trop de tentatives, réessaie plus tard." };
+const msgTentatives = { error: "Trop de tentatives, réessayez plus tard." };
 const limiteLogin = rateLimit({ windowMs: 15 * 60 * 1000, max: 60, skipSuccessfulRequests: true, message: msgTentatives });
 const limite2FA = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, skipSuccessfulRequests: true, message: msgTentatives });
 const limiteInscription = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, message: msgTentatives });
@@ -50,12 +55,17 @@ const limiteMotDePasseOublie = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, me
 // Formulaires publics sans compte (newsletter, contact partenaire) : anti-spam
 const limiteFormulairePublic = rateLimit({ windowMs: 60 * 60 * 1000, max: 20, message: msgTentatives });
 const { limiteConnexionParEmail } = require("./middleware/limiteConnexion");
+// Paiements : soumissions d'identifiants de transaction (anti-essais en rafale)
+const limitePaiement = rateLimit({ windowMs: 60 * 60 * 1000, max: 40, message: msgTentatives });
 
 // ── CORS ──────────────────────────────────────────────────────
 // Autorise les appels depuis ton frontend Netlify
 const originesAutorisees = [
 "http://localhost:5500",
 "http://localhost:3000",
+// Nouvelle et ancienne adresses Netlify : le site reste joignable pendant le changement de nom
+"https://proinsertionci.netlify.app",
+"https://educoncoursci.netlify.app",
 process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -69,7 +79,7 @@ callback(null, true);
 // ça permet de savoir immédiatement si un problème de connexion
 // frontend/backend vient de CORS (ex: FRONTEND_URL mal configurée)
 // plutôt que de deviner depuis la console du navigateur seule.
-console.warn(`⚠️  CORS refusé pour l'origine "${origin}" — vérifie FRONTEND_URL sur ton hébergeur. Origines autorisées : ${originesAutorisees.join(", ")}`);
+console.warn(`⚠️  CORS refusé pour l'origine "${origin}" — vérifiez FRONTEND_URL sur votre hébergeur. Origines autorisées : ${originesAutorisees.join(", ")}`);
 callback(new Error("CORS non autorisé pour cette origine"));
 }
 },
@@ -104,7 +114,7 @@ app.use((req, res, next) => {
       req.user?.role !== "admin"
     ) {
       console.error(`Erreur 500 (${req.method} ${req.originalUrl}) : ${corps.error}`);
-      corps = { ...corps, error: "Une erreur est survenue. Réessaie dans un instant." };
+      corps = { ...corps, error: "Une erreur est survenue. Réessayez dans un instant." };
     }
     return jsonOriginal(corps);
   };
@@ -115,10 +125,12 @@ app.use((req, res, next) => {
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ── Routes API ────────────────────────────────────────────────
+app.post(["/api/payment/verify", "/api/payment/wave/initier", "/api/payment/cinetpay/initier", "/api/cv/commande/:id/payer"], limitePaiement);
 app.use("/api/auth/login",            limiteLogin, limiteConnexionParEmail);
 app.use("/api/auth/register",         limiteInscription);
 app.use("/api/auth/forgot-password",  limiteMotDePasseOublie);
 app.use("/api/auth/reset-password",   limiteMotDePasseOublie);
+app.use(["/api/auth/verify-email", "/api/auth/resend-verification", "/api/auth/account"], limiteMotDePasseOublie);
 app.use("/api/auth/2fa/verify-login", limite2FA);
 app.use("/api/auth",     require("./routes/auth"));
 app.use("/api/vitrine/newsletter", limiteFormulairePublic);
@@ -160,7 +172,7 @@ app.use("/api/diagnostic", require("./routes/diagnostic"));
 app.get("/api/health", (req, res) => {
 res.json({
 status:  "ok",
-service: "ProInsertion API",
+service: "ProInsertion CI API",
 version: "1.0.0",
 date:    new Date().toLocaleDateString("fr-FR"),
 });
@@ -228,7 +240,7 @@ require("./services/transactionsScheduler").demarrerPlanification(); // Nettoyag
 require("./services/concoursStatutScheduler").demarrerPlanification(); // Lot 18 — statut automatique des concours
 require("./services/concoursFeed").demarrerPlanification(); // Lot 18 — détection automatique de nouveaux concours
 app.listen(PORT, () => {
-console.log(`🚀 Serveur ProInsertion démarré sur le port ${PORT}`);
+console.log(`🚀 Serveur ProInsertion CI démarré sur le port ${PORT}`);
 console.log(`📡 API disponible : http://localhost:${PORT}/api/health`);
 console.log(`🌍 Environnement  : ${process.env.NODE_ENV || "development"}`);
 });

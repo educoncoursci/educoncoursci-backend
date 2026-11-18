@@ -142,7 +142,7 @@ Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en ha
   avec le slogan « Votre avenir professionnel commence ici. ».
 - **Volontairement inchangés** (les changer casserait le site) : l'adresse `educoncoursci.netlify.app`,
   les noms des dépôts GitHub et du service Render, le dossier Cloudinary `educoncoursci/`.
-- Les adresses e-mail `support@educoncoursci.ci` et `noreply@educoncoursci.ci` sont conservées : à
+- Les adresses e-mail `support@proinsertionci.ci` et `noreply@educoncoursci.ci` sont conservées : à
   remplacer le jour où tu auras ton propre nom de domaine ProInsertion.
 - **Service worker** : le nom du cache est passé à `proinsertion-v3`. À chaque déploiement qui modifie
   `js/api.js`, `js/auth.js`, `js/main.js`, `index.html` ou les feuilles de style, incrémente ce numéro
@@ -154,3 +154,20 @@ Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en ha
 
 - CinetPay (en attente d'un compte entreprise), SMS, WhatsApp API, notifications push.
 - Nom de domaine personnalisé : l'URL Netlify fonctionne très bien pour démarrer.
+
+## Vérifications après chaque déploiement
+
+1. `npm ls multer` doit afficher `multer@2.0.2`, et le serveur doit démarrer sans erreur.
+2. Envoyez une photo de profil, un PDF (administration) et une offre en PDF (analyse d'offre) ; essayez aussi un fichier refusé (.txt, ou image de plus de 5 Mo) : un message clair doit s'afficher.
+3. Créez un compte test : l'e-mail de confirmation doit arriver (`FRONTEND_URL` doit être défini) et le lien doit confirmer l'adresse. Tant qu'elle n'est pas confirmée, le paiement est refusé.
+4. Effectuez un petit paiement réel et vérifiez que le compte passe en premium.
+5. Les comptes créés avant la vérification d'e-mail sont considérés comme vérifiés.
+6. Page « Examen blanc » : terminez une épreuve de 5 questions ou plus ; le score affiché est calculé par le serveur et apparaît dans « Mes scores ».
+7. Bibliothèque : téléchargez un PDF gratuit et un PDF Premium (compte abonné), puis testez l'export des utilisateurs en administration : le fichier doit se télécharger sans que le jeton apparaisse dans l'adresse.
+8. Profil → « Déconnecter les autres appareils » : connectez-vous sur deux navigateurs, utilisez le bouton sur l'un, l'autre doit demander de se reconnecter.
+
+## Boutiques d'applications
+- Page publique de suppression de compte : /supprimer-compte.html (renseigner CONTACT_EMAIL).
+- Bouton « Installer l'application » : pied de page et accueil.
+- Android : coller l'empreinte SHA-256 dans .well-known/assetlinks.json après création du compte Play.
+- Fiche pas à pas : kit-boutiques/FICHE-BOUTIQUES.md.
