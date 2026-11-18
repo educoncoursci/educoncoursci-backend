@@ -88,7 +88,7 @@ echo “”
 # ── 3. Inscription & Connexion ────────────────────────────
 
 echo “👤 Authentification :”
-RANDOM_EMAIL=“test_$(date +%s)@educoncoursci.ci”
+RANDOM_EMAIL=“test_$(date +%s)@proinsertionci.ci”
 
 # Inscription
 

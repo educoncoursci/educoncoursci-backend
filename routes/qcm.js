@@ -24,6 +24,7 @@ router.get("/:id", authOptionnel, ctrl.detail);  // GET /api/qcm/:id
 // IMPORTANT : la route spécifique doit être déclarée AVANT /:id/score,
 // sinon Express matcherait "examen-blanc" comme valeur de :id et
 // appellerait le mauvais controller.
+router.post("/examen-blanc/corriger", authOptionnel, ctrl.corrigerExamenBlanc); // POST /api/qcm/examen-blanc/corriger
 router.post("/examen-blanc/score", authOptionnel, ctrl.soumettreExamenBlanc); // POST /api/qcm/examen-blanc/score
 router.post("/:id/score", authOptionnel, ctrl.soumettre); // POST /api/qcm/:id/score
 

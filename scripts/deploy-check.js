@@ -66,7 +66,7 @@ function verifierGroupe(titre, variables, icone) {
   return manquantes;
 }
 
-console.log("🔍 Vérification pré-déploiement — ProInsertion\n");
+console.log("🔍 Vérification pré-déploiement — ProInsertion CI\n");
 console.log("=".repeat(60));
 
 const manquantesIndispensables = verifierGroupe(

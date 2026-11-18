@@ -14,6 +14,10 @@ logout,
 changePassword,
 forgotPassword,
 resetPassword,
+verifyEmail,
+resendVerification,
+logoutAll,
+supprimerMonCompte,
 } = require("../controllers/authController");
 const deuxFA = require("../controllers/twoFactorController");
 
@@ -32,8 +36,20 @@ router.get("/me", auth, me);
 // POST /api/auth/change-password ← Changer le mot de passe (connecté)
 router.post("/change-password", auth, changePassword);
 
+// POST /api/auth/logout-all ← Déconnecter tous les appareils (connecté)
+router.post("/logout-all", auth, logoutAll);
+
+// DELETE /api/auth/account ← Supprimer son compte (mot de passe exigé)
+router.delete("/account", auth, supprimerMonCompte);
+
 // POST /api/auth/forgot-password ← Demander un lien de réinitialisation
 router.post("/forgot-password", forgotPassword);
+
+// POST /api/auth/verify-email ← Confirmer l'adresse e-mail (lien reçu)
+router.post("/verify-email", verifyEmail);
+
+// POST /api/auth/resend-verification ← Renvoyer le lien (connecté)
+router.post("/resend-verification", auth, resendVerification);
 
 // POST /api/auth/reset-password  ← Définir un nouveau mot de passe via le lien reçu
 router.post("/reset-password", resetPassword);

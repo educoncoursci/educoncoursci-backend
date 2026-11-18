@@ -7,6 +7,7 @@ const express = require("express");
 const router  = express.Router();
 const ctrl    = require("../controllers/cvController");
 const auth    = require("../middleware/auth");
+const exigerEmailVerifie = require("../middleware/exigerEmailVerifie");
 const quotaIA = require("../middleware/quotaIA");
 const exigerPremium = require("../middleware/exigerPremium");
 
@@ -30,7 +31,7 @@ router.get("/commande/pack/:gid", auth, commande.lirePack);
 router.post("/commande", auth, quotaIA("cv"), commande.creer);
 router.get("/commande", auth, commande.lister);
 router.get("/commande/:id", auth, commande.lire);
-router.post("/commande/:id/payer", auth, commande.payer);
+router.post("/commande/:id/payer", auth, exigerEmailVerifie, commande.payer);
 router.get("/commande/:id/pdf", auth, commande.telechargerPDF);
 
 // POST /api/cv/pdf  — Exporter en PDF (connecté requis ; le contrôleur

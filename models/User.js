@@ -4,18 +4,55 @@
 //  Utilisé par authController.js et userController.js
 // ============================================================
 
+const crypto = require("crypto");
 const { query } = require("../config/database");
+const sessions = require("../services/sessionUtilisateur");
+
+// Le jeton de réinitialisation n'est jamais stocké en clair : seule son empreinte l'est.
+const hacherJeton = (t) => crypto.createHash("sha256").update(String(t)).digest("hex");
 
 const User = {
   // ── Créer un nouvel utilisateur ─────────────────────────────
   async create({ nom, email, passwordHash }) {
+    const jeton = crypto.randomBytes(32).toString("hex");
     const result = await query(
-      `INSERT INTO users (nom, email, password_hash)
-       VALUES ($1, $2, $3)
-       RETURNING id, nom, email, role, premium, date_inscription`,
-      [nom, email, passwordHash],
+      `INSERT INTO users (nom, email, password_hash, email_verified, email_verif_hash, email_verif_expire, email_verif_envoye_le)
+       VALUES ($1, $2, $3, FALSE, $4, NOW() + INTERVAL '48 hours', NOW())
+       RETURNING id, nom, email, role, premium, date_inscription, email_verified`,
+      [nom, email, passwordHash, hacherJeton(jeton)],
     );
-    return result.rows[0];
+    return { ...result.rows[0], jetonVerification: jeton };
+  },
+
+  // ── Vérification d'adresse e-mail ───────────────────────────
+  // Génère un nouveau lien (anti-spam : un envoi par minute au maximum).
+  async renouvelerVerification(id) {
+    const jeton = crypto.randomBytes(32).toString("hex");
+    const r = await query(
+      `UPDATE users
+          SET email_verif_hash = $1, email_verif_expire = NOW() + INTERVAL '48 hours', email_verif_envoye_le = NOW()
+        WHERE id = $2 AND email_verified = FALSE
+          AND (email_verif_envoye_le IS NULL OR email_verif_envoye_le < NOW() - INTERVAL '60 seconds')
+        RETURNING id, nom, email`,
+      [hacherJeton(jeton), id],
+    );
+    return r.rows[0] ? { ...r.rows[0], jetonVerification: jeton } : null;
+  },
+
+  async confirmerEmail(jeton) {
+    const r = await query(
+      `UPDATE users
+          SET email_verified = TRUE, email_verif_hash = NULL, email_verif_expire = NULL
+        WHERE email_verif_hash = $1 AND email_verif_expire > NOW()
+        RETURNING id, email`,
+      [hacherJeton(jeton)],
+    );
+    return r.rows[0] || null;
+  },
+
+  async emailVerifie(id) {
+    const r = await query(`SELECT email_verified FROM users WHERE id = $1`, [id]);
+    return !!(r.rows[0] && r.rows[0].email_verified);
   },
 
   // ── Trouver un utilisateur par e-mail ───────────────────────
@@ -29,7 +66,7 @@ const User = {
     const result = await query(
       `SELECT id, nom, email, role, premium, premium_plan,
               premium_expire, date_inscription, favoris_json, scores_json,
-              two_factor_enabled
+              two_factor_enabled, email_verified
        FROM users WHERE id = $1`,
       [id],
     );
@@ -51,20 +88,29 @@ const User = {
     const result = await query(
       `UPDATE users
        SET nom = COALESCE($1, nom),
+           email_verified = CASE WHEN $2::text IS NOT NULL AND $2::text <> email THEN FALSE ELSE email_verified END,
+           email_verif_envoye_le = CASE WHEN $2::text IS NOT NULL AND $2::text <> email THEN NULL ELSE email_verif_envoye_le END,
            email = COALESCE($2, email)
        WHERE id = $3
-       RETURNING id, nom, email, role, premium, premium_plan, premium_expire`,
+       RETURNING id, nom, email, role, premium, premium_plan, premium_expire, email_verified`,
       [nom, email, id],
     );
     return result.rows[0];
   },
 
   // ── Mettre à jour le mot de passe ───────────────────────────
+  // Déconnecte tous les appareils : tout jeton émis avant cet instant est refusé.
+  async deconnecterPartout(id) {
+    await query(`UPDATE users SET password_changed_at = NOW() WHERE id = $1`, [id]);
+    sessions.oublier(id);
+  },
+
   async updatePassword(id, passwordHash) {
-    await query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [
+    await query(`UPDATE users SET password_hash = $1, password_changed_at = NOW() WHERE id = $2`, [
       passwordHash,
       id,
     ]);
+    sessions.oublier(id);
   },
 
   // ── Activer/désactiver le Premium (utilisée par le paiement,
@@ -77,6 +123,7 @@ const User = {
        RETURNING id, nom, email, role, premium, premium_plan, premium_expire`,
       [premium, plan || null, expire || null, id],
     );
+    sessions.oublier(id);
     return result.rows[0];
   },
 
@@ -131,6 +178,7 @@ async definirCodesRecuperation(id, codesRecuperationHashes) {
        RETURNING id, nom, email, premium, premium_plan, premium_expire`,
       [plan, expire.toISOString().split("T")[0], id],
     );
+    sessions.oublier(id);
     return result.rows[0];
   },
 
@@ -141,6 +189,7 @@ async definirCodesRecuperation(id, codesRecuperationHashes) {
        RETURNING id, nom, email, role`,
       [role, id],
     );
+    sessions.oublier(id);
     return result.rows[0];
   },
 
@@ -209,7 +258,7 @@ async definirCodesRecuperation(id, codesRecuperationHashes) {
       `UPDATE users SET reset_token = $1, reset_token_expire = $2
        WHERE email = $3
        RETURNING id, nom, email`,
-      [token, expireDate, email],
+      [hacherJeton(token), expireDate, email],
     );
     return result.rows[0] || null;
   },
@@ -218,7 +267,7 @@ async definirCodesRecuperation(id, codesRecuperationHashes) {
     const result = await query(
       `SELECT id, nom, email FROM users
        WHERE reset_token = $1 AND reset_token_expire > NOW()`,
-      [token],
+      [hacherJeton(token)],
     );
     return result.rows[0] || null;
   },
@@ -226,11 +275,12 @@ async definirCodesRecuperation(id, codesRecuperationHashes) {
   async resetPassword(id, passwordHash) {
     const result = await query(
       `UPDATE users
-       SET password_hash = $1, reset_token = NULL, reset_token_expire = NULL
+       SET password_hash = $1, reset_token = NULL, reset_token_expire = NULL, password_changed_at = NOW()
        WHERE id = $2
        RETURNING id, nom, email`,
       [passwordHash, id],
     );
+    sessions.oublier(id);
     return result.rows[0];
   },
 
@@ -250,6 +300,7 @@ async definirCodesRecuperation(id, codesRecuperationHashes) {
   // ── Supprimer un utilisateur (admin) ────────────────────────
   async delete(id) {
     await query(`DELETE FROM users WHERE id = $1`, [id]);
+    sessions.oublier(id);
   },
 
   // ── Vérifier si un e-mail existe déjà ──────────────────────

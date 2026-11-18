@@ -30,7 +30,9 @@ const { cloudinary, cloudinaryConfigure } = require("../config/cloudinary");
 
 function secretValide(req) {
   const secret = process.env.DIAGNOSTIC_SECRET;
-  return Boolean(secret) && req.query.secret === secret;
+  if (!secret || typeof req.query.secret !== "string") return false;
+  const a = Buffer.from(secret), b = Buffer.from(req.query.secret);
+  return a.length === b.length && require("crypto").timingSafeEqual(a, b);
 }
 
 // ── GET /api/diagnostic/email — état de la config, sans envoyer d'e-mail ──
@@ -48,7 +50,7 @@ router.get("/email", (req, res) => {
     emailConfigure: emailConfigure(),
     conseil: !cleDefinie
       ? "BREVO_API_KEY absente : aucun e-mail ne peut partir tant qu'elle n'est pas ajoutée sur Render."
-      : "Configuration présente. Utilise /api/diagnostic/email/test?secret=...&to=ton@email.com pour un envoi réel et voir l'erreur exacte de Brevo en cas d'échec (cause la plus fréquente : EMAIL_FROM différent de l'adresse vérifiée dans Brevo → Paramètres → Expéditeurs).",
+      : "Configuration présente. Utilisez /api/diagnostic/email/test?secret=...&to=votre@email.com pour un envoi réel et voir l'erreur exacte de Brevo en cas d'échec (cause la plus fréquente : EMAIL_FROM différent de l'adresse vérifiée dans Brevo → Paramètres → Expéditeurs).",
   });
 });
 
@@ -58,7 +60,7 @@ router.get("/email/test", async (req, res) => {
 
   const destinataire = req.query.to;
   if (!destinataire) {
-    return res.status(400).json({ error: "Ajoute ?to=ton@email.com à l'URL pour recevoir le test." });
+    return res.status(400).json({ error: "Ajoutez ?to=votre@email.com à l'URL pour recevoir le test." });
   }
 
   if (!emailConfigure()) {
@@ -70,12 +72,12 @@ router.get("/email/test", async (req, res) => {
   try {
     const resultat = await envoyer({
       to: destinataire,
-      subject: "✅ Test ProInsertion — la configuration e-mail fonctionne",
-      html: `<p>Si tu lis ce message, l'envoi d'e-mails depuis ProInsertion fonctionne correctement 🎉</p>`,
+      subject: "✅ Test ProInsertion CI — la configuration e-mail fonctionne",
+      html: `<p>Si vous lis ce message, l'envoi d'e-mails depuis ProInsertion CI fonctionne correctement 🎉</p>`,
     });
     res.json({
       succes: true,
-      message: `E-mail envoyé avec succès à ${destinataire}. Vérifie la boîte de réception (et les spams).`,
+      message: `E-mail envoyé avec succès à ${destinataire}. Vérifiez la boîte de réception (et les spams).`,
       messageId: resultat.messageId,
     });
   } catch (err) {
@@ -100,7 +102,7 @@ router.get("/stockage", (req, res) => {
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? "définie" : "❌ NON DÉFINIE",
     cloudinaryConfigure: cloudinaryConfigure(),
     conseil: cloudinaryConfigure()
-      ? "Configuration présente. Utilise /api/diagnostic/stockage/test?secret=... pour un envoi réel de test."
+      ? "Configuration présente. Utilisez /api/diagnostic/stockage/test?secret=... pour un envoi réel de test."
       : "Les 3 variables CLOUDINARY_* sont nécessaires pour un stockage permanent. Sans elles, les fichiers uploadés (PDF, vidéos, photos) sont stockés sur le disque de Render et seront perdus au prochain redéploiement.",
   });
 });
@@ -130,7 +132,7 @@ router.get("/stockage/test", async (req, res) => {
     res.status(500).json({
       succes: false,
       erreur: err.message,
-      conseil: "Vérifie que CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY et CLOUDINARY_API_SECRET correspondent exactement à ton Dashboard Cloudinary.",
+      conseil: "Vérifiez que CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY et CLOUDINARY_API_SECRET correspondent exactement à votre Dashboard Cloudinary.",
     });
   }
 });

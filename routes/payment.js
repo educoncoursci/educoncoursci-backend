@@ -7,13 +7,14 @@ const express = require("express");
 const router  = express.Router();
 const ctrl    = require("../controllers/paymentController");
 const auth    = require("../middleware/auth");
+const exigerEmailVerifie = require("../middleware/exigerEmailVerifie");
 const admin   = require("../middleware/admin");
 
 // Publique : récupérer les plans et instructions
 router.get("/plans", ctrl.getPlans); // GET /api/payment/plans
 
 // Connecté requis : vérifier un paiement et activer le Premium
-router.post("/verify", auth, ctrl.verify); // POST /api/payment/verify
+router.post("/verify", auth, exigerEmailVerifie, ctrl.verify); // POST /api/payment/verify
 
 // Historique personnel de l'utilisateur connecté
 router.get("/history", auth, ctrl.history); // GET /api/payment/history
@@ -31,11 +32,11 @@ router.post("/rejeter/:id", auth, admin, ctrl.rejeterTransaction); // POST /api/
 router.post("/resiliation", auth, admin, ctrl.resilier); // POST /api/payment/resiliation
 
 // ── CinetPay (Lot 17) ─────────────────────────────────────────
-router.post("/cinetpay/initier", auth, ctrl.initierCinetPay);  // POST /api/payment/cinetpay/initier
+router.post("/cinetpay/initier", auth, exigerEmailVerifie, ctrl.initierCinetPay);  // POST /api/payment/cinetpay/initier
 router.post("/cinetpay/webhook", ctrl.webhookCinetPay);        // POST /api/payment/cinetpay/webhook (public — appelé par CinetPay)
 
 // ── Wave (API Checkout officielle) ──────────────────────────────
-router.post("/wave/initier", auth, ctrl.initierWave);  // POST /api/payment/wave/initier
+router.post("/wave/initier", auth, exigerEmailVerifie, ctrl.initierWave);  // POST /api/payment/wave/initier
 router.post("/wave/webhook", ctrl.webhookWave);         // POST /api/payment/wave/webhook (public — appelé par Wave)
 
 module.exports = router;

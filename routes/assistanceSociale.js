@@ -17,7 +17,7 @@ const rateLimit = require("express-rate-limit");
 //  - visiteur sans compte : 10 messages / heure (par adresse IP) ;
 //  - inscrit : 40 messages / heure (par compte) ;
 //  - taille des messages et de l'historique bornée.
-const msgLimite = { error: "Limite de messages atteinte pour cette heure. Réessaie plus tard. En cas d'urgence, appelle les numéros d'urgence." };
+const msgLimite = { error: "Limite de messages atteinte pour cette heure. Réessayez plus tard. En cas d'urgence, appelle les numéros d'urgence." };
 const limiteAssistantInvite = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, skip: (req) => !!req.user, message: msgLimite });
 const limiteAssistantMembre = rateLimit({
   windowMs: 60 * 60 * 1000, max: 40, skip: (req) => !req.user,

@@ -92,7 +92,32 @@ if (nom !== undefined && !nomValide(nom)) {
 if (email !== undefined && !emailValide(email)) {
   return res.status(400).json({ error: "Adresse e-mail invalide." });
 }
-const updated = await User.updateProfil(req.params.id, { nom, email });
+let emailNormalise = email;
+if (email !== undefined) {
+  emailNormalise = String(email).toLowerCase().trim();
+  const actuel = await User.findById(req.params.id);
+  if (actuel && actuel.email !== emailNormalise) {
+    if (await User.emailExiste(emailNormalise)) {
+      return res.status(409).json({ error: "Cette adresse e-mail est déjà utilisée." });
+    }
+    // Prévient l'ancienne adresse : un changement d'e-mail frauduleux ne doit pas passer inaperçu
+    require("../services/email").envoyer({
+      to: actuel.email,
+      subject: "L'adresse e-mail de votre compte a été modifiée",
+      text: `Bonjour,<br><br>L'adresse e-mail de votre compte ProInsertion CI vient d'être remplacée. ` +
+            `Si vous n'êtes pas à l'origine de cette modification, contactez-nous immédiatement et changez votre mot de passe.`,
+    }).catch((e) => console.error("Alerte changement d'e-mail non envoyée :", e.message));
+  }
+}
+const updated = await User.updateProfil(req.params.id, { nom, email: emailNormalise });
+if (updated && updated.email_verified === false) {
+  const v = await User.renouvelerVerification(updated.id);
+  if (v) {
+    const lien = `${process.env.FRONTEND_URL || "https://proinsertionci.netlify.app"}/auth/verifier-email.html?token=${v.jetonVerification}`;
+    require("../services/email").envoyerVerificationEmail(v, lien)
+      .catch((e) => console.error("E-mail de vérification non envoyé :", e.message));
+  }
+}
 res.json({ message: "Profil mis à jour.", user: updated });
 } catch (err) {
 res.status(500).json({ error: err.message });

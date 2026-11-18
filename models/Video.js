@@ -6,6 +6,18 @@
 
 const { query } = require("../config/database");
 
+function construireFiltre({ categorie, premium, statut, q }) {
+  const conds = [`statut = $1`];
+  const params = [statut];
+  if (categorie) { params.push(categorie); conds.push(`categorie = $${params.length}`); }
+  if (premium !== undefined) { params.push(premium); conds.push(`premium = $${params.length}`); }
+  if (q) {
+    params.push("%" + String(q).replace(/[\\%_]/g, "\\$&") + "%");
+    conds.push(`titre ILIKE $${params.length}`);
+  }
+  return { where: conds.join(" AND "), params };
+}
+
 const Video = {
   // ── Créer une vidéo ─────────────────────────────────────────
   async create({ titre, categorie, duree, url, description, premium, statut, origine }) {
@@ -33,32 +45,35 @@ const Video = {
     categorie,
     premium,
     statut = "publié",
+    q,
+    tri = "recent",
     limit = 50,
     offset = 0,
   } = {}) {
-    let conditions = [`statut = $1`];
-    let params = [statut];
-    let idx = 2;
-
-    if (categorie) {
-      conditions.push(`categorie = $${idx++}`);
-      params.push(categorie);
-    }
-    if (premium !== undefined) {
-      conditions.push(`premium = $${idx++}`);
-      params.push(premium);
-    }
-
-    params.push(limit, offset);
-
-    const result = await query(
-      `SELECT * FROM videos
-       WHERE ${conditions.join(" AND ")}
-       ORDER BY created_at DESC
-       LIMIT $${idx++} OFFSET $${idx}`,
-      params,
+    const { where, params: p0 } = construireFiltre({ categorie, premium, statut, q });
+    const ordre = tri === "vues" ? "vues DESC, id DESC"
+      : tri === "gratuit" ? "premium ASC, created_at DESC"
+      : "created_at DESC";
+    const idx0 = p0.length + 1;
+    const rows = await query(
+      `SELECT * FROM videos WHERE ${where} ORDER BY ${ordre} LIMIT $${idx0} OFFSET $${idx0 + 1}`,
+      [...p0, limit, offset],
     );
-    return result.rows.map(ajouterYoutubeId);
+    return rows.rows.map(ajouterYoutubeId);
+  },
+
+  async compter({ categorie, premium, statut = "publié", q } = {}) {
+    const { where, params } = construireFiltre({ categorie, premium, statut, q });
+    const r = await query(`SELECT COUNT(*)::int AS n FROM videos WHERE ${where}`, params);
+    return r.rows[0].n;
+  },
+
+  async categories(statut = "publié") {
+    const r = await query(
+      `SELECT DISTINCT categorie FROM videos WHERE statut = $1 AND categorie IS NOT NULL AND categorie <> '' ORDER BY categorie`,
+      [statut],
+    );
+    return r.rows.map((x) => x.categorie);
   },
 
   // ── Toutes les vidéos y compris brouillons (admin) ──────────
