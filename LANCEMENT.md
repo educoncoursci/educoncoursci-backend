@@ -171,3 +171,9 @@ Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en ha
 - Bouton « Installer l'application » : pied de page et accueil.
 - Android : coller l'empreinte SHA-256 dans .well-known/assetlinks.json après création du compte Play.
 - Fiche pas à pas : kit-boutiques/FICHE-BOUTIQUES.md.
+
+## Déploiement GitHub → Render (à lire)
+- Le dépôt doit contenir TOUS les fichiers du ZIP, y compris les nouveaux (ex. services/sessionUtilisateur.js, services/cvDesign.js, services/cvStructure.js, middleware/*). Une erreur « Cannot find module » signifie qu'un fichier n'a pas été ajouté : `git add -A` puis `git commit` puis `git push`.
+- Versionnez aussi package-lock.json (créé par `npm install`).
+- Modèles de CV avec photo : config/modelesCv.js (30 modèles : 5 mises en page × 6 couleurs).
+- Modèles de CV : 5 mises en page (Latéral, Prestige, Classique, Élégant, Moderne) × 6 couleurs (Bleu marine, Anthracite, Bleu pétrole, Vert forêt, Bordeaux, Ardoise : couleurs sobres à fort contraste ; la couleur s’applique aussi à la présentation Sobre). Pour ajouter une couleur : une ligne dans PALETTES_DESIGN (config/modelesCv.js).
