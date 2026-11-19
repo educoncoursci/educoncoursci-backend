@@ -294,7 +294,7 @@ async function genererCertificatPDF(nomFichier, { titre, sousTitre, nomCandidat,
 
     doc.fillColor(COULEURS.primaire)
        .font("Helvetica-Bold").fontSize(14)
-       .text("EDUCONCOURSCI", 0, 60, { align: "center" });
+       .text("PROINSERTION CI", 0, 60, { align: "center" });
     doc.fillColor(COULEURS.gris)
        .font("Helvetica").fontSize(10)
        .text("Préparation aux concours de Côte d'Ivoire", 0, 80, { align: "center" });

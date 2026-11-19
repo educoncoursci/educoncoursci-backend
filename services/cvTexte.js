@@ -113,6 +113,7 @@ function preparerCorpsCV(contenuIA, data) {
 }
 
 module.exports = {
+  RUBRIQUES,
   preparerCorpsCV,
   estSeparateur,
   estTitreSection,
