@@ -7,6 +7,7 @@ const { genererCV, genererLM, genererConseilRevision, analyserATS, adapterCVOffr
 const { genererPDFTexte, genererCVStructure, supprimerFichier } = require("../services/pdf");
 const { genererCVDocx, genererLMDocx } = require("../services/docx");
 const { listerParCategorie, obtenirModele } = require("../config/modelesCv");
+const { genererCVDesign } = require("../services/cvDesign");
 const User = require("../models/User");
 
 // ════════════════════════════════════════════════════════════
@@ -155,7 +156,9 @@ if (type === "cv" && modeleId) {
 }
 
 // CV aux couleurs du modèle choisi (une colonne, lisible par les ATS)
-if (type === "cv" && style === "structure" && data) {
+if (type === "cv" && data && obtenirModele(modeleId)?.design) {
+  filePath = await genererCVDesign(data, contenu, obtenirModele(modeleId));
+} else if (type === "cv" && style === "structure" && data) {
   const modele = obtenirModele(modeleId);
   filePath = await genererCVStructure(data, contenu, modele);
 } else {

@@ -5,7 +5,45 @@
 //  ajoutées progressivement sans casser les modèles existants.
 // ============================================================
 
+
+// ── Modèles « design » avec photo (services/cvDesign.js) ─────
+//  4 mises en page × plusieurs couleurs. La photo est facultative.
+const PALETTES_DESIGN = {
+  marine:     { nom: "Bleu marine", primaire: "#1F3A5F", secondaire: "#3E5C86", accent: "#8FB0DA", clair: "#DCE5F2", trait: "#3E5C86" },
+  anthracite: { nom: "Anthracite",  primaire: "#25282E", secondaire: "#4A4F59", accent: "#A9B0BD", clair: "#DDE1E8", trait: "#59627A" },
+  petrole:    { nom: "Bleu pétrole", primaire: "#14566B", secondaire: "#2C7A91", accent: "#9BD1DF", clair: "#D7EBF0", trait: "#2C7A91" },
+  foret:      { nom: "Vert forêt",  primaire: "#1E4D3A", secondaire: "#3A7A60", accent: "#8CC5A8", clair: "#DCEDE4", trait: "#3A7A60" },
+  bordeaux:   { nom: "Bordeaux",    primaire: "#6B1F2E", secondaire: "#9A3346", accent: "#D9A0AA", clair: "#F1E0E3", trait: "#9A3346" },
+  ardoise:    { nom: "Gris ardoise", primaire: "#3F4E5E", secondaire: "#5F7387", accent: "#BFCBD8", clair: "#E0E6ED", trait: "#5F7387" },
+};
+const MISES_EN_PAGE_DESIGN = {
+  lateral:   { categorie: "Latéral (avec photo)",         nom: "Latéral",    ats: "prudence", description: "Colonne latérale colorée : photo, coordonnées, compétences et langues en barres ; parcours à droite." },
+  bandeau:   { categorie: "Prestige (avec photo)",        nom: "Prestige",   ats: "oui", description: "Grand bandeau coloré, photo ronde et titres soulignés d'une touche dorée." },
+  classique: { categorie: "Classique (avec photo)",       nom: "Classique",  ats: "oui", description: "Sobre et lisible : photo ronde, filet épais et titres en petites capitales." },
+  centre:    { categorie: "Élégant centré (avec photo)",  nom: "Élégant",    ats: "oui", description: "En-tête centré, losanges et titres espacés entre deux filets." },
+  pastille:  { categorie: "Moderne (avec photo)",         nom: "Moderne",    ats: "oui", description: "Bandeau avec coin doré, photo arrondie et titres en pastilles." },
+};
+const MODELES_DESIGN = {};
+for (const [layout, mep] of Object.entries(MISES_EN_PAGE_DESIGN)) {
+  for (const [cle, pal] of Object.entries(PALETTES_DESIGN)) {
+    MODELES_DESIGN[`${layout}_${cle}`] = {
+      nom: `${mep.nom} — ${pal.nom}`,
+      categorie: mep.categorie,
+      description: mep.description,
+      layout,
+      design: true,
+      photo: true,
+      palette: cle,
+      ats: mep.ats,
+      couleurs: { primaire: pal.primaire, secondaire: pal.secondaire, accent: pal.accent, clair: pal.clair, trait: pal.trait },
+      premium: false,
+    };
+  }
+}
+
 const MODELES_CV = {
+  ...MODELES_DESIGN,
+
   // ── CV ATS Classique ─────────────────────────────────────
   ats_classique_1: {
     nom: "ATS Classique — Sobre",
@@ -129,4 +167,4 @@ function obtenirModele(id) {
   return MODELES_CV[id] || MODELES_CV.ats_classique_1; // repli sûr par défaut
 }
 
-module.exports = { MODELES_CV, listerParCategorie, obtenirModele };
+module.exports = { MODELES_CV, PALETTES_DESIGN, listerParCategorie, obtenirModele };

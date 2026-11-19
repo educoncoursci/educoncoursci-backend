@@ -144,8 +144,12 @@ if (recherche) {
   });
 }
 
+const comptage = recherche
+  ? await query("SELECT COUNT(*)::int AS n FROM users WHERE nom ILIKE $1 OR email ILIKE $1", [`%${recherche}%`])
+  : await query("SELECT COUNT(*)::int AS n FROM users");
+
 res.json({
-  total:        utilisateurs.length,
+  total:        comptage.rows[0].n,
   utilisateurs,
 });
 

@@ -14,7 +14,8 @@
 const { query } = require("../config/database");
 const { genererCV, genererLM, genererRedaction, genererQuestionsEntretien, analyserEntretien } = require("../services/claude");
 const { genererCVStructure, genererPDFTexte, supprimerFichier } = require("../services/pdf");
-const { obtenirModele } = require("../config/modelesCv");
+const { obtenirModele, MODELES_CV, PALETTES_DESIGN } = require("../config/modelesCv");
+const { genererCVDesign, lirePhoto } = require("../services/cvDesign");
 const { TYPES_CV, TYPES_LM } = require("../config/typesCv");
 
 const { TYPES_REDACTION, estRedaction, champsRequis, tousLesChamps, listerPourClient } = require("../config/typesRedaction");
@@ -106,6 +107,21 @@ function nomAffiche(c) {
   return c.pack_nom ? `${c.pack_nom} · ${base}` : base;
 }
 
+
+// Choix de présentation du CV : modèle « design » et photo (facultative).
+// Ni l'un ni l'autre ne passent par l'IA ; on ne garde que des valeurs valides.
+function nettoyerChoixDesign(donnees) {
+  const id = String(donnees.modele || "");
+  if (MODELES_CV[id]?.design) donnees.modele = id; else delete donnees.modele;
+  // Couleur choisie (s'applique aussi à la présentation sobre) : cohérente avec le modèle design s'il y en a un
+  const pal = String(donnees.palette || "");
+  if (donnees.modele) donnees.palette = MODELES_CV[donnees.modele].palette;
+  else if (PALETTES_DESIGN[pal]) donnees.palette = pal;
+  else delete donnees.palette;
+  if (donnees.photo && lirePhoto(donnees.photo)) donnees.photo = String(donnees.photo).trim(); else delete donnees.photo;
+  return donnees;
+}
+
 function vueCommande(c) {
   const etat = etatPaiement(c);
   const vue = {
@@ -140,6 +156,7 @@ function vueCommande(c) {
 exports.creer = async (req, res) => {
   try {
     const { type, ...donnees } = req.body || {};
+    nettoyerChoixDesign(donnees);
     const lettre = estLettre(type);
     const redaction = estRedaction(type);
     const def = redaction ? TYPES_REDACTION[type] : lettre ? TYPES_LM[type] : TYPES_CV[type];
@@ -199,6 +216,7 @@ exports.creer = async (req, res) => {
 exports.creerPack = async (req, res) => {
   try {
     const { pack, ...donnees } = req.body || {};
+    nettoyerChoixDesign(donnees);
     if (!estPack(pack)) return res.status(400).json({ error: "Pack invalide." });
     const produit = (await query(`SELECT * FROM produits WHERE id = $1 AND actif = TRUE`, [pack])).rows[0];
     if (!produit) return res.status(400).json({ error: "Ce pack n'est pas disponible pour le moment." });
@@ -478,8 +496,15 @@ exports.telechargerPDF = async (req, res) => {
     if (lettre) {
       chemin = await genererPDFTexte(c.contenu, `DOC_${nom}_${Date.now()}`, "lm", null, { data: donnees, modele: null, titre: TYPES_REDACTION[c.produit_id]?.titre });
     } else {
-      const modele = obtenirModele(TYPES_CV[c.produit_id]?.modele) || obtenirModele("ats_classique_1");
-      chemin = await genererCVStructure(donnees, c.contenu, modele);
+      if (donnees.modele && MODELES_CV[donnees.modele]?.design) {
+        chemin = await genererCVDesign(donnees, c.contenu, obtenirModele(donnees.modele));
+      } else {
+        const base = obtenirModele(TYPES_CV[c.produit_id]?.modele) || obtenirModele("ats_classique_1");
+        const pal = PALETTES_DESIGN[donnees.palette];
+        // Présentation sobre : seule la couleur des titres et des filets change (mise en page inchangée)
+        const modele = pal ? { ...base, couleurs: { ...base.couleurs, primaire: pal.primaire, accent: pal.secondaire } } : base;
+        chemin = await genererCVStructure(donnees, c.contenu, modele);
+      }
     }
     const prefixe = c.produit_id.startsWith("cv-") ? "CV" : c.produit_id.startsWith("lm-") ? "LM" : estRedaction(c.produit_id) ? "DOC" : "CV";
     res.download(chemin, `${prefixe}_${nom}.pdf`, (err) => {
