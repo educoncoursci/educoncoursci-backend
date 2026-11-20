@@ -21,7 +21,7 @@ tableaux de bord Render / Netlify : aucune console n'est nécessaire.
 (`FRONTEND_URL` doit être exactement l'URL Netlify, sinon le site ne peut pas appeler l'API).
 
 **Importantes** :
-- `ANTHROPIC_API_KEY` — CV, lettres, assistant et générateur de QCM par IA.
+- `ANTHROPIC_API_KEY` — CV, lettres, assistant.
 - `BREVO_API_KEY` et `EMAIL_FROM` — e-mails (alertes de paiement, confirmations).
   `ADMIN_EMAIL` reçoit l'alerte à chaque nouveau paiement à valider.
 - `WAVE_NUMERO`, `OM_NUMERO` (et `MTN_NUMERO`, `MOOV_NUMERO` si utilisés) — numéros affichés pour le paiement manuel.
@@ -177,3 +177,19 @@ Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en ha
 - Versionnez aussi package-lock.json (créé par `npm install`).
 - Modèles de CV avec photo : config/modelesCv.js (30 modèles : 5 mises en page × 6 couleurs).
 - Modèles de CV : 5 mises en page (Latéral, Prestige, Classique, Élégant, Moderne) × 6 couleurs (Bleu marine, Anthracite, Bleu pétrole, Vert forêt, Bordeaux, Ardoise : couleurs sobres à fort contraste ; la couleur s’applique aussi à la présentation Sobre). Pour ajouter une couleur : une ligne dans PALETTES_DESIGN (config/modelesCv.js).
+
+## Rubrique Concours (refonte)
+- Deux onglets publics : **Concours en cours** et **Concours à venir** (ouverture datée dans les 30 prochains jours). Endpoint : `GET /api/concours/rubriques`.
+- Le classement est calculé **à chaque lecture** à partir des dates (fuseau Africa/Abidjan) : aucun traitement manuel ni tâche planifiée nécessaire. Code : `services/concoursPublic.js`.
+- Un concours n'est publié que s'il a : une **source officielle** (lien ou mention), une **date d'ouverture** précise, et « Date vérifiée » cochée. Sans date limite, il faut une « Dernière vérification » de moins de 30 jours.
+- Dans l'admin (Concours), chaque ligne indique « Publié : en cours / à venir » ou « Non publié : raison ».
+- Supprimés : Vidéos, QCM, examen blanc, préparation, classement, progression/scores, anciennes pages en-cours / à venir / terminés (redirigées par `fe/_redirects`). Les tables de la base (videos, qcm, scores) ne sont PAS supprimées : aucune donnée n'est perdue.
+- Rubrique **Examens** conservée (page, bibliothèque de sujets).
+
+## Sécurité (audit) — à retenir
+- **Wave (API)** : dans le tableau de bord Wave Business, l'adresse des notifications est `https://<votre-backend>/api/payment/wave/webhook` et le **secret de signature** fourni par Wave doit être copié dans `WAVE_WEBHOOK_SECRET` (Render → Environment). Sans ce secret, aucune notification n'est acceptée : le paiement reste « en attente » et vous le validez à la main (/admin/paiements.html). Le serveur suit le format officiel (en-tête `Wave-Signature`, rejet au-delà de 5 minutes).
+- **Mode manuel (Mobile Money)** : avant de cliquer « Valider », vérifiez dans votre application que **le montant ET l'identifiant** de la transaction sont bien arrivés. Le serveur ne peut pas le vérifier à votre place.
+- Changer d'adresse e-mail exige maintenant le mot de passe actuel (Dashboard → Profil).
+- Code 2FA : 8 essais ratés → compte bloqué 15 min. Activez la 2FA sur le compte administrateur (Profil → Sécurité).
+- `.gitignore` ajouté : le fichier `.env` n'est plus envoyé sur GitHub. Liste des variables : `.env.example`. Si une clé a un jour été publiée sur GitHub, **changez-la** (la supprimer du dépôt ne suffit pas).
+- Retirez `DIAGNOSTIC_SECRET` de Render quand le diagnostic e-mail/stockage est terminé.

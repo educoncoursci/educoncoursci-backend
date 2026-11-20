@@ -61,8 +61,8 @@ const limitePaiement = rateLimit({ windowMs: 60 * 60 * 1000, max: 40, message: m
 // ── CORS ──────────────────────────────────────────────────────
 // Autorise les appels depuis ton frontend Netlify
 const originesAutorisees = [
-"http://localhost:5500",
-"http://localhost:3000",
+// Adresses de développement : jamais acceptées en production
+...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:5500", "http://localhost:3000"]),
 // Nouvelle et ancienne adresses Netlify : le site reste joignable pendant le changement de nom
 "https://proinsertionci.netlify.app",
 "https://educoncoursci.netlify.app",
@@ -140,7 +140,6 @@ app.use("/api/concours", require("./routes/concours"));
 app.use("/api/referentiels", require("./routes/referentiels"));
 app.use("/api/eligibilite", require("./routes/eligibilite"));
 app.use("/api/alertes", require("./routes/alertes"));
-app.use("/api/progression", require("./routes/progression"));
 app.use("/api/candidatures-concours", require("./routes/candidaturesConcours"));
 app.use("/api/assistant-concours", require("./routes/assistantConcours"));
 app.use("/api/push", require("./routes/push"));
@@ -149,9 +148,6 @@ app.use("/api/marketplace", require("./routes/marketplace"));
 app.use("/api/messages", require("./routes/messages"));
 app.use("/api/vitrine", require("./routes/vitrine"));
 app.use("/api/pdfs",     require("./routes/pdfs"));
-app.use("/api/videos",   require("./routes/videos"));
-app.use("/api/qcm",      require("./routes/qcm"));
-app.use("/api/qcm-ia",   require("./routes/qcmIA")); // Générateur de QCM par IA (admin)
 app.use("/api/academie", require("./routes/academie")); // Académie : cours, leçons, progression
 app.use("/api/recruteurs", require("./routes/recruteurs")); // Espace recruteurs : offres soumises
 app.use("/api/catalogue", require("./routes/catalogue")); // Catalogue des produits et tarifs
