@@ -160,18 +160,38 @@ return {
 // tiers. Voir docs.wave.com/webhook — le payload signé est le corps
 // BRUT de la requête (pas le JSON re-sérialisé, l'ordre des clés et
 // les espaces changeraient la signature). ──────────────────────
-verifierSignatureWebhook(corpsBrut, signatureRecue) {
-if (!WEBHOOK_SECRET) return false;
-const attendu = crypto
-  .createHmac("sha256", WEBHOOK_SECRET)
-  .update(corpsBrut)
-  .digest("hex");
-// Comparaison à temps constant pour éviter les attaques par timing
-try {
-  return crypto.timingSafeEqual(Buffer.from(attendu), Buffer.from(signatureRecue || ""));
-} catch {
-  return false; // longueurs différentes = signature invalide
+verifierSignatureWebhook(corpsBrut, enteteSignature, enteteAutorisation) {
+if (!WEBHOOK_SECRET) return false; // sans secret configuré, AUCUN webhook n'est accepté
+if (!corpsBrut || !Buffer.isBuffer(corpsBrut)) return false; // le corps BRUT est indispensable
+
+const egal = (a, b) => {
+  const x = Buffer.from(String(a));
+  const y = Buffer.from(String(b));
+  return x.length === y.length && crypto.timingSafeEqual(x, y); // temps constant
+};
+
+// Mode « secret partagé » de Wave : Authorization: Bearer <secret>
+if (typeof enteteAutorisation === "string" && enteteAutorisation.startsWith("Bearer ")) {
+  if (egal(enteteAutorisation.slice(7).trim(), WEBHOOK_SECRET)) return true;
 }
+
+// Mode « clé de signature » (recommandé) : Wave-Signature: t=<horodatage>,v1=<hex>[,v1=<hex>…]
+// Chaîne signée = horodatage + corps brut (sans séparateur), HMAC-SHA256 en hexadécimal.
+if (typeof enteteSignature !== "string") return false;
+let t = null;
+const signatures = [];
+for (const partie of enteteSignature.split(",")) {
+  const [cle, ...reste] = partie.trim().split("=");
+  const valeur = reste.join("=");
+  if (cle === "t") t = valeur;
+  else if (cle === "v1") signatures.push(valeur);
+}
+if (!t || !/^\d{1,12}$/.test(t) || !signatures.length) return false;
+// Anti-rejeu : on refuse tout message de plus de 5 minutes (ou daté du futur)
+const ecart = Math.abs(Date.now() / 1000 - Number(t));
+if (!(ecart <= 300)) return false;
+const attendu = crypto.createHmac("sha256", WEBHOOK_SECRET).update(t).update(corpsBrut).digest("hex");
+return signatures.some((sig) => egal(sig, attendu));
 },
 
 // ── Retourne les instructions de paiement Wave (choisit le meilleur
