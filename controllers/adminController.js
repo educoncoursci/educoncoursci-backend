@@ -6,9 +6,6 @@
 const User        = require("../models/User");
 const Concours    = require("../models/Concours");
 const PDF         = require("../models/PDF");
-const Video       = require("../models/Video");
-const QCM         = require("../models/QCM");
-const Score       = require("../models/Score");
 const Transaction = require("../models/Transaction");
 const Emploi      = require("../models/Emploi");
 const Journal     = require("../models/Journal");
@@ -27,9 +24,6 @@ totalUsers,
 totalPremium,
 totalConcours,
 totalPDFs,
-totalVideos,
-totalQCM,
-totalScores,
 totalOffresEmploi,
 revenusTotal,
 revenusQMois,
@@ -41,9 +35,6 @@ User.count(),
 User.countPremium(),
 Concours.count(),
 PDF.count(),
-Video.count(),
-QCM.count(),
-Score.count(),
 Emploi.count(),
 Transaction.totalRevenus(),
 Transaction.revenusduMois(),
@@ -93,9 +84,6 @@ res.json({
   contenu: {
     concours: totalConcours,
     pdfs:     totalPDFs,
-    videos:   totalVideos,
-    qcm:      totalQCM,
-    scores:   totalScores,
     offresEmploi: totalOffresEmploi,
   },
   finances: {

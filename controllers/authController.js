@@ -9,6 +9,9 @@ const jwt    = require("jsonwebtoken");
 const crypto = require("crypto");
 const User   = require("../models/User");
 
+// Hash bcrypt (12 tours) d'une valeur sans usage : sert uniquement à égaliser le temps de réponse.
+const HASH_FACTICE = bcrypt.hashSync("valeur-sans-usage-" + crypto.randomBytes(8).toString("hex"), 12);
+
 // ── Générer un token JWT ──────────────────────────────────────
 function genererToken(user) {
 return jwt.sign(
@@ -58,7 +61,7 @@ function envoyerLienVerification(user) {
 
 const register = async (req, res) => {
 try {
-const { nom, email, password } = req.body;
+const { nom, email, password } = req.body || {};
 
 // Validation des champs
 if (!nom || !email || !password) {
@@ -77,7 +80,7 @@ if (typeof password !== "string" || password.length < 8 || password.length > 200
   });
 }
 
-if (!emailValide(email)) {
+if (typeof email !== "string" || !emailValide(email)) {
   return res.status(400).json({ error: "Adresse e-mail invalide." });
 }
 
@@ -127,17 +130,24 @@ res.status(500).json({ error: "Erreur lors de la création du compte." });
 // ── POST /api/auth/login ──────────────────────────────────────
 const login = async (req, res) => {
 try {
-const { email, password } = req.body;
+const { email, password } = req.body || {};
 
 if (!email || !password) {
   return res.status(400).json({
     error: "E-mail et mot de passe requis."
   });
 }
+// Types stricts : un objet ou un nombre envoyé à la place d'une chaîne ne doit jamais provoquer d'erreur serveur
+if (typeof email !== "string" || typeof password !== "string" || email.length > 254 || password.length > 200) {
+  return res.status(400).json({ error: "E-mail ou mot de passe invalide." });
+}
 
 // Trouver l'utilisateur
 const user = await User.findByEmail(email.toLowerCase().trim());
 if (!user) {
+  // Même durée de traitement qu'un vrai compte : on ne révèle pas, par le temps de
+  // réponse, quels e-mails sont inscrits.
+  await bcrypt.compare(password, HASH_FACTICE);
   return res.status(401).json({
     error: "E-mail ou mot de passe incorrect."
   });
@@ -237,16 +247,16 @@ res.json({ message: "Déconnexion réussie." });
 // ── POST /api/auth/change-password ───────────────────────────
 const changePassword = async (req, res) => {
 try {
-const { ancienPassword, nouveauPassword } = req.body;
+const { ancienPassword, nouveauPassword } = req.body || {};
 
-if (!ancienPassword || !nouveauPassword) {
+if (!ancienPassword || !nouveauPassword || typeof ancienPassword !== "string" || typeof nouveauPassword !== "string") {
   return res.status(400).json({
     error: "Ancien et nouveau mot de passe requis."
   });
 }
-if (nouveauPassword.length < 8) {
+if (nouveauPassword.length < 8 || nouveauPassword.length > 200) {
   return res.status(400).json({
-    error: "Le nouveau mot de passe doit contenir au moins 8 caractères."
+    error: "Le nouveau mot de passe doit contenir entre 8 et 200 caractères."
   });
 }
 
@@ -281,8 +291,8 @@ res.status(500).json({ error: "Erreur lors du changement de mot de passe." });
 // ════════════════════════════════════════════════════════════
 const forgotPassword = async (req, res) => {
 try {
-const { email } = req.body;
-if (!email) {
+const { email } = req.body || {};
+if (!email || typeof email !== "string" || email.length > 254) {
   return res.status(400).json({ error: "E-mail requis." });
 }
 
@@ -329,12 +339,12 @@ res.status(500).json({ error: "Erreur lors de la demande de réinitialisation." 
 // ════════════════════════════════════════════════════════════
 const resetPassword = async (req, res) => {
 try {
-const { token, password } = req.body;
-if (!token || !password) {
+const { token, password } = req.body || {};
+if (!token || !password || typeof token !== "string" || typeof password !== "string" || token.length > 200) {
   return res.status(400).json({ error: "Token et nouveau mot de passe requis." });
 }
-if (password.length < 8) {
-  return res.status(400).json({ error: "Le mot de passe doit contenir au moins 8 caractères." });
+if (password.length < 8 || password.length > 200) {
+  return res.status(400).json({ error: "Le mot de passe doit contenir entre 8 et 200 caractères." });
 }
 
 const user = await User.findByResetToken(token);

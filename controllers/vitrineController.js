@@ -7,7 +7,6 @@
 
 const User      = require("../models/User");
 const Concours  = require("../models/Concours");
-const QCM       = require("../models/QCM");
 const PDF       = require("../models/PDF");
 const Newsletter = require("../models/Newsletter");
 const Temoignage = require("../models/Temoignage");
@@ -16,12 +15,11 @@ const emailService = require("../services/email");
 // ── GET /api/vitrine/stats — Statistiques publiques (page d'accueil) ──
 exports.statsPubliques = async (req, res) => {
 try {
-const [totalUtilisateurs, totalConcours, concoursOuverts, totalQCM, totalPDFs] =
+const [totalUtilisateurs, totalConcours, concoursOuverts, totalPDFs] =
   await Promise.all([
     User.count(),
     Concours.count(),
     Concours.countOuverts(),
-    QCM.count(),
     PDF.count(),
   ]);
 
@@ -29,7 +27,6 @@ res.json({
   totalUtilisateurs,
   totalConcours,
   concoursOuverts,
-  totalQCM,
   totalPDFs,
 });
 

@@ -9,6 +9,7 @@
 const speakeasy = require("speakeasy");
 const qrcode    = require("qrcode");
 const bcrypt    = require("bcryptjs");
+const limites   = require("../middleware/limiteConnexion");
 const jwt       = require("jsonwebtoken");
 const crypto    = require("crypto");
 const User      = require("../models/User");
@@ -126,8 +127,8 @@ exports.desactiver = async (req, res) => {
 // ════════════════════════════════════════════════════════════
 exports.verifierLogin = async (req, res) => {
   try {
-    const { tempToken, token, codeRecuperation } = req.body;
-    if (!tempToken || (!token && !codeRecuperation)) {
+    const { tempToken, token, codeRecuperation } = req.body || {};
+    if (typeof tempToken !== "string" || (!token && !codeRecuperation) || (typeof token !== "string" && typeof codeRecuperation !== "string") || (token || codeRecuperation || "").length > 64) {
       return res.status(400).json({ error: "Code de vérification requis." });
     }
 
@@ -144,6 +145,17 @@ exports.verifierLogin = async (req, res) => {
     const utilisateur = await User.findAvecSecretDeuxFacteur(payload.id);
     if (!utilisateur || !utilisateur.two_factor_enabled) {
       return res.status(400).json({ error: "2FA non active sur ce compte." });
+    }
+
+    // Blocage par compte (en plus de la limite par adresse IP du serveur)
+    try {
+      const minutes = await limites.blocage2FA(payload.id);
+      if (minutes) {
+        res.set("Retry-After", String(minutes * 60));
+        return res.status(429).json({ error: `Trop de tentatives. Réessayez dans ${minutes} minute${minutes > 1 ? "s" : ""}.` });
+      }
+    } catch (e) {
+      console.error("limite 2FA (lecture) :", e.message);
     }
 
     let verifie = false;
@@ -168,8 +180,10 @@ exports.verifierLogin = async (req, res) => {
     }
 
     if (!verifie) {
+      await limites.echec2FA(payload.id).catch((e) => console.error("limite 2FA (écriture) :", e.message));
       return res.status(401).json({ error: "Code incorrect." });
     }
+    await limites.reussite2FA(payload.id).catch(() => {});
 
     // Ré-utilise les infos complètes de l'utilisateur pour le JWT final
     const complet = await User.findByEmail(utilisateur.email);

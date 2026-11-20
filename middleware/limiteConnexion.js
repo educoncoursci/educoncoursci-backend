@@ -83,8 +83,38 @@ async function limiteConnexionParEmail(req, res, next) {
   next();
 }
 
+// ── Blocage par compte pour la 2ᵉ étape (code 2FA) ─────────────
+// Même table et même logique que la connexion : la clé est « 2fa:<id> ».
+// Sans cela, quelqu'un connaissant le mot de passe pourrait essayer les
+// codes à 6 chiffres depuis de nombreuses adresses IP.
+async function blocage2FA(userId) {
+  const k = `2fa:${userId}`;
+  const r = await query(
+    `SELECT n, EXTRACT(EPOCH FROM (NOW() - debut)) * 1000 AS ecoule_ms FROM tentatives_connexion WHERE cle = $1`,
+    [k],
+  );
+  const e = r.rows[0];
+  if (e && Number(e.ecoule_ms) <= FENETRE_MS && e.n >= MAX_ECHECS) {
+    return Math.max(1, Math.ceil((FENETRE_MS - Number(e.ecoule_ms)) / 60000));
+  }
+  return 0; // minutes restantes, 0 = pas bloqué
+}
+async function echec2FA(userId) {
+  await query(
+    `INSERT INTO tentatives_connexion (cle, n, debut) VALUES ($1, 1, NOW())
+     ON CONFLICT (cle) DO UPDATE SET
+       n     = CASE WHEN tentatives_connexion.debut < NOW() - INTERVAL '${FENETRE_MIN} minutes' THEN 1 ELSE tentatives_connexion.n + 1 END,
+       debut = CASE WHEN tentatives_connexion.debut < NOW() - INTERVAL '${FENETRE_MIN} minutes' THEN NOW() ELSE tentatives_connexion.debut END`,
+    [`2fa:${userId}`],
+  );
+}
+async function reussite2FA(userId) {
+  await query(`DELETE FROM tentatives_connexion WHERE cle = $1`, [`2fa:${userId}`]);
+}
+
 module.exports = {
   limiteConnexionParEmail,
+  blocage2FA, echec2FA, reussite2FA,
   MAX_ECHECS,
   _reinitialiser: () => query(`DELETE FROM tentatives_connexion`),
 };

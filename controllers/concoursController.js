@@ -6,6 +6,7 @@
 const Concours = require("../models/Concours");
 const Journal  = require("../models/Journal");
 const Statut   = require("../services/concoursStatut");
+const Public   = require("../services/concoursPublic");
 
 // ════════════════════════════════════════════════════════════
 //  GET /api/concours — Liste avec filtres
@@ -70,7 +71,9 @@ if (concours.premium && req.user && req.user.role !== "admin" && !req.user.premi
   });
 }
 
-res.json({ concours });
+// Rubrique du jour + champs publics normalisés (null = « Information non communiquée officiellement »)
+const publicFiche = Public.fichePourDetail(concours);
+res.json({ concours: { ...concours, publication: publicFiche } });
 
 } catch (err) {
 console.error("Erreur détail concours :", err.message);
@@ -184,8 +187,8 @@ res.status(500).json({ error: "Erreur lors de la suppression du concours." });
 // GET /api/concours/compteurs — compteurs dynamiques par catégorie d'affichage
 exports.compteurs = async (req, res) => {
 try {
-await Statut.rafraichirSiNecessaire();
-res.json(await Concours.compteurs());
+const r = await Public.rubriques();
+res.json({ en_cours: r.en_cours.length, a_venir: r.a_venir.length, fenetre_jours: r.fenetre_jours });
 } catch (err) {
 console.error("Erreur compteurs concours :", err.message);
 res.status(500).json({ error: "Erreur serveur." });
@@ -194,8 +197,8 @@ res.status(500).json({ error: "Erreur serveur." });
 
 exports.ouverts = async (req, res) => {
 try {
-const concours = await Concours.findOuverts();
-res.json({ concours });
+const r = await Public.rubriques();
+res.json({ concours: r.en_cours.slice(0, 6) });
 } catch (err) {
 console.error("Erreur concours ouverts :", err.message);
 res.status(500).json({ error: "Erreur serveur." });
@@ -241,5 +244,28 @@ res.json({
 } catch (err) {
 console.error("Erreur reseeder concours :", err.message);
 res.status(500).json({ error: "Erreur lors de l'ensemencement : " + err.message });
+}
+};
+// ════════════════════════════════════════════════════════════
+//  GET /api/concours/rubriques — Les deux onglets publics (en cours / à venir)
+//  Calculé à chaque appel à la date du jour (Africa/Abidjan).
+// ════════════════════════════════════════════════════════════
+exports.rubriques = async (req, res) => {
+try {
+res.set("Cache-Control", "public, max-age=60");
+res.json(await Public.rubriques());
+} catch (err) {
+console.error("Erreur rubriques concours :", err.message);
+res.status(500).json({ error: "Erreur lors de la récupération des concours." });
+}
+};
+
+// GET /api/concours/rapport-publication (admin) — publié ou non, et pourquoi
+exports.rapportPublication = async (req, res) => {
+try {
+res.json({ aujourdhui: Statut.aujourdhuiAbidjan(), concours: await Public.rapportPublication() });
+} catch (err) {
+console.error("Erreur rapport publication :", err.message);
+res.status(500).json({ error: "Erreur serveur." });
 }
 };

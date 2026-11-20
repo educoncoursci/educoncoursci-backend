@@ -25,7 +25,7 @@ exports.rechercher = async (req, res) => {
     const estPremium = req.user?.premium || false;
 
     // ── Recherches en base, en parallèle ────────────────────
-    const [concoursRes, pdfsRes, videosRes, qcmRes] = await Promise.all([
+    const [concoursRes, pdfsRes] = await Promise.all([
       query(
         `SELECT id, titre, organisme, categorie, statut
          FROM concours
@@ -37,20 +37,6 @@ exports.rechercher = async (req, res) => {
         `SELECT id, titre, categorie, matiere, premium
          FROM pdfs
          WHERE statut = 'publié' AND (titre ILIKE $1 OR categorie ILIKE $1 OR matiere ILIKE $1)
-         ORDER BY created_at DESC LIMIT 5`,
-        [terme]
-      ),
-      query(
-        `SELECT id, titre, categorie, premium
-         FROM videos
-         WHERE statut = 'publié' AND (titre ILIKE $1 OR categorie ILIKE $1)
-         ORDER BY created_at DESC LIMIT 5`,
-        [terme]
-      ),
-      query(
-        `SELECT id, titre, matiere, difficulte, premium
-         FROM qcm
-         WHERE statut = 'publié' AND (titre ILIKE $1 OR matiere ILIKE $1)
          ORDER BY created_at DESC LIMIT 5`,
         [terme]
       ),
@@ -86,18 +72,6 @@ exports.rechercher = async (req, res) => {
         verrouille: p.verrouille,
         lien: `/bibliotheque.html?pdf=${p.id}`,
       })),
-      videos: videosRes.rows.map(marquerVerrouille).map(v => ({
-        type: "video", id: v.id, titre: v.titre,
-        sousTitre: v.categorie,
-        verrouille: v.verrouille,
-        lien: `/videos.html?video=${v.id}`,
-      })),
-      qcm: qcmRes.rows.map(marquerVerrouille).map(q => ({
-        type: "qcm", id: q.id, titre: q.titre,
-        sousTitre: `${q.matiere} · ${q.difficulte}`,
-        verrouille: q.verrouille,
-        lien: `/quiz.html?qcm=${q.id}`,
-      })),
       documentsGenerables: [
         ...documentsProTrouves.map(t => ({
           type: "document_generable", id: t.id, titre: t.nom,
@@ -114,7 +88,6 @@ exports.rechercher = async (req, res) => {
 
     const total =
       resultats.concours.length + resultats.documents.length +
-      resultats.videos.length + resultats.qcm.length +
       resultats.documentsGenerables.length;
 
     res.json({ terme: termeBrut, total, resultats });

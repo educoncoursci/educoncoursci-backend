@@ -92,17 +92,6 @@ const upload = creerUploadeur({
   maxSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB) || 20,
 });
 
-// ── Upload Vidéo ─────────────────────────────────────────────
-// Le lien YouTube reste la méthode recommandée dans l'admin ;
-// l'upload direct est une option secondaire pour les cas où
-// YouTube ne convient pas (voir admin/videos.html).
-const uploadVideo = creerUploadeur({
-  dossier: "videos",
-  mimetypesAutorises: ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"],
-  messageErreur: "Formats acceptés : MP4, WebM, MOV.",
-  maxSizeMb: parseInt(process.env.MAX_VIDEO_SIZE_MB) || 200,
-});
-
 // ── Upload Photo de profil ──────────────────────────────────
 const uploadPhoto = creerUploadeur({
   dossier: "photos",
@@ -153,7 +142,6 @@ const handleUploadError = (err, req, res, next) => {
 
 module.exports = {
   upload,
-  uploadVideo,
   uploadPhoto,
   handleUploadError,
   envoyerVersCloudinary,

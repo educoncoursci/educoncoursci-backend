@@ -7,6 +7,9 @@
 
 const Forum = require("../models/Forum");
 
+// Catégories autorisées (identiques à celles proposées par la page Communauté)
+const CATEGORIES_FORUM = ["general", "entraide", "question", "actualite"];
+
 // ════════════════════════════════════════════════════════════
 //  GET /api/forum/sujets — Liste des sujets (public)
 // ════════════════════════════════════════════════════════════
@@ -51,20 +54,34 @@ exports.detailSujet = async (req, res) => {
 // ════════════════════════════════════════════════════════════
 exports.creerSujet = async (req, res) => {
   try {
-    const { titre, contenu, categorie, concoursId } = req.body;
+    const { titre, contenu, categorie, concoursId } = req.body || {};
 
-    if (!titre || titre.trim().length < 5) {
+    if (typeof titre !== "string" || titre.trim().length < 5) {
       return res.status(400).json({ error: "Le titre doit contenir au moins 5 caractères." });
     }
-    if (!contenu || contenu.trim().length < 10) {
+    if (titre.trim().length > 200) {
+      return res.status(400).json({ error: "Le titre est trop long (200 caractères maximum)." });
+    }
+    if (typeof contenu !== "string" || contenu.trim().length < 10) {
       return res.status(400).json({ error: "Le message doit contenir au moins 10 caractères." });
+    }
+    if (contenu.trim().length > 5000) {
+      return res.status(400).json({ error: "Le message est trop long (5 000 caractères maximum)." });
+    }
+    // Catégorie : liste fermée (jamais de texte libre, qui serait affiché dans les pages du forum)
+    if (categorie !== undefined && categorie !== null && categorie !== "" && !CATEGORIES_FORUM.includes(categorie)) {
+      return res.status(400).json({ error: "Catégorie invalide." });
+    }
+    const idConcours = concoursId === undefined || concoursId === null || concoursId === "" ? null : Number(concoursId);
+    if (idConcours !== null && !Number.isInteger(idConcours)) {
+      return res.status(400).json({ error: "Concours invalide." });
     }
 
     const sujet = await Forum.creerSujet(req.user.id, {
       titre: titre.trim(),
       contenu: contenu.trim(),
-      categorie,
-      concoursId,
+      categorie: categorie || "general",
+      concoursId: idConcours,
     });
     res.status(201).json({ message: "Sujet publié.", sujet });
   } catch (err) {
@@ -118,9 +135,12 @@ exports.repondre = async (req, res) => {
     if (!sujet) {
       return res.status(404).json({ error: "Sujet introuvable." });
     }
-    const { contenu } = req.body;
-    if (!contenu || contenu.trim().length < 2) {
+    const { contenu } = req.body || {};
+    if (typeof contenu !== "string" || contenu.trim().length < 2) {
       return res.status(400).json({ error: "La réponse est trop courte." });
+    }
+    if (contenu.trim().length > 5000) {
+      return res.status(400).json({ error: "La réponse est trop longue (5 000 caractères maximum)." });
     }
     const reponse = await Forum.repondre(req.params.id, req.user.id, contenu.trim());
     res.status(201).json({ message: "Réponse publiée.", reponse: { ...reponse, auteur_nom: req.user.nom } });

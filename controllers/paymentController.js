@@ -211,13 +211,24 @@ if (!PLANS[transaction.plan]) {
 const { dureeJours } = PLANS[transaction.plan];
 const expiration = Wave.calculerExpiration(dureeJours); // même formule pour les deux moyens
 
-const userMisAJour = await User.setPremium(transaction.user_id, {
-  premium: true,
-  plan:    transaction.plan,
-  expire:  expiration,
-});
+// Verrou atomique : une seule validation peut aboutir (double clic, deux admins…)
+const transactionMiseAJour = await Transaction.validerSiPasDejaValide(id);
+if (!transactionMiseAJour) {
+  return res.status(409).json({ error: "Cette transaction est déjà validée." });
+}
 
-const transactionMiseAJour = await Transaction.updateStatut(id, "validé");
+let userMisAJour;
+try {
+  userMisAJour = await User.setPremium(transaction.user_id, {
+    premium: true,
+    plan:    transaction.plan,
+    expire:  expiration,
+  });
+} catch (e) {
+  // Activation impossible : on remet la transaction en attente pour pouvoir réessayer
+  await Transaction.updateStatut(id, transaction.statut);
+  throw e;
+}
 
 notifierEnSilence(
   Email.envoyerConfirmationPaiement(
@@ -261,7 +272,10 @@ if (transaction.statut === "validé") {
   return res.status(409).json({ error: "Impossible de rejeter une transaction déjà validée. Résilie l'abonnement si besoin." });
 }
 
-const transactionMiseAJour = await Transaction.updateStatut(id, "échoué");
+const transactionMiseAJour = await Transaction.updateStatutSiNonValide(id, "échoué");
+if (!transactionMiseAJour) {
+  return res.status(409).json({ error: "Impossible de rejeter une transaction déjà validée. Résilie l'abonnement si besoin." });
+}
 
 if (transaction.email) {
   notifierEnSilence(
@@ -452,13 +466,21 @@ exports.webhookCinetPay = async (req, res) => {
       } else {
         const { dureeJours } = PLANS[transaction.plan] || {};
         if (dureeJours) {
-          const expiration = Wave.calculerExpiration(dureeJours);
-          await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
-          await Transaction.updateStatut(transaction.id, "validé");
+          // Verrou atomique : un webhook rejoué ou simultané n'active qu'une seule fois
+          const claimed = await Transaction.validerSiPasDejaValide(transaction.id);
+          if (claimed) {
+            try {
+              const expiration = Wave.calculerExpiration(dureeJours);
+              await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
+            } catch (e) {
+              await Transaction.updateStatut(transaction.id, transaction.statut); // permet le renvoi du webhook
+              throw e;
+            }
+          }
         }
       }
     } else if (!verification.succes && transaction) {
-      await Transaction.updateStatut(transaction.id, "échoué");
+      await Transaction.updateStatutSiNonValide(transaction.id, "échoué"); // ne défait jamais un paiement validé
     }
 
     res.status(200).send("OK");
@@ -538,10 +560,10 @@ exports.initierWave = async (req, res) => {
 // ════════════════════════════════════════════════════════════
 exports.webhookWave = async (req, res) => {
   try {
-    const signature = req.headers["wave-signature"] || req.headers["authorization"]?.replace("Bearer ", "");
-    const corpsBrut = req.rawBody || JSON.stringify(req.body);
-
-    if (!Wave.verifierSignatureWebhook(corpsBrut, signature)) {
+    // Authentification selon la documentation Wave (docs.wave.com/webhook) : en-tête
+    // Wave-Signature (« t=…,v1=… », HMAC-SHA256 de horodatage + corps brut) ou, à défaut,
+    // Authorization: Bearer <secret partagé>. Le corps BRUT est obligatoire : sans lui, refus.
+    if (!Wave.verifierSignatureWebhook(req.rawBody, req.headers["wave-signature"], req.headers["authorization"])) {
       console.error("Webhook Wave : signature invalide, requête ignorée.");
       return res.status(401).send("Signature invalide");
     }
@@ -561,6 +583,11 @@ exports.webhookWave = async (req, res) => {
     // Revérification systématique auprès de l'API Wave — jamais de
     // confiance aveugle dans le corps du webhook, même signé.
     const verification = await Wave.verifierSessionPaiement(sessionId);
+    // La session confirmée par Wave doit porter la référence de CETTE transaction
+    if (verification.clientReference && String(verification.clientReference).toUpperCase() !== String(clientReference).toUpperCase()) {
+      console.error(`Webhook Wave : référence incohérente (${clientReference} ≠ ${verification.clientReference}), ignoré.`);
+      return res.status(200).send("OK");
+    }
 
     // Même défense en profondeur que webhookCinetPay : Wave confirme
     // lui-même le montant réellement payé (verification.montant), on
@@ -581,13 +608,20 @@ exports.webhookWave = async (req, res) => {
       } else {
         const { dureeJours } = PLANS[transaction.plan] || {};
         if (dureeJours) {
-          const expiration = Wave.calculerExpiration(dureeJours);
-          await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
-          await Transaction.updateStatut(transaction.id, "validé");
+          const claimed = await Transaction.validerSiPasDejaValide(transaction.id);
+          if (claimed) {
+            try {
+              const expiration = Wave.calculerExpiration(dureeJours);
+              await User.setPremium(transaction.user_id, { premium: true, plan: transaction.plan, expire: expiration });
+            } catch (e) {
+              await Transaction.updateStatut(transaction.id, transaction.statut);
+              throw e;
+            }
+          }
         }
       }
     } else if (!verification.succes) {
-      await Transaction.updateStatut(transaction.id, "échoué");
+      await Transaction.updateStatutSiNonValide(transaction.id, "échoué");
     }
 
     res.status(200).send("OK");
