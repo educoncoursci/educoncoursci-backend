@@ -13,6 +13,8 @@ const admin   = require("../middleware/admin");
 // Routes publiques (lecture)
 router.get("/",         ctrl.liste);   // GET /api/concours
 router.get("/ouverts",  ctrl.ouverts); // GET /api/concours/ouverts
+router.get("/rubriques", ctrl.rubriques); // GET /api/concours/rubriques — les 2 onglets publics (AVANT /:id)
+router.get("/rapport-publication", auth, admin, ctrl.rapportPublication); // admin — AVANT /:id
 router.get("/compteurs", ctrl.compteurs); // GET /api/concours/compteurs — AVANT /:id
 router.get("/stats",    ctrl.stats);   // GET /api/concours/stats — AVANT /:id, sinon "stats" serait interprété comme un id
 

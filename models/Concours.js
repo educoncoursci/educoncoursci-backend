@@ -479,14 +479,9 @@ const Concours = {
 
   // ── Concours ouverts (pour la page d'accueil) ───────────────
   async findOuverts(limit = 6) {
-    const result = await query(
-      `SELECT * FROM concours
-       WHERE statut = 'ouvert'
-       ORDER BY created_at DESC
-       LIMIT $1`,
-      [limit],
-    );
-    return result.rows.map(formatConcours);
+    // Source unique : mêmes règles que l'onglet « Concours en cours » (dates + source officielle)
+    const { rubriques } = require("../services/concoursPublic");
+    return (await rubriques()).en_cours.slice(0, limit);
   },
 
   // ── Liste des catégories distinctes (pour les filtres) ───────
@@ -506,10 +501,8 @@ const Concours = {
   },
 
   async countOuverts() {
-    const result = await query(
-      `SELECT COUNT(*) FROM concours WHERE statut = 'ouvert'`,
-    );
-    return parseInt(result.rows[0].count, 10);
+    const { rubriques } = require("../services/concoursPublic");
+    return (await rubriques()).en_cours.length;
   },
 
   // ── Compteurs dynamiques par statut (jamais codés en dur — recalculés

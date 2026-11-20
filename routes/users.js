@@ -8,6 +8,7 @@ const express = require("express");
 const router  = express.Router();
 const auth    = require("../middleware/auth");
 const { nomValide, emailValide } = require("../middleware/neutraliser");
+const bcrypt  = require("bcryptjs");
 const User    = require("../models/User");
 const Score   = require("../models/Score");
 const { uploadPhoto, handleUploadError, cloudinaryConfigure, envoyerVersCloudinary } = require("../middleware/upload");
@@ -20,8 +21,8 @@ if (parseInt(req.params.id) !== req.user.id) {
   return res.status(403).json({ error: "Accès refusé." });
 }
 const { photoUrl } = req.body;
-if (photoUrl && !/^https?:\/\//.test(photoUrl)) {
-  return res.status(400).json({ error: "Le lien doit commencer par http:// ou https://." });
+if (photoUrl && (typeof photoUrl !== "string" || photoUrl.length > 500 || /[\s'"()<>\\]/.test(photoUrl) || !/^https?:\/\//i.test(photoUrl))) {
+  return res.status(400).json({ error: "Lien invalide : il doit commencer par http:// ou https://, sans espace ni guillemet (500 caractères maximum)." });
 }
 const user = await User.setPhoto(req.params.id, photoUrl || null);
 res.json({ message: "Photo de profil mise à jour.", user });
@@ -85,11 +86,11 @@ return res.status(403).json({ error: "Accès refusé." });
 // Champs modifiables par l'utilisateur lui-même : nom et email
 // uniquement. role/premium ne sont JAMAIS pris depuis req.body ici —
 // leur modification passe uniquement par les routes admin dédiées.
-const { nom, email } = req.body;
-if (nom !== undefined && !nomValide(nom)) {
+const { nom, email, password } = req.body || {};
+if (nom !== undefined && (typeof nom !== "string" || !nomValide(nom))) {
   return res.status(400).json({ error: "Nom invalide : lettres, chiffres, espaces, tirets et apostrophes uniquement." });
 }
-if (email !== undefined && !emailValide(email)) {
+if (email !== undefined && (typeof email !== "string" || !emailValide(email))) {
   return res.status(400).json({ error: "Adresse e-mail invalide." });
 }
 let emailNormalise = email;
@@ -97,6 +98,15 @@ if (email !== undefined) {
   emailNormalise = String(email).toLowerCase().trim();
   const actuel = await User.findById(req.params.id);
   if (actuel && actuel.email !== emailNormalise) {
+    // L'adresse e-mail sert à récupérer le compte : un jeton volé (ou une session laissée
+    // ouverte) ne doit pas suffire à la remplacer. Le titulaire doit prouver qu'il connaît
+    // son mot de passe (un administrateur modifiant le compte d'un autre n'est pas concerné).
+    if (parseInt(req.params.id) === req.user.id) {
+      const compte = await User.findByEmail(actuel.email);
+      if (typeof password !== "string" || !password || !compte || !(await bcrypt.compare(password, compte.password_hash))) {
+        return res.status(403).json({ error: "Mot de passe actuel requis et correct pour changer l'adresse e-mail." });
+      }
+    }
     if (await User.emailExiste(emailNormalise)) {
       return res.status(409).json({ error: "Cette adresse e-mail est déjà utilisée." });
     }

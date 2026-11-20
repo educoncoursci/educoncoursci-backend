@@ -47,6 +47,28 @@ const result = await query(
 return result.rows[0] || null;
 },
 
+// ── Passage à « validé » ATOMIQUE : une seule requête décide qui "gagne".
+// Deux validations simultanées (double clic admin, webhook rejoué) ne peuvent
+// plus toutes deux activer l'abonnement : la seconde ne trouve plus de ligne
+// à modifier et reçoit null. Retourne la ligne validée, ou null si elle l'était déjà.
+async validerSiPasDejaValide(id) {
+const result = await query(
+`UPDATE transactions SET statut = 'validé' WHERE id = $1 AND statut <> 'validé' RETURNING *`,
+[id]
+);
+return result.rows[0] || null;
+},
+
+// ── Change le statut SAUF si la transaction est déjà validée (un webhook
+// rejoué ou tardif ne doit jamais défaire un paiement confirmé).
+async updateStatutSiNonValide(id, statut) {
+const result = await query(
+`UPDATE transactions SET statut = $1 WHERE id = $2 AND statut <> 'validé' RETURNING *`,
+[statut, id]
+);
+return result.rows[0] || null;
+},
+
 // ── Marque comme "échoué" les transactions restées "en attente"
 // trop longtemps (ex: client qui ferme l'onglet avant de payer, ou
 // qui abandonne dans Wave/CinetPay sans jamais aller au bout). Sans
