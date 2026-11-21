@@ -162,7 +162,7 @@ return { messageId: data.messageId, to };
 
 // ── 1. Bienvenue ─────────────────────────────────────────────
 async function envoyerBienvenue(user) {
-const html = templateBase("Bienvenue sur ProInsertion CI !", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Bienvenue, ${user.nom} ! 🎉 </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;"> Votre compte a été créé avec succès sur <strong>ProInsertion CI</strong>, la plateforme de référence pour la préparation aux concours de Côte d'Ivoire. </p> <div style="background:#F0FDF4;border-radius:12px;padding:18px;margin:20px 0;"> <p style="margin:0 0 10px;font-weight:700;color:#1A6B3C;">Vous avez maintenant accès à :</p> <ul style="margin:0;padding-left:20px;color:#333;line-height:1.9;font-size:14px;"> <li>📋 La liste complète des concours et examens CI</li> <li>🧠 Des QCM de préparation gratuits</li> <li>📰 Les dernières actualités et alertes</li> <li>📚 Des ressources de préparation</li> </ul> </div> <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px;"> Pour accéder aux cours complets, sujets corrigés et vidéos de formation, passe en <strong>Premium</strong> dès 2 000 FCFA/mois. </p> <div style="text-align:center;margin:24px 0;"> <a href="${process.env.FRONTEND_URL || "https://proinsertionci.netlify.app"}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Accéder à la plateforme → </a> </div>`);
+const html = templateBase("Bienvenue sur ProInsertion CI !", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;"> Bienvenue, ${user.nom} ! 🎉 </h2> <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;"> Votre compte a été créé avec succès sur <strong>ProInsertion CI</strong>, la plateforme de référence pour la préparation aux concours de Côte d'Ivoire. </p> <div style="background:#F0FDF4;border-radius:12px;padding:18px;margin:20px 0;"> <p style="margin:0 0 10px;font-weight:700;color:#1A6B3C;">Vous avez maintenant accès à :</p> <ul style="margin:0;padding-left:20px;color:#333;line-height:1.9;font-size:14px;"> <li>📋 La liste complète des concours de Côte d'Ivoire</li> <li>🧠 Des QCM de préparation gratuits</li> <li>💼 Des offres d'emploi et un générateur de CV et lettres</li> </ul> </div> <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 20px;"> Pour profiter de tous les outils, passe en <strong>Premium</strong> dès 2 000 FCFA/mois. </p> <div style="text-align:center;margin:24px 0;"> <a href="${process.env.FRONTEND_URL || "https://proinsertionci.netlify.app"}" style="background:linear-gradient(90deg,#1A6B3C,#0A6EBD);color:#fff; text-decoration:none;padding:14px 28px;border-radius:10px; font-weight:700;font-size:15px;display:inline-block;"> Accéder à la plateforme → </a> </div>`);
 
 return envoyer({
 to:      user.email,
@@ -178,7 +178,7 @@ const html = templateBase("Paiement validé — ProInsertion CI", `<h2 style="co
 <td style="padding:8px 0;color:#888;font-size:13px;border-bottom:1px solid #E5E7EB;">${k}</td>
 <td style="padding:8px 0;font-weight:700;font-size:13px;border-bottom:1px solid #E5E7EB;text-align:right;">${v}</td>
 </tr>
-`).join("")} </table> </div> <div style="background:#EFF6FF;border-radius:12px;padding:16px;margin:0 0 20px;"> <p style="margin:0 0 8px;font-weight:700;color:#0A6EBD;">Vous avez maintenant accès à :</p> <p style="margin:0;color:#333;font-size:13px;line-height:1.8;"> 📚 Tous les cours PDF · 🎬 Vidéos de formation · 📝 Sujets corrigés · ⏱ Examens blancs · Corrections détaillées </p> </div> <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/dashboard" style="background:#F5820D;color:#fff;text-decoration:none; padding:14px 28px;border-radius:10px;font-weight:700; font-size:15px;display:inline-block;"> Accéder à mon espace Premium ⭐ </a> </div> `);
+`).join("")} </table> </div> <div style="background:#EFF6FF;border-radius:12px;padding:16px;margin:0 0 20px;"> <p style="margin:0 0 8px;font-weight:700;color:#0A6EBD;">Vous avez maintenant accès à :</p> <p style="margin:0;color:#333;font-size:13px;line-height:1.8;"> ⭐ Tous les avantages de votre formule Premium </p> </div> <div style="text-align:center;"> <a href="${process.env.FRONTEND_URL}/dashboard" style="background:#F5820D;color:#fff;text-decoration:none; padding:14px 28px;border-radius:10px;font-weight:700; font-size:15px;display:inline-block;"> Accéder à mon espace Premium ⭐ </a> </div> `);
 
 return envoyer({
 to:      user.email,
@@ -338,6 +338,15 @@ html,
 });
 }
 
+// ── Alertes emploi : résumé quotidien des nouvelles offres ──
+const echapper = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function envoyerAlertesEmploi(email, nom, offres) {
+const base = process.env.FRONTEND_URL || "https://proinsertionci.netlify.app";
+const lignes = offres.map((o) => `<tr><td style="padding:10px 0;border-bottom:1px solid #eee;"><strong style="color:#1A6B3C;">${echapper(o.titre)}</strong><br><span style="color:#555;font-size:13px;">${echapper(o.entreprise)} · ${echapper(o.type_contrat)}${o.ville ? " · " + echapper(o.ville) : ""}</span></td></tr>`).join("");
+const html = templateBase("Nouvelles offres pour vous", `<h2 style="color:#1A6B3C;font-size:20px;margin:0 0 16px;">Nouvelles offres correspondant à vos alertes</h2><p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;">Bonjour <strong>${echapper(nom)}</strong>, ${offres.length} nouvelle${offres.length > 1 ? "s offres correspondent" : " offre correspond"} à vos alertes emploi.</p><table style="width:100%;border-collapse:collapse;margin:0 0 20px;">${lignes}</table><div style="text-align:center;"><a href="${base}/emploi.html" style="background:#1A6B3C;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;display:inline-block;">Voir les offres →</a></div><p style="color:#888;font-size:12px;margin:20px 0 0;">Vous pouvez modifier ou supprimer vos alertes à tout moment depuis la page Offres d'emploi.</p>`);
+return envoyer({ to: email, subject: `${offres.length} nouvelle${offres.length > 1 ? "s offres" : " offre"} pour vous — ProInsertion CI`, html });
+}
+
 module.exports = {
 envoyer,
 envoyerBienvenue,
@@ -349,6 +358,7 @@ envoyerNotificationAdmin,
 envoyerResetMotDePasse,
 envoyerVerificationEmail,
 envoyerConfirmationNewsletter,
+envoyerAlertesEmploi,
 emailConfigure,
 getTransporter,
 };

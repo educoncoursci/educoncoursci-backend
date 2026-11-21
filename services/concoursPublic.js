@@ -121,7 +121,7 @@ function versFichePublique(c, aujourdhui = aujourdhuiAbidjan()) {
     logo: c.structure_logo_url || null,
     sigle: c.structure_sigle || null,
     couleur: c.couleur || null,
-    premium: !!c.premium,
+    premium: false,
   };
 }
 
