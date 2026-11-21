@@ -77,6 +77,27 @@ res.status(500).json({ error: err.message });
 }
 });
 
+// GET/PATCH /api/users/:id/rappels — préférence « rappels personnels par e-mail » (propre compte uniquement)
+router.get("/:id/rappels", auth, async (req, res) => {
+try {
+if (parseInt(req.params.id) !== req.user.id) return res.status(403).json({ error: "Accès refusé." });
+const r = await require("../config/database").query("SELECT rappels_email FROM users WHERE id = $1", [req.user.id]);
+res.json({ actif: r.rows[0] ? r.rows[0].rappels_email === true : true });
+} catch (err) {
+res.status(500).json({ error: "Erreur serveur." });
+}
+});
+router.patch("/:id/rappels", auth, async (req, res) => {
+try {
+if (parseInt(req.params.id) !== req.user.id) return res.status(403).json({ error: "Accès refusé." });
+if (typeof (req.body || {}).actif !== "boolean") return res.status(400).json({ error: "Valeur invalide." });
+await require("../config/database").query("UPDATE users SET rappels_email = $1 WHERE id = $2", [req.body.actif, req.user.id]);
+res.json({ actif: req.body.actif });
+} catch (err) {
+res.status(500).json({ error: "Erreur serveur." });
+}
+});
+
 // PATCH /api/users/:id — Modifier profil
 router.patch("/:id", auth, async (req, res) => {
 try {
