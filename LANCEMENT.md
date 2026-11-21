@@ -207,3 +207,18 @@ Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en ha
 - Nouvelles pages : `comment-ca-marche.html`, `a-propos.html` ; accueil à deux parcours (emploi / concours gratuits).
 - Tableau de bord : profil complété, relances à faire, clôtures de concours suivis (utilise `date_cloture` renvoyé par `/api/candidatures-concours`).
 - Concours : export d'agenda (.ics) côté navigateur (`js/agenda.js`), sans envoi de données.
+
+## Rappels personnels par e-mail (nouveau)
+- `services/rappelsPersonnels.js` : chaque jour à 8h15 (Abidjan), UN e-mail « Vos rappels du jour » par membre, seulement s'il y a une relance de candidature à faire (relance prévue depuis 3 jours au plus) ou si l'abonnement Premium se termine dans 7 jours / 1 jour.
+- Uniquement e-mails vérifiés ; chaque membre peut désactiver ces rappels dans Mon profil (colonne `users.rappels_email`, créée automatiquement au démarrage). Les rappels de clôture de concours (J-7/J-3/J-1) restent gérés par `rappelsScheduler.js`.
+- Nécessite l'envoi d'e-mails configuré (SMTP) comme pour les autres e-mails du site.
+
+## Référencement (Google)
+- Pages publiques : adresse canonique, aperçus de partage (Open Graph/Twitter) et descriptions ajoutés ; pages privées (connexion, tableau de bord, admin, paiement) marquées « noindex ».
+- Les adresses utilisent `https://proinsertionci.netlify.app`. **Le jour où vous aurez votre nom de domaine**, remplacez cette adresse dans `sitemap.xml`, `robots.txt`, les balises `canonical`/`og:url` des pages et `index.html` (données structurées), puis déclarez le sitemap dans Google Search Console.
+
+## Mesure d'audience intégrée (nouveau)
+- Page **Admin → Audience** : visiteurs par jour, pages vues, provenance (recherche, Facebook, WhatsApp…), pages les plus consultées, du visiteur à l'inscription.
+- Sans cookie ni adresse IP conservée ; empreinte anonyme renouvelée chaque jour ; signal « Ne pas me suivre » respecté ; pages admin jamais comptées ; données gardées 400 jours (table `stats_hits`, créée automatiquement au démarrage). La page Confidentialité en parle.
+- **Savoir d'où viennent vos visiteurs** : WhatsApp et la plupart des applications n'indiquent pas la provenance. Dans Admin → Audience, la carte « Créer un lien suivi » fabrique le lien à partager (page + nom de source, bouton Copier). Les boutons « Partager sur WhatsApp » du site (concours, cours, leçons) ajoutent automatiquement `utm_source=whatsapp`.
+- Les visites faites avec le navigateur en mode « Ne pas me suivre » ne sont pas comptées : les chiffres sont donc légèrement inférieurs à la réalité.

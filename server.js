@@ -133,6 +133,8 @@ app.use("/api/auth/reset-password",   limiteMotDePasseOublie);
 app.use(["/api/auth/verify-email", "/api/auth/resend-verification", "/api/auth/account"], limiteMotDePasseOublie);
 app.use("/api/auth/2fa/verify-login", limite2FA);
 app.use("/api/auth",     require("./routes/auth"));
+// Mesure d'audience anonyme (sans cookie) : limitée par adresse IP
+app.use("/api/stats", rateLimit({ windowMs: 60 * 1000, max: 120, standardHeaders: false, message: { error: "Trop de requêtes." } }), require("./routes/stats"));
 app.use("/api/vitrine/newsletter", limiteFormulairePublic);
 app.post("/api/marketplace/offres/:id/contact", limiteFormulairePublic);
 app.use("/api/users",    require("./routes/users"));
@@ -233,6 +235,8 @@ require("./services/actualitesFeed").demarrerPlanification(); // Flux d'actualit
 require("./services/emploiFeed").demarrerPlanification();      // Agrégation des offres d'emploi externes
 require("./services/rappelsScheduler").demarrerPlanification(); // Rappels de clôture J-7/J-3/J-1 (Module 4)
 require("./services/alertesEmploi").demarrerPlanification(); // Alertes emploi par e-mail (résumé quotidien)
+require("./services/rappelsPersonnels").demarrerPlanification(); // Rappels du jour : relances et fin d'abonnement
+require("./services/statsNettoyage").demarrerPlanification(); // Conservation limitée des statistiques d'audience
 require("./services/transactionsScheduler").demarrerPlanification(); // Nettoyage des transactions de paiement abandonnées
 require("./services/concoursStatutScheduler").demarrerPlanification(); // Lot 18 — statut automatique des concours
 require("./services/concoursFeed").demarrerPlanification(); // Lot 18 — détection automatique de nouveaux concours

@@ -347,6 +347,21 @@ const html = templateBase("Nouvelles offres pour vous", `<h2 style="color:#1A6B3
 return envoyer({ to: email, subject: `${offres.length} nouvelle${offres.length > 1 ? "s offres" : " offre"} pour vous — ProInsertion CI`, html });
 }
 
+// ── Rappels personnels : relances à faire + fin d'abonnement ──
+async function envoyerRappelsPersonnels(email, nom, { relances = [], expiration = null }) {
+const base = process.env.FRONTEND_URL || "https://proinsertionci.netlify.app";
+let blocs = "";
+if (relances.length) {
+  const lignes = relances.map((r) => `<tr><td style="padding:10px 0;border-bottom:1px solid #eee;"><strong style="color:#1A6B3C;">${echapper(r.poste)}</strong><br><span style="color:#555;font-size:13px;">${echapper(r.organisme || "")}${r.organisme ? " · " : ""}relance prévue le ${echapper(String(r.relance_le).split("-").reverse().join("/"))}</span></td></tr>`).join("");
+  blocs += `<h3 style="color:#1A6B3C;font-size:16px;margin:0 0 8px;">Candidatures à relancer</h3><table style="width:100%;border-collapse:collapse;margin:0 0 20px;">${lignes}</table><div style="text-align:center;margin:0 0 20px;"><a href="${base}/dashboard/suivi-candidatures.html" style="background:#1A6B3C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:700;font-size:15px;display:inline-block;">Ouvrir mon suivi →</a></div>`;
+}
+if (expiration) {
+  blocs += `<h3 style="color:#B45309;font-size:16px;margin:0 0 8px;">Votre abonnement Premium se termine bientôt</h3><p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;">Il reste ${expiration.jours} jour${expiration.jours > 1 ? "s" : ""} (jusqu'au ${echapper(expiration.date)}). Vous pouvez le renouveler à tout moment depuis la page des formules.</p><div style="text-align:center;margin:0 0 20px;"><a href="${base}/boutique.html" style="background:#B45309;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:700;font-size:15px;display:inline-block;">Voir les formules →</a></div>`;
+}
+const html = templateBase("Vos rappels du jour", `<p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;">Bonjour <strong>${echapper(nom)}</strong>, voici vos rappels du jour.</p>${blocs}<p style="color:#888;font-size:12px;margin:20px 0 0;">Vous pouvez désactiver ces rappels à tout moment dans <a href="${base}/dashboard/profil.html" style="color:#888;">votre profil</a>.</p>`);
+return envoyer({ to: email, subject: "Vos rappels du jour — ProInsertion CI", html });
+}
+
 module.exports = {
 envoyer,
 envoyerBienvenue,
@@ -359,6 +374,7 @@ envoyerResetMotDePasse,
 envoyerVerificationEmail,
 envoyerConfirmationNewsletter,
 envoyerAlertesEmploi,
+envoyerRappelsPersonnels,
 emailConfigure,
 getTransporter,
 };
