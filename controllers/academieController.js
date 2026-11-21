@@ -4,8 +4,8 @@
 //  exercices) → progression de l'utilisateur.
 //
 //  Accès :
-//   - Les premières leçons de chaque cours sont gratuites (champ
-//     lecons_gratuites), même sans compte ; la suite est Premium.
+//   - Toutes les leçons publiées sont gratuites, même sans compte
+//     (aucun verrou Premium ; le champ lecons_gratuites n'est plus utilisé).
 //   - Un cours n'est visible du public que s'il est publié.
 //   - L'administration (création assistée par IA, relecture,
 //     publication) est réservée à l'admin.
@@ -32,11 +32,9 @@ function parseJson(valeur, defaut) {
 
 const estAdmin = (req) => req.user?.role === "admin";
 
-async function peutLireLecon(req, lecon, cours) {
-  if (lecon.ordre <= cours.lecons_gratuites) return true;
-  if (!req.user) return false;
-  if (estAdmin(req)) return true;
-  return User.estPremiumActif(req.user.id);
+// Contenu pédagogique 100 % gratuit : toutes les leçons publiées sont lisibles par tous.
+async function peutLireLecon() {
+  return true;
 }
 
 // Exercices servis à l'apprenant : sans les champs de relecture.
@@ -130,7 +128,7 @@ exports.detailCours = async (req, res) => {
           id: l.id,
           ordre: l.ordre,
           titre: l.titre,
-          gratuite: l.ordre <= cours.lecons_gratuites,
+          gratuite: true,
           terminee: terminees.has(l.id),
         })),
       },
@@ -195,7 +193,7 @@ exports.detailLecon = async (req, res) => {
       suivante: suivante && {
         id: suivante.id,
         titre: suivante.titre,
-        gratuite: suivante.ordre <= cours.lecons_gratuites,
+        gratuite: true,
       },
       terminee,
     });

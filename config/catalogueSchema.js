@@ -37,6 +37,19 @@ async function initCatalogue() {
        JSON.stringify(p.composition), JSON.stringify(p.inclus), i + 1],
     );
   }
+  // Séparation concours (gratuits) / services payants : reformule l'ancienne description
+  // sans toucher aux produits que l'administrateur a modifiés lui-même.
+  await query(
+    `UPDATE produits SET description = $1, updated_at = NOW()
+     WHERE id = 'lm-administration' AND modifie_par_admin = FALSE AND description ILIKE '%concours%'`,
+    ["Lettre au ton administratif formel pour une candidature auprès d'une administration ou de la fonction publique."],
+  );
+  // Abonnement : plus de « contenus Premium » ; prix aligné sur la formule 1 Mois réellement facturée (2 000 FCFA, voir config/plans.js)
+  await query(
+    `UPDATE produits SET description = $1, prix_fcfa = 2000, updated_at = NOW()
+     WHERE id = 'abonnement-premium' AND modifie_par_admin = FALSE`,
+    ["Outils de candidature (CV, lettres, analyse et adaptation aux offres) sans limite quotidienne."],
+  );
 }
 
 // Active par défaut des produits dont le service vient de devenir disponible,

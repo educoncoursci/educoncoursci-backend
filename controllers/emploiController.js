@@ -109,10 +109,24 @@ res.status(500).json({ error: "Erreur serveur." });
 // ════════════════════════════════════════════════════════════
 exports.creerAlerte = async (req, res) => {
 try {
-const { motCle, typeContrat, ville } = req.body;
+const b = req.body && typeof req.body === "object" ? req.body : {};
+const nettoyer = (v) => (typeof v === "string" ? v.trim() : "");
+const motCle = nettoyer(b.motCle);
+const ville = nettoyer(b.ville);
+const typeContrat = nettoyer(b.typeContrat);
+const TYPES = ["CDI", "CDD", "Stage", "Freelance", "Alternance"];
 
 if (!motCle && !typeContrat && !ville) {
   return res.status(400).json({ error: "Précise au moins un critère d'alerte." });
+}
+if (motCle.length > 100 || ville.length > 100) {
+  return res.status(400).json({ error: "Critères trop longs (100 caractères maximum)." });
+}
+if (typeContrat && !TYPES.includes(typeContrat)) {
+  return res.status(400).json({ error: "Type de contrat invalide." });
+}
+if ((await Emploi.compterAlertes(req.user.id)) >= 10) {
+  return res.status(400).json({ error: "Vous avez atteint la limite de 10 alertes. Supprimez-en une pour en créer une nouvelle." });
 }
 
 const alerte = await Emploi.creerAlerte({ userId: req.user.id, motCle, typeContrat, ville });
@@ -135,6 +149,7 @@ res.status(500).json({ error: "Erreur serveur." });
 
 exports.supprimerAlerte = async (req, res) => {
 try {
+if (!/^\d{1,9}$/.test(String(req.params.id))) return res.status(400).json({ error: "Identifiant invalide." });
 await Emploi.supprimerAlerte(req.params.id, req.user.id);
 res.json({ message: "Alerte supprimée." });
 } catch (err) {

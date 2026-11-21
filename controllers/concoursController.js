@@ -14,20 +14,15 @@ const Public   = require("../services/concoursPublic");
 exports.liste = async (req, res) => {
 try {
 await Statut.rafraichirSiNecessaire();
-const { categorie, statut, recherche, premium, structureId, limit, offset, archive } = req.query;
+const { categorie, statut, recherche, structureId, limit, offset, archive } = req.query;
 
-// Les utilisateurs non-premium ne voient que le contenu gratuit
-let filtrerPremium;
-if (premium !== undefined) {
-  filtrerPremium = premium === "true";
-}
+// Rubrique Concours : information 100 % gratuite, aucun contenu réservé.
 
 const concours = await Concours.findAll({
   categorie,
   statut,
   search: recherche,
   archive,
-  premium: filtrerPremium,
   structureId: structureId ? parseInt(structureId) : undefined,
   limit:  Math.min(parseInt(limit) || 50, 500),
   offset: parseInt(offset) || 0,
@@ -62,14 +57,7 @@ return res.status(404).json({ error: "Concours introuvable." });
 // (parsés par le modèle) — ne pas les re-parser avec JSON.parse ici,
 // ça provoquait une erreur 500 systématique sur cette route.
 
-// Vérifie si le contenu est Premium et si l'utilisateur a accès
-// (les admins voient toujours tout, y compris pour l'édition en back-office)
-if (concours.premium && req.user && req.user.role !== "admin" && !req.user.premium) {
-  return res.status(403).json({
-    error:   "Contenu réservé aux abonnés Premium.",
-    premium: true,
-  });
-}
+// Aucun verrou : toutes les fiches concours sont accessibles gratuitement.
 
 // Rubrique du jour + champs publics normalisés (null = « Information non communiquée officiellement »)
 const publicFiche = Public.fichePourDetail(concours);

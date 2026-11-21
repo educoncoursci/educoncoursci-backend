@@ -25,18 +25,11 @@ exports.rechercher = async (req, res) => {
     const estPremium = req.user?.premium || false;
 
     // ── Recherches en base, en parallèle ────────────────────
-    const [concoursRes, pdfsRes] = await Promise.all([
+    const [concoursRes] = await Promise.all([
       query(
         `SELECT id, titre, organisme, categorie, statut
          FROM concours
          WHERE (titre ILIKE $1 OR organisme ILIKE $1 OR categorie ILIKE $1)
-         ORDER BY created_at DESC LIMIT 5`,
-        [terme]
-      ),
-      query(
-        `SELECT id, titre, categorie, matiere, premium
-         FROM pdfs
-         WHERE statut = 'publié' AND (titre ILIKE $1 OR categorie ILIKE $1 OR matiere ILIKE $1)
          ORDER BY created_at DESC LIMIT 5`,
         [terme]
       ),
@@ -66,12 +59,7 @@ exports.rechercher = async (req, res) => {
         statut: c.statut,
         lien: `/concours-detail.html?id=${c.id}`,
       })),
-      documents: pdfsRes.rows.map(marquerVerrouille).map(p => ({
-        type: "document", id: p.id, titre: p.titre,
-        sousTitre: [p.categorie, p.matiere].filter(Boolean).join(" · "),
-        verrouille: p.verrouille,
-        lien: `/bibliotheque.html?pdf=${p.id}`,
-      })),
+      documents: [], // la bibliothèque de sujets/cours PDF a été retirée du site
       documentsGenerables: [
         ...documentsProTrouves.map(t => ({
           type: "document_generable", id: t.id, titre: t.nom,

@@ -265,6 +265,32 @@ await client.query(`
   );
 `);
 
+// Rubrique Concours 100 % gratuite : plus aucun concours « Premium » (colonne conservée, valeurs remises à FALSE)
+await client.query(`UPDATE concours SET premium = FALSE WHERE premium IS DISTINCT FROM FALSE`);
+
+// Alertes emploi : date du dernier e-mail envoyé (pour ne jamais renvoyer deux fois la même offre)
+await client.query(`ALTER TABLE alertes_emploi ADD COLUMN IF NOT EXISTS derniere_notif TIMESTAMP`);
+
+// Table : suivi_candidatures (suivi PERSONNEL des candidatures d'emploi du membre :
+// offres trouvées ailleurs ou sur le site, statut, relance, notes. Strictement privé.)
+await client.query(`
+  CREATE TABLE IF NOT EXISTS suivi_candidatures (
+    id               SERIAL PRIMARY KEY,
+    user_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    poste            VARCHAR(150) NOT NULL,
+    organisme        VARCHAR(150),
+    lien             TEXT,
+    statut           VARCHAR(20) NOT NULL DEFAULT 'a_envoyer'
+                     CHECK (statut IN ('a_envoyer','envoyee','relancee','entretien','acceptee','refusee')),
+    date_candidature DATE,
+    relance_le       DATE,
+    notes            TEXT,
+    created_at       TIMESTAMP DEFAULT NOW(),
+    updated_at       TIMESTAMP DEFAULT NOW()
+  );
+`);
+await client.query(`CREATE INDEX IF NOT EXISTS idx_suivi_candidatures_user ON suivi_candidatures(user_id)`);
+
 // Table : actualites (alimentée en continu par le flux RSS + ajouts admin)
 await client.query(`
   CREATE TABLE IF NOT EXISTS actualites (

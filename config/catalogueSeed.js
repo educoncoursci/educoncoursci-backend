@@ -48,7 +48,7 @@ const PRODUITS = [
   P("lm-spontanee", "lettres", "Lettre de candidature spontanée", "Pour vous présenter à une organisation qui n'a pas publié d'offre.", 2000),
   P("lm-stage", "lettres", "Lettre de demande de stage", "Pour solliciter un stage auprès d'une entreprise ou d'une organisation.", 2000),
   P("lm-ong", "lettres", "Lettre de motivation ONG / humanitaire", "Lettre orientée engagement, valeurs et terrain pour une ONG ou une organisation sociale.", 2500),
-  P("lm-administration", "lettres", "Lettre de motivation administration / Fonction Publique", "Lettre au ton administratif formel pour une administration ou un concours de la fonction publique.", 2000),
+  P("lm-administration", "lettres", "Lettre de motivation administration / Fonction Publique", "Lettre au ton administratif formel pour une candidature auprès d'une administration ou de la fonction publique.", 2000),
   P("lm-emploi", "lettres", "Lettre de demande d'emploi", "Pour postuler à un emploi avec une lettre claire et convaincante.", 2000),
 
   // ── Packs ──
@@ -93,7 +93,7 @@ const PRODUITS = [
       inclus: ["Un guide de recherche d'emploi", "Des conseils pour réussir un entretien"] }),
 
   // ── Abonnement ──
-  P("abonnement-premium", "abonnement", "Abonnement candidat Premium", "Outils de candidature sans limite quotidienne et contenus Premium.", 3000, { periodicite: "mois" }),
+  P("abonnement-premium", "abonnement", "Abonnement candidat Premium", "Outils de candidature (CV, lettres, analyse et adaptation aux offres) sans limite quotidienne.", 2000, { periodicite: "mois" }),
 
   // ── Recruteurs ──
   P("offre-simple", "recruteurs", "Publication d'une offre d'emploi simple", "Votre offre publiée sur la page Emploi.", 6000),

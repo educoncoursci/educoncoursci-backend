@@ -5,7 +5,6 @@
 
 const User        = require("../models/User");
 const Concours    = require("../models/Concours");
-const PDF         = require("../models/PDF");
 const Transaction = require("../models/Transaction");
 const Emploi      = require("../models/Emploi");
 const Journal     = require("../models/Journal");
@@ -23,7 +22,6 @@ const [
 totalUsers,
 totalPremium,
 totalConcours,
-totalPDFs,
 totalOffresEmploi,
 revenusTotal,
 revenusQMois,
@@ -34,7 +32,6 @@ derniersInscrits,
 User.count(),
 User.countPremium(),
 Concours.count(),
-PDF.count(),
 Emploi.count(),
 Transaction.totalRevenus(),
 Transaction.revenusduMois(),
@@ -83,7 +80,6 @@ res.json({
   },
   contenu: {
     concours: totalConcours,
-    pdfs:     totalPDFs,
     offresEmploi: totalOffresEmploi,
   },
   finances: {
