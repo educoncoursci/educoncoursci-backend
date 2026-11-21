@@ -170,7 +170,7 @@ const Concours = {
         conditions,
         JSON.stringify(pieces || []),
         JSON.stringify(centres || []),
-        premium || false,
+        false, // les concours ne sont jamais payants
         // Avant : `statutCalcule || "à venir"` — un concours sans AUCUNE
         // date connue ET sans statut explicite se voyait forcé à
         // "à venir" par défaut, ce qui laisse croire à tort qu'une
@@ -387,7 +387,7 @@ const Concours = {
         conditions   = COALESCE($10,  conditions),
         pieces       = COALESCE($11, pieces),
         centres      = COALESCE($12, centres),
-        premium      = COALESCE($13, premium),
+        premium      = FALSE,
         statut       = COALESCE($14, statut),
         couleur      = COALESCE($15, couleur),
         structure_id = COALESCE($16, structure_id),

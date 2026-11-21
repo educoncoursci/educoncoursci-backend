@@ -40,7 +40,7 @@ const CandidatureConcours = {
   async findByUser(userId) {
     const result = await query(
       `SELECT cc.*, c.titre, c.organisme, c.statut AS concours_statut,
-              c.cloture, c.couleur, c.categorie
+              c.cloture, to_char(c.date_cloture, 'YYYY-MM-DD') AS date_cloture, c.couleur, c.categorie
        FROM candidatures_concours cc
        JOIN concours c ON c.id = cc.concours_id
        WHERE cc.user_id = $1

@@ -467,8 +467,8 @@ const Emploi = {
 
   async creerAlerte({ userId, motCle, typeContrat, ville }) {
     const result = await query(
-      `INSERT INTO alertes_emploi (user_id, mot_cle, type_contrat, ville)
-       VALUES ($1,$2,$3,$4)
+      `INSERT INTO alertes_emploi (user_id, mot_cle, type_contrat, ville, derniere_notif)
+       VALUES ($1,$2,$3,$4, NOW())
        RETURNING *`,
       [userId, motCle || null, typeContrat || null, ville || null],
     );
@@ -481,6 +481,45 @@ const Emploi = {
       [userId],
     );
     return result.rows;
+  },
+
+  async compterAlertes(userId) {
+    const r = await query(`SELECT COUNT(*)::int AS n FROM alertes_emploi WHERE user_id = $1`, [userId]);
+    return r.rows[0].n;
+  },
+
+  // Alertes actives dont le propriétaire a un e-mail vérifié (jamais d'envoi vers une adresse non confirmée).
+  async alertesActivesAvecEmail() {
+    const r = await query(
+      `SELECT a.id, a.user_id, a.mot_cle, a.type_contrat, a.ville,
+              COALESCE(a.derniere_notif, a.created_at) AS depuis,
+              u.email, u.nom
+       FROM alertes_emploi a JOIN users u ON u.id = a.user_id
+       WHERE a.actif IS NOT FALSE AND u.email_verified = TRUE
+       ORDER BY a.user_id, a.id`,
+    );
+    return r.rows;
+  },
+
+  // Offres publiées depuis `depuis` correspondant aux critères de l'alerte (valeurs paramétrées).
+  async offresPourAlerte(alerte, limite = 10) {
+    const p = [alerte.depuis];
+    const w = [`statut = 'publié'`, `created_at > $1`];
+    if (alerte.mot_cle) { p.push(`%${alerte.mot_cle}%`); w.push(`(titre ILIKE $${p.length} OR entreprise ILIKE $${p.length} OR secteur ILIKE $${p.length})`); }
+    if (alerte.type_contrat) { p.push(alerte.type_contrat); w.push(`type_contrat = $${p.length}`); }
+    if (alerte.ville) { p.push(`%${alerte.ville}%`); w.push(`ville ILIKE $${p.length}`); }
+    p.push(limite);
+    const r = await query(
+      `SELECT id, titre, entreprise, type_contrat, ville FROM offres_emploi
+       WHERE ${w.join(" AND ")} ORDER BY created_at DESC LIMIT $${p.length}`,
+      p,
+    );
+    return r.rows;
+  },
+
+  async marquerAlertesNotifiees(ids) {
+    if (!ids.length) return;
+    await query(`UPDATE alertes_emploi SET derniere_notif = NOW() WHERE id = ANY($1::int[])`, [`{${ids.map(Number).join(",")}}`]);
   },
 
   async supprimerAlerte(id, userId) {

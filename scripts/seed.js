@@ -193,29 +193,8 @@ for (const c of concours) {
 }
 console.log(`  ✅ ${concours.length} concours créés`);
 
-// ── 3. PDFs de démonstration ─────────────────────────────
-console.log("\n📄 Création des PDFs...");
 
-const pdfs = [
-  { titre: "Annales BAC 2024 — Toutes séries", categorie: "BAC", premium: false, pages: 120, taille: "8.2 MB", url: "https://example.com/bac-2024.pdf", telechargements: 1247 },
-  { titre: "Sujets corrigés BEPC 2023-2024", categorie: "BEPC", premium: false, pages: 85, taille: "5.6 MB", url: "https://example.com/bepc-2024.pdf", telechargements: 832 },
-  { titre: "Cours complet de Culture Générale — Concours CI", categorie: "Fonction Publique", premium: true, pages: 210, taille: "12.4 MB", url: "https://example.com/culture-gen.pdf", telechargements: 543 },
-  { titre: "Fiches de révision Logique et Raisonnement", categorie: "Concours", premium: false, pages: 45, taille: "3.1 MB", url: "https://example.com/logique.pdf", telechargements: 2103 },
-  { titre: "Manuel de Travail Social — Méthodes et Pratiques CI", categorie: "Travail Social", premium: true, pages: 180, taille: "9.8 MB", url: "https://example.com/ts-manuel.pdf", telechargements: 412 },
-  { titre: "Droit Administratif Ivoirien — Cours et Exercices", categorie: "Fonction Publique", premium: true, pages: 156, taille: "7.3 MB", url: "https://example.com/droit-admin.pdf", telechargements: 289 },
-  { titre: "Annales Concours Police 2022-2024", categorie: "Police", premium: true, pages: 95, taille: "6.2 MB", url: "https://example.com/police-annales.pdf", telechargements: 671 },
-  { titre: "Guide de Préparation INFAS — Sciences de la Santé", categorie: "INFAS", premium: false, pages: 68, taille: "4.5 MB", url: "https://example.com/infas-guide.pdf", telechargements: 934 },
-];
 
-for (const p of pdfs) {
-  await query(`
-    INSERT INTO pdfs (titre, categorie, premium, pages, taille, url, telechargements)
-    VALUES ($1,$2,$3,$4,$5,$6,$7)
-    ON CONFLICT DO NOTHING`,
-    [p.titre, p.categorie, p.premium, p.pages, p.taille, p.url, p.telechargements]
-  );
-}
-console.log(`  ✅ ${pdfs.length} PDFs créés`);
 
 // ── 4. Vidéos YouTube de démonstration ──────────────────
 console.log("\n🎬 Création des vidéos...");
