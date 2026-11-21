@@ -647,6 +647,19 @@ await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_
 // (DEFAULT TRUE) ; seules les nouvelles inscriptions démarrent non vérifiées.
 await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE`);
 await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verif_hash TEXT`);
+// Rappels personnels par e-mail (relances, fin d'abonnement) : activés par défaut, désactivables par le membre
+// Mesure d'audience intégrée : aucune donnée personnelle (empreinte anonyme renouvelée chaque jour)
+await client.query(`CREATE TABLE IF NOT EXISTS stats_hits (
+  id        BIGSERIAL PRIMARY KEY,
+  jour      DATE NOT NULL,
+  chemin    VARCHAR(80) NOT NULL,
+  source    VARCHAR(30),
+  visiteur  VARCHAR(16) NOT NULL,
+  membre    BOOLEAN NOT NULL DEFAULT FALSE
+)`);
+await client.query(`CREATE INDEX IF NOT EXISTS idx_stats_hits_jour ON stats_hits (jour, chemin)`);
+await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS rappels_email BOOLEAN NOT NULL DEFAULT TRUE`);
+await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS rappels_envoye_le DATE`);
 await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verif_expire TIMESTAMPTZ`);
 await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verif_envoye_le TIMESTAMPTZ`);
 
