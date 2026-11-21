@@ -141,13 +141,13 @@ app.use("/api/referentiels", require("./routes/referentiels"));
 app.use("/api/eligibilite", require("./routes/eligibilite"));
 app.use("/api/alertes", require("./routes/alertes"));
 app.use("/api/candidatures-concours", require("./routes/candidaturesConcours"));
+app.use("/api/suivi-candidatures", require("./routes/suiviCandidatures"));
 app.use("/api/assistant-concours", require("./routes/assistantConcours"));
 app.use("/api/push", require("./routes/push"));
 app.use("/api/forum", require("./routes/forum"));
 app.use("/api/marketplace", require("./routes/marketplace"));
 app.use("/api/messages", require("./routes/messages"));
 app.use("/api/vitrine", require("./routes/vitrine"));
-app.use("/api/pdfs",     require("./routes/pdfs"));
 app.use("/api/academie", require("./routes/academie")); // Académie : cours, leçons, progression
 app.use("/api/recruteurs", require("./routes/recruteurs")); // Espace recruteurs : offres soumises
 app.use("/api/catalogue", require("./routes/catalogue")); // Catalogue des produits et tarifs
@@ -232,6 +232,7 @@ try {
 require("./services/actualitesFeed").demarrerPlanification(); // Flux d'actualités en continu
 require("./services/emploiFeed").demarrerPlanification();      // Agrégation des offres d'emploi externes
 require("./services/rappelsScheduler").demarrerPlanification(); // Rappels de clôture J-7/J-3/J-1 (Module 4)
+require("./services/alertesEmploi").demarrerPlanification(); // Alertes emploi par e-mail (résumé quotidien)
 require("./services/transactionsScheduler").demarrerPlanification(); // Nettoyage des transactions de paiement abandonnées
 require("./services/concoursStatutScheduler").demarrerPlanification(); // Lot 18 — statut automatique des concours
 require("./services/concoursFeed").demarrerPlanification(); // Lot 18 — détection automatique de nouveaux concours

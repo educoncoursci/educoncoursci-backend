@@ -193,3 +193,17 @@ Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en ha
 - Code 2FA : 8 essais ratés → compte bloqué 15 min. Activez la 2FA sur le compte administrateur (Profil → Sécurité).
 - `.gitignore` ajouté : le fichier `.env` n'est plus envoyé sur GitHub. Liste des variables : `.env.example`. Si une clé a un jour été publiée sur GitHub, **changez-la** (la supprimer du dépôt ne suffit pas).
 - Retirez `DIAGNOSTIC_SECRET` de Render quand le diagnostic e-mail/stockage est terminé.
+
+## Nouveautés : suivi des candidatures et alertes e-mail
+- Table `suivi_candidatures` et colonne `alertes_emploi.derniere_notif` créées automatiquement au démarrage (aucune action manuelle).
+- Alertes emploi : un e-mail récapitulatif par jour (8h30, heure du serveur), uniquement aux adresses vérifiées. L'envoi réel exige `BREVO_API_KEY` et `EMAIL_FROM` (déjà utilisés par les autres e-mails) ; sans eux, l'envoi est simulé dans les logs.
+
+## Séparation Concours (gratuit) / services payants
+- Rubrique Concours, Académie (cours/leçons) et assistant concours : 100 % gratuits, aucun verrou Premium. La colonne `concours.premium` est conservée mais remise à FALSE au démarrage (aucune donnée supprimée).
+- Premium = services d'insertion uniquement (générateurs illimités, analyse ATS, adaptation et comparaison CV/offre, modèles premium, support). Tarifs inchangés : 2 000 / 5 000 / 15 000 FCFA.
+- Produit catalogue « Abonnement candidat Premium » aligné à 2 000 FCFA/mois (si non modifié par l'admin). Historique des transactions intact.
+
+## Améliorations d'image et de parcours
+- Nouvelles pages : `comment-ca-marche.html`, `a-propos.html` ; accueil à deux parcours (emploi / concours gratuits).
+- Tableau de bord : profil complété, relances à faire, clôtures de concours suivis (utilise `date_cloture` renvoyé par `/api/candidatures-concours`).
+- Concours : export d'agenda (.ics) côté navigateur (`js/agenda.js`), sans envoi de données.
