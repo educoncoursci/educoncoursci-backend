@@ -66,6 +66,7 @@ const originesAutorisees = [
 // Nouvelle et ancienne adresses Netlify : le site reste joignable pendant le changement de nom
 "https://proinsertionci.netlify.app",
 "https://educoncoursci.netlify.app",
+  "https://proinsertion.pages.dev",
 process.env.FRONTEND_URL,
 ].filter(Boolean);
 
