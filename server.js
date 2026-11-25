@@ -139,6 +139,19 @@ app.use("/api/auth",     require("./routes/auth"));
 app.use("/api/stats", rateLimit({ windowMs: 60 * 1000, max: 120, standardHeaders: false, message: { error: "Trop de requêtes." } }), require("./routes/stats"));
 app.use("/api/vitrine/newsletter", limiteFormulairePublic);
 app.post("/api/marketplace/offres/:id/contact", limiteFormulairePublic);
+// ── Contenu réservé aux membres connectés ──────────────────────
+// Un visiteur sans compte ne reçoit AUCUNE donnée de ces routes (réponse 401),
+// même s'il contourne le site. Restent publiques, car la page d'accueil en a
+// besoin : /api/auth (inscription, connexion…), /api/vitrine (témoignages,
+// lettre d'information), /api/catalogue et /api/payment/plans (tarifs affichés),
+// /api/payment/*/webhook (appelés par Wave/CinetPay), /api/stats/visite, /api/push/vapid-key.
+const exigerConnexion = require("./middleware/auth");
+app.use([
+  "/api/concours", "/api/referentiels", "/api/eligibilite", "/api/emploi",
+  "/api/forum", "/api/marketplace", "/api/academie", "/api/assistance-sociale",
+  "/api/actualites", "/api/documents", "/api/documents-admin", "/api/cv", "/api/search",
+], exigerConnexion);
+
 app.use("/api/users",    require("./routes/users"));
 app.use("/api/concours", require("./routes/concours"));
 app.use("/api/referentiels", require("./routes/referentiels"));
