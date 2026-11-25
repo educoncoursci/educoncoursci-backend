@@ -21,10 +21,21 @@ const [totalUtilisateurs, totalConcours, concoursOuverts] =
     Concours.countOuverts(),
   ]);
 
+// Nombre de CV réellement générés (commandes de type CV). Sans risque : en cas
+// d'erreur on renvoie 0 et le bloc d'affichage masque simplement ce compteur.
+let cvGeneres = 0;
+try {
+  const { query } = require("../config/database");
+  const { idsTypesCv } = require("../config/typesCv");
+  const r = await query("SELECT COUNT(*)::int AS n FROM commandes_cv WHERE produit_id = ANY($1::text[])", [idsTypesCv()]);
+  cvGeneres = r.rows[0].n;
+} catch (e) { /* compteur facultatif */ }
+
 res.json({
   totalUtilisateurs,
   totalConcours,
   concoursOuverts,
+  cvGeneres,
 });
 
 } catch (err) {
