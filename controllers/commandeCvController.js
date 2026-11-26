@@ -122,6 +122,15 @@ function nettoyerChoixDesign(donnees) {
   return donnees;
 }
 
+// Mêmes instructions que le Premium (services Wave/Orange), calculées sur le prix réel du service.
+function instructionsPaiement(prix) {
+  if (!Number.isInteger(prix)) return null;
+  return {
+    wave: { ...Wave.getInstructions(null, null, prix, true), format_exemple: EXEMPLES.wave },
+    orange: { ...Orange.getInstructions(null, null, prix), format_exemple: EXEMPLES.orange },
+  };
+}
+
 function vueCommande(c) {
   const etat = etatPaiement(c);
   const vue = {
@@ -138,6 +147,7 @@ function vueCommande(c) {
       orange_numero: process.env.OM_NUMERO || null,
     },
   };
+  if (etat === "a_payer" || etat === "rejete") vue.paiement.instructions = instructionsPaiement(c.prix_fcfa);
   if (etat === "valide") {
     vue.contenu = c.contenu;
     if (c.produit_id === ID_SIMULATION) {
@@ -413,9 +423,12 @@ exports.lire = async (req, res) => {
 exports.payer = async (req, res) => {
   try {
     const { moyen, txId } = req.body || {};
+    const telephone = require("../services/alertePaiement").normaliserTelephone((req.body || {}).telephone);
     const service = SERVICES[moyen];
     if (!service) return res.status(400).json({ error: "Moyen de paiement invalide (Wave ou Orange Money)." });
     if (!txId || typeof txId !== "string") return res.status(400).json({ error: "L'identifiant de transaction est requis." });
+
+    if (!telephone) return res.status(400).json({ error: "Indiquez le numéro de téléphone utilisé pour le paiement (8 à 15 chiffres)." });
 
     const c = await chargerCommande(parseInt(req.params.id, 10) || 0, req.user.id);
     if (!c) return res.status(404).json({ error: "Document introuvable." });
@@ -440,6 +453,7 @@ exports.payer = async (req, res) => {
       transaction = await Transaction.create({
         txId: txNormalise, userId: req.user.id, email: req.user.email,
         moyen: `${LABELS[moyen]} CI`, plan: c.pack_id || c.produit_id, montant: c.prix_fcfa, statut: "en attente",
+        telephone, service: c.pack_nom || c.produit_nom,
       });
     } catch (e) {
       if (e.code === "23505") return res.status(409).json({ error: "Cet identifiant de transaction a déjà été utilisé." });
@@ -447,17 +461,8 @@ exports.payer = async (req, res) => {
     }
     await query(`UPDATE commandes_cv SET transaction_id = $1 WHERE id = $2 OR ($3::int IS NOT NULL AND groupe_id = $3 AND user_id = $4)`, [transaction.id, c.id, c.groupe_id || null, req.user.id]);
 
-    // Alerte admin (même circuit que les abonnements)
-    if (process.env.ADMIN_EMAIL) {
-      const lien = `${process.env.FRONTEND_URL || ""}/admin/paiements.html`;
-      enSilence(Email.envoyer({
-        to: process.env.ADMIN_EMAIL,
-        subject: `💰 Paiement à valider — ${c.pack_nom || c.produit_nom} (${c.prix_fcfa} FCFA)`,
-        text: `Client : ${echapper(req.user.email)}<br>Produit : ${echapper(c.pack_nom || c.produit_nom)}<br>` +
-              `Montant : ${echapper(c.prix_fcfa)} FCFA<br>Moyen : ${echapper(transaction.moyen)}<br>` +
-              `Identifiant : ${echapper(txNormalise)}<br><br>Vérifiez la réception des fonds puis valide : <a href="${lien}">${lien}</a>`,
-      }), "alerte admin paiement");
-    }
+    // Alerte admin : circuit unique (e-mail + SMS + push), identique au Premium
+    require("../services/alertePaiement").alerterAdmin(transaction, { nomClient: req.user.nom, service: c.pack_nom || c.produit_nom });
 
     res.json({
       message: "Identifiant reçu. Votre paiement est en cours de vérification (24 h maximum). Votre document sera téléchargeable dès la validation.",
@@ -524,7 +529,9 @@ exports.telechargerPDF = async (req, res) => {
 //  de Premium.
 // ════════════════════════════════════════════════════════════
 exports.confirmerPaiementCv = async (req, res, transaction) => {
-  const maj = await Transaction.updateStatut(transaction.id, "validé");
+  const maj = await Transaction.validerSiPasDejaValide(transaction.id);
+  if (!maj) return res.status(409).json({ error: "Cette transaction est déjà validée." });
+  require("../services/alertePaiement").notifierClient(transaction, true);
   Journal.enregistrer(req.user.id, req.user.nom, "validation", "transaction", transaction.id,
     `${transaction.email} — ${transaction.plan} (${transaction.montant} FCFA)`);
   if (transaction.email) {

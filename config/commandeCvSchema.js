@@ -22,6 +22,10 @@ async function initCommandesCv() {
       created_at     TIMESTAMP DEFAULT NOW()
     );
   `);
+  // Téléphone du payeur et libellé du service, communs à TOUS les paiements (Premium et services à l'acte)
+  await query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS telephone VARCHAR(20)`);
+  await query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS service VARCHAR(160)`);
+  await query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS notifier_client BOOLEAN NOT NULL DEFAULT FALSE`);
   // Packs : plusieurs documents, un seul paiement (groupe_id = id du premier document)
   await query(`ALTER TABLE commandes_cv ADD COLUMN IF NOT EXISTS groupe_id INTEGER`);
   await query(`ALTER TABLE commandes_cv ADD COLUMN IF NOT EXISTS pack_id VARCHAR(60)`);

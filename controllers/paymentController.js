@@ -96,6 +96,7 @@ res.status(500).json({ error: "Erreur serveur." });
 exports.verify = async (req, res) => {
 try {
 const { txId, moyen, plan } = req.body;
+const telephone = require("../services/alertePaiement").normaliserTelephone(req.body.telephone);
 
 // ── Validations de base ───────────────────────────────────
 if (!txId || !moyen || !plan) {
@@ -132,6 +133,10 @@ if (!formatValide) {
   });
 }
 
+if (!telephone) {
+  return res.status(400).json({ error: "Indiquez le numéro de téléphone utilisé pour le paiement (8 à 15 chiffres)." });
+}
+
 // ── Vérifier que cet ID n'a pas déjà été utilisé ─────────
 const dejaUtilise = await Transaction.txIdDejaUtilise(txIdNormalise);
 if (dejaUtilise) {
@@ -156,9 +161,11 @@ const transaction = await Transaction.create({
   plan,
   montant,
   statut:  "en attente",
+  telephone,
+  service: `Premium ${plan}`,
 });
 
-alerterAdminNouveauPaiement(transaction);
+require("../services/alertePaiement").alerterAdmin(transaction, { nomClient: req.user.nom, service: `Premium ${plan}` });
 notifierEnSilence(
   Email.envoyer({
     to: req.user.email,
@@ -230,6 +237,8 @@ try {
   throw e;
 }
 
+require("../services/alertePaiement").notifierClient(transaction, true);
+
 notifierEnSilence(
   Email.envoyerConfirmationPaiement(
     userMisAJour,
@@ -277,15 +286,18 @@ if (!transactionMiseAJour) {
   return res.status(409).json({ error: "Impossible de rejeter une transaction déjà validée. Résilie l'abonnement si besoin." });
 }
 
+require("../services/alertePaiement").notifierClient(transaction, false);
+
 if (transaction.email) {
+  const libelle = transaction.service || `Premium ${transaction.plan}`;
   notifierEnSilence(
     Email.envoyer({
       to: transaction.email,
       subject: "Votre paiement n'a pas pu être confirmé",
       text:
-        `Bonjour,<br><br>Nous n'avons pas pu confirmer votre paiement pour le plan ` +
-        `<strong>Premium ${echapperHtml(transaction.plan)}</strong> (l'identifiant de transaction est introuvable ou incorrect). ` +
-        `Vérifiez l'identifiant reçu par SMS et soumettez-le à nouveau depuis la page Boutique, ou contacte-nous si vous pensez qu'il s'agit d'une erreur.`,
+        `Bonjour,<br><br>Nous n'avons pas pu confirmer votre paiement pour <strong>${echapperHtml(libelle)}</strong> ` +
+        `(l'identifiant de transaction est introuvable ou incorrect). ` +
+        `Vérifiez l'identifiant reçu par SMS et soumettez-le à nouveau depuis le site, ou contactez-nous si vous pensez qu'il s'agit d'une erreur.`,
     }),
     "rejet de paiement client",
   );
@@ -629,4 +641,30 @@ exports.webhookWave = async (req, res) => {
     console.error("Erreur webhook Wave :", err.message);
     res.status(200).send("OK"); // on renvoie 200 quoi qu'il arrive pour éviter les re-essais en boucle de Wave
   }
+};
+
+// ── Notifications de paiement du client connecté (dans le site) ─────────────
+// GET /api/payment/mes-notifications : décisions récentes (validé / rejeté) pas encore vues.
+exports.mesNotifications = async (req, res) => {
+  try {
+    const { query } = require("../config/database");
+    const r = await query(
+      `SELECT id, statut, COALESCE(service, 'Premium ' || plan) AS service, montant
+         FROM transactions
+        WHERE user_id = $1 AND notifier_client = TRUE AND statut IN ('validé', 'échoué')
+        ORDER BY id DESC LIMIT 5`,
+      [req.user.id]
+    );
+    res.json({ notifications: r.rows });
+  } catch (e) { res.status(500).json({ error: "Erreur serveur." }); }
+};
+
+// POST /api/payment/mes-notifications/vues { ids: [..] } : marque comme vues (uniquement les siennes).
+exports.notificationsVues = async (req, res) => {
+  try {
+    const { query } = require("../config/database");
+    const ids = (Array.isArray(req.body?.ids) ? req.body.ids : []).map((n) => parseInt(n, 10)).filter(Number.isInteger).slice(0, 20);
+    if (ids.length) await query("UPDATE transactions SET notifier_client = FALSE WHERE user_id = $1 AND id = ANY($2::int[])", [req.user.id, ids]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: "Erreur serveur." }); }
 };
