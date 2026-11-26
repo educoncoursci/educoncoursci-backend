@@ -196,14 +196,14 @@ return signatures.some((sig) => egal(sig, attendu));
 
 // ── Retourne les instructions de paiement Wave (choisit le meilleur
 // mode disponible : API > lien statique > manuel) ──────────────
-getInstructions(plan, numeroWave) {
-const montant = Wave.getMontantPlan(plan);
+getInstructions(plan, numeroWave, montantForce, ignorerApi) {
+const montant = Number.isInteger(montantForce) ? montantForce : Wave.getMontantPlan(plan);
 
 // Mode 1 (recommandé) : l'appelant (paymentController) crée la
 // session via creerSessionPaiement() plutôt que d'utiliser ces
 // instructions statiques — ce champ signale juste au frontend
 // d'utiliser ce parcours.
-if (API_CONFIGUREE) {
+if (API_CONFIGUREE && !ignorerApi) {
   return {
     moyen:        "Wave CI",
     montant:      `${montant?.toLocaleString("fr-CI")} FCFA`,
@@ -234,7 +234,7 @@ if (lienPaiement) {
       `Une fois sur Wave, saisissez exactement ${montant?.toLocaleString("fr-CI")} FCFA`,
       "Confirmez le paiement avec votre code Wave",
       "Note l'identifiant de transaction reçu par SMS (ex: T_5L7D2SFHD3VMTIPJ)",
-      "Revenez sur cette page et saisissez cet identifiant ci-dessous pour activer votre Premium",
+      Number.isInteger(montantForce) ? "Revenez sur cette page et saisissez cet identifiant ci-dessous pour débloquer votre document" : "Revenez sur cette page et saisissez cet identifiant ci-dessous pour activer votre Premium",
     ],
   };
 }

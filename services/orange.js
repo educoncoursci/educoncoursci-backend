@@ -46,8 +46,8 @@ return expiration.toISOString().split("T")[0];
 },
 
 // ── Retourne les instructions de paiement Orange Money ──────
-getInstructions(plan, numeroOM) {
-const montant = Orange.getMontantPlan(plan);
+getInstructions(plan, numeroOM, montantForce) {
+const montant = Number.isInteger(montantForce) ? montantForce : Orange.getMontantPlan(plan);
 const numero  = numeroOM || process.env.OM_NUMERO;
 return {
 moyen:   "Orange Money CI",
