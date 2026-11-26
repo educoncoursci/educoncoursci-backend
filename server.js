@@ -232,7 +232,7 @@ for (const [nom, creer] of [
   }
 }
 
-// Garantit qu'akone97@hotmail.com (ou ADMIN_EMAIL) est l'unique admin.
+// Garantit qu'akone0988@gmail.com (ou ADMIN_EMAIL) est l'unique admin.
 // Best-effort : si le compte n'existe pas encore, on log un avertissement
 // sans bloquer le démarrage du serveur (il suffira de redémarrer une fois
 // le compte créé, ou de lancer `npm run admin:init` manuellement).

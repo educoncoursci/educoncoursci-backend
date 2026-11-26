@@ -13,7 +13,7 @@
 const { query } = require("../config/database");
 const cron = require("node-cron");
 
-const EMAIL_PAR_DEFAUT = "akone97@hotmail.com";
+const EMAIL_PAR_DEFAUT = "akone0988@gmail.com";
 
 async function assurerAdminUnique(emailCible) {
   const email = (emailCible || process.env.ADMIN_EMAIL || EMAIL_PAR_DEFAUT)
