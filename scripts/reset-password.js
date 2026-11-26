@@ -5,7 +5,7 @@
 //  compte admin dont le mot de passe a été oublié).
 //
 //  Usage :
-//    node scripts/reset-password.js akone97@hotmail.com NouveauMotDePasse123
+//    node scripts/reset-password.js akone0988@gmail.com NouveauMotDePasse123
 // ============================================================
 
 require("dotenv").config();
