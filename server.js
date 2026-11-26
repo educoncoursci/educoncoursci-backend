@@ -68,6 +68,9 @@ const originesAutorisees = [
 "https://educoncoursci.netlify.app",
 // Nouvelle adresse (Cloudflare Pages)
 "https://proinsertion.pages.dev",
+// Domaine personnalisé (Cloudflare)
+"https://proinsertionci.org",
+"https://www.proinsertionci.org",
 process.env.FRONTEND_URL,
 ].filter(Boolean);
 
