@@ -17,6 +17,8 @@ router.get("/plans", ctrl.getPlans); // GET /api/payment/plans
 router.post("/verify", auth, exigerEmailVerifie, ctrl.verify); // POST /api/payment/verify
 
 // Historique personnel de l'utilisateur connecté
+router.get("/mes-notifications", auth, ctrl.mesNotifications);
+router.post("/mes-notifications/vues", auth, ctrl.notificationsVues);
 router.get("/history", auth, ctrl.history); // GET /api/payment/history
 
 // Admin : voir toutes les transactions
