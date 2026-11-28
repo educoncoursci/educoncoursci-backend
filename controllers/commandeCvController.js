@@ -135,6 +135,7 @@ function vueCommande(c) {
   const etat = etatPaiement(c);
   const vue = {
     id: c.id,
+    reference: c.reference || null,
     type: c.produit_id,
     nom: nomAffiche(c),
     groupe_id: c.groupe_id || null,
@@ -429,6 +430,10 @@ exports.payer = async (req, res) => {
     if (!txId || typeof txId !== "string") return res.status(400).json({ error: "L'identifiant de transaction est requis." });
 
     if (!telephone) return res.status(400).json({ error: "Indiquez le numéro de téléphone utilisé pour le paiement (8 à 15 chiffres)." });
+    const emailClient = String((req.body || {}).email ?? "").trim().toLowerCase();
+    if (emailClient.length > 160 || !/^[^\s@<>"',;:()\[\]\\]+@[^\s@<>"',;:()\[\]\\]+\.[^\s@<>"',;:()\[\]\\]{2,}$/.test(emailClient)) {
+      return res.status(400).json({ error: "Indiquez une adresse e-mail valide : c'est là que votre document vous sera envoyé." });
+    }
 
     const c = await chargerCommande(parseInt(req.params.id, 10) || 0, req.user.id);
     if (!c) return res.status(404).json({ error: "Document introuvable." });
@@ -454,6 +459,7 @@ exports.payer = async (req, res) => {
         txId: txNormalise, userId: req.user.id, email: req.user.email,
         moyen: `${LABELS[moyen]} CI`, plan: c.pack_id || c.produit_id, montant: c.prix_fcfa, statut: "en attente",
         telephone, service: c.pack_nom || c.produit_nom,
+        emailClient, reference: c.reference || null,
       });
     } catch (e) {
       if (e.code === "23505") return res.status(409).json({ error: "Cet identifiant de transaction a déjà été utilisé." });
@@ -465,7 +471,8 @@ exports.payer = async (req, res) => {
     require("../services/alertePaiement").alerterAdmin(transaction, { nomClient: req.user.nom, service: c.pack_nom || c.produit_nom });
 
     res.json({
-      message: "Identifiant reçu. Votre paiement est en cours de vérification (24 h maximum). Votre document sera téléchargeable dès la validation.",
+      message: `Identifiant reçu${c.reference ? " — commande n° " + c.reference : ""}. Votre paiement est en cours de vérification (24 h maximum). Votre document vous sera envoyé par e-mail et sera téléchargeable dès la validation.`,
+      reference: c.reference || null,
       etat: "en_verification",
     });
   } catch (err) {

@@ -26,6 +26,14 @@ async function initCommandesCv() {
   await query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS telephone VARCHAR(20)`);
   await query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS service VARCHAR(160)`);
   await query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS notifier_client BOOLEAN NOT NULL DEFAULT FALSE`);
+  // E-mail de contact du client (pour lui envoyer son document) et numéro de commande copié sur la transaction
+  await query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS email_client VARCHAR(160)`);
+  await query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reference VARCHAR(30)`);
+  // Identifiant unique de commande (ex. PI-261127-3F9A7C21), attribué automatiquement à chaque commande,
+  // y compris aux commandes déjà existantes (valeur par défaut évaluée ligne par ligne).
+  await query(`ALTER TABLE commandes_cv ADD COLUMN IF NOT EXISTS reference VARCHAR(30)
+    DEFAULT ('PI-' || to_char(now(), 'YYMMDD') || '-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 8)))`);
+  await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_commandes_cv_reference ON commandes_cv (reference)`);
   // Packs : plusieurs documents, un seul paiement (groupe_id = id du premier document)
   await query(`ALTER TABLE commandes_cv ADD COLUMN IF NOT EXISTS groupe_id INTEGER`);
   await query(`ALTER TABLE commandes_cv ADD COLUMN IF NOT EXISTS pack_id VARCHAR(60)`);
