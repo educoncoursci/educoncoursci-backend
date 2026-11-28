@@ -8,10 +8,10 @@ const { query } = require("../config/database");
 const Transaction = {
 
 // ── Créer une transaction ────────────────────────────────────
-async create({ txId, userId, email, moyen, plan, montant, statut = "validé", telephone = null, service = null }) {
+async create({ txId, userId, email, moyen, plan, montant, statut = "validé", telephone = null, service = null, emailClient = null, reference = null }) {
 const result = await query(
-`INSERT INTO transactions (tx_id, user_id, email, moyen, plan, montant, statut, telephone, service) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-[txId.toUpperCase(), userId, email, moyen, plan, montant, statut, telephone, service]
+`INSERT INTO transactions (tx_id, user_id, email, moyen, plan, montant, statut, telephone, service, email_client, reference) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+[txId.toUpperCase(), userId, email, moyen, plan, montant, statut, telephone, service, emailClient, reference]
 );
 return result.rows[0];
 },
