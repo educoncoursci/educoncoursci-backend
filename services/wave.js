@@ -233,7 +233,7 @@ if (lienPaiement) {
       "Cliquez sur le bouton \"Payer avec Wave\" ci-dessous",
       `Une fois sur Wave, saisissez exactement ${montant?.toLocaleString("fr-CI")} FCFA`,
       "Confirmez le paiement avec votre code Wave",
-      "Note l'identifiant de transaction reçu par SMS (ex: T_5L7D2SFHD3VMTIPJ)",
+      "Notez l'identifiant de transaction reçu par SMS (ex: T_5L7D2SFHD3VMTIPJ)",
       Number.isInteger(montantForce) ? "Revenez sur cette page et saisissez cet identifiant ci-dessous pour débloquer votre document" : "Revenez sur cette page et saisissez cet identifiant ci-dessous pour activer votre Premium",
     ],
   };
@@ -248,7 +248,7 @@ modePaiement: "manuel",
 etapes: [
 "Ouvrez l'application Wave sur votre téléphone",
 `Envoyez exactement ${montant?.toLocaleString("fr-CI")} FCFA au numéro ${numeroWave || process.env.WAVE_NUMERO}`,
-"Note l'identifiant de transaction reçu par SMS (ex: T_5L7D2SFHD3VMTIPJ)",
+"Notez l'identifiant de transaction reçu par SMS (ex: T_5L7D2SFHD3VMTIPJ)",
 "Revenez sur le site et saisissez cet identifiant pour activer votre compte",
 ],
 format_exemple: "T_5L7D2SFHD3VMTIPJ",

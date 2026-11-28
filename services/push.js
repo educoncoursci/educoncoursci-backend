@@ -20,7 +20,7 @@ const API_CONFIGUREE = Boolean(PUBLIC_KEY && PRIVATE_KEY);
 
 if (API_CONFIGUREE) {
   webpush.setVapidDetails(
-    "mailto:support@proinsertionci.ci",
+    "mailto:contact@proinsertionci.org",
     PUBLIC_KEY,
     PRIVATE_KEY,
   );

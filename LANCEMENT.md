@@ -142,7 +142,7 @@ Tout se règle en un seul endroit : le bloc **`window.SITE_CONFIG`**, tout en ha
   avec le slogan « Votre avenir professionnel commence ici. ».
 - **Volontairement inchangés** (les changer casserait le site) : l'adresse `educoncoursci.netlify.app`,
   les noms des dépôts GitHub et du service Render, le dossier Cloudinary `educoncoursci/`.
-- Les adresses e-mail `support@proinsertionci.ci` et `noreply@educoncoursci.ci` sont conservées : à
+- Les adresses e-mail `contact@proinsertionci.org` et `noreply@educoncoursci.ci` sont conservées : à
   remplacer le jour où tu auras ton propre nom de domaine ProInsertion.
 - **Service worker** : le nom du cache est passé à `proinsertion-v3`. À chaque déploiement qui modifie
   `js/api.js`, `js/auth.js`, `js/main.js`, `index.html` ou les feuilles de style, incrémente ce numéro
