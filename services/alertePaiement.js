@@ -40,6 +40,8 @@ async function alerterAdmin(transaction, { nomClient, service } = {}) {
         `Un paiement attend votre vérification.<br><br>` +
         `<strong>Client :</strong> ${esc(nomClient || "—")} (${esc(t.email)})<br>` +
         `<strong>Téléphone :</strong> ${esc(t.telephone || "non renseigné")}<br>` +
+        (t.email_client ? `<strong>E-mail de livraison du client :</strong> ${esc(t.email_client)} (document à envoyer sous 24 h après vérification)<br>` : "") +
+        (t.reference ? `<strong>N° de commande :</strong> ${esc(t.reference)}<br>` : "") +
         `<strong>Service :</strong> ${esc(libelle)}<br>` +
         `<strong>Montant :</strong> ${esc(t.montant)} FCFA<br>` +
         `<strong>Moyen :</strong> ${esc(t.moyen)}<br>` +
