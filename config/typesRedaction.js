@@ -91,17 +91,17 @@ Object.assign(TYPES_REDACTION, {
   "cv-correction": {
     titre: "CV corrigé et amélioré", tokens: 2200,
     consigne: "CORRECTION et AMÉLIORATION du CV existant : corrige l'orthographe, la grammaire et la structure, reformule les phrases faibles avec des verbes d'action, harmonise les dates. Conserve STRICTEMENT les faits du CV d'origine, sans rien inventer ni ajouter. Ne génère que le CV amélioré.",
-    champs: [R("poste", "Poste visé"), AR("cvExistant", "Colle ici le texte de ton CV actuel", { max: 8000 }), A("remarques", "Ce que tu souhaites améliorer (facultatif)")],
+    champs: [R("poste", "Poste visé"), AR("cvExistant", "Collez ici le texte de votre CV actuel", { max: 8000 }), A("remarques", "Ce que vous souhaitez améliorer (facultatif)")],
   },
   "cv-optimisation-offre": {
     titre: "CV adapté à l'offre", tokens: 2400,
     consigne: "OPTIMISATION du CV existant pour l'offre d'emploi fournie : reformule et réordonne le CV pour mettre en avant ce qui répond à l'offre, reprends naturellement les mots-clés de l'offre là où ils correspondent à des faits RÉELS du CV. N'invente aucune expérience, compétence ou diplôme. Ne génère que le CV adapté.",
-    champs: [R("poste", "Poste visé"), AR("cvExistant", "Colle ici le texte de ton CV actuel", { max: 8000 }), AR("offreEmploi", "Colle ici le texte de l'offre d'emploi", { max: 6000 })],
+    champs: [R("poste", "Poste visé"), AR("cvExistant", "Collez ici le texte de votre CV actuel", { max: 8000 }), AR("offreEmploi", "Collez ici le texte de l'offre d'emploi", { max: 6000 })],
   },
   "entretien-preparation": {
     titre: "Préparation à un entretien", tokens: 2400,
     consigne: "FICHE DE PRÉPARATION à un entretien d'embauche pour le poste et l'organisation indiqués : présentation à préparer, 10 questions fréquentes avec pistes de réponse fondées UNIQUEMENT sur le profil fourni, questions à poser au recruteur, erreurs à éviter, check-list du jour J. N'invente aucun fait sur l'organisation ni sur le candidat.",
-    champs: [R("poste", "Poste visé"), T("organisation", "Organisation"), AR("profil", "Ton profil (formation, expériences, atouts)"), A("inquietudes", "Ce qui t'inquiète pour cet entretien")],
+    champs: [R("poste", "Poste visé"), T("organisation", "Organisation"), AR("profil", "Votre profil (formation, expériences, atouts)"), A("inquietudes", "Ce qui vous inquiète pour cet entretien")],
   },
   "bonus-guide-emploi": {
     titre: "Guide de recherche d'emploi", tokens: 2000,
